@@ -16,6 +16,7 @@ import dev.matheus.cadastroBolsistas.service.BolsistaService;
 import dev.matheus.cadastroBolsistas.service.LaboratorioService;
 import dev.matheus.cadastroBolsistas.service.ProfessorService;
 import dev.matheus.cadastroBolsistas.service.ProjetoService;
+import dev.matheus.cadastroBolsistas.util.ArquivoDownloadUtil;
 import dev.matheus.cadastroBolsistas.util.PaginacaoUtil;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,7 +26,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -164,11 +164,11 @@ public class UsuarioApiController {
 
     @Operation(summary = "Exportar usuários em CSV", description = "Exporta em arquivo CSV a lista de bolsistas e professores visíveis para o usuário autenticado.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Arquivo CSV para download"),
+            @ApiResponse(responseCode = "200", description = "Arquivo CSV para download", content = @Content(mediaType = "text/csv")),
             @ApiResponse(responseCode = "403", description = "Acesso negado para bolsistas", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/exportar")
-    public void exportar(HttpServletResponse response) throws java.io.IOException {
+    public ResponseEntity<byte[]> exportar() {
         Usuario logado = usuarioLogado.obrigatorio();
         usuarioLogado.exigir(!logado.isBolsista(), "Bolsista nao exporta a lista de usuarios.");
 
@@ -179,21 +179,19 @@ public class UsuarioApiController {
         preencherLabsDosProfessores(lista);
         lista = bolsistaService.filtrarPorEscopo(lista, logado);
 
-        response.setContentType("text/csv; charset=UTF-8");
-        response.setHeader("Content-Disposition", "attachment; filename=usuarios.csv");
-        try (java.io.PrintWriter writer = response.getWriter()) {
-            writer.println("ID,Nome,Email,Tipo,Curso,Matricula,Cargo,Modalidade,Valor,DataInicio,DataFim,Laboratorio");
-            for (Usuario u : lista) {
-                UsuarioResponse r = UsuarioResponse.de(u);
-                writer.println(String.join(",",
-                        String.valueOf(r.id()), csv(r.nome()), csv(r.email()), csv(r.tipoUsuario()),
-                        csv(r.curso()), csv(r.matricula()), csv(r.cargo()),
-                        csv(r.modalidadeBolsaDescricao()), csv(r.valorBolsa() != null ? String.format("%.2f", r.valorBolsa()) : ""),
-                        csv(r.dataInicioBolsa() != null ? r.dataInicioBolsa().toString() : ""),
-                        csv(r.dataFimBolsa() != null ? r.dataFimBolsa().toString() : ""),
-                        csv(r.nomeLaboratorio())));
-            }
+        StringBuilder sb = new StringBuilder("ID,Nome,Email,Tipo,Curso,Matricula,Cargo,Modalidade,Valor,DataInicio,DataFim,Laboratorio\n");
+        for (Usuario u : lista) {
+            UsuarioResponse r = UsuarioResponse.de(u);
+            sb.append(String.join(",",
+                    String.valueOf(r.id()), csv(r.nome()), csv(r.email()), csv(r.tipoUsuario()),
+                    csv(r.curso()), csv(r.matricula()), csv(r.cargo()),
+                    csv(r.modalidadeBolsaDescricao()), csv(r.valorBolsa() != null ? String.format("%.2f", r.valorBolsa()) : ""),
+                    csv(r.dataInicioBolsa() != null ? r.dataInicioBolsa().toString() : ""),
+                    csv(r.dataFimBolsa() != null ? r.dataFimBolsa().toString() : ""),
+                    csv(r.nomeLaboratorio()))).append("\n");
         }
+
+        return ArquivoDownloadUtil.csv("usuarios.csv", sb.toString());
     }
 
     private static String csv(String valor) {
