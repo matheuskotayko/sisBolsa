@@ -1411,7 +1411,7 @@
                 }
             }
         },
-        "/api/auth/redefinir-senha": {
+        "/api/auth/password-resets": {
             "post": {
                 "tags": [
                     "Autentica\u00e7\u00e3o"
@@ -1456,6 +1456,62 @@
                     },
                     "404": {
                         "description": "Usu\u00e1rio n\u00e3o encontrado",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/password-reset-requests": {
+            "post": {
+                "tags": [
+                    "Autentica\u00e7\u00e3o"
+                ],
+                "summary": "Solicitar c\u00f3digo de recupera\u00e7\u00e3o de senha",
+                "description": "Gera um c\u00f3digo tempor\u00e1rio de 6 d\u00edgitos v\u00e1lido por 15 minutos para o e-mail cadastrado.",
+                "operationId": "esqueciSenha",
+                "requestBody": {
+                    "description": "E-mail do usu\u00e1rio",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EsqueciSenhaRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "C\u00f3digo de recupera\u00e7\u00e3o gerado",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "E-mail inv\u00e1lido",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "E-mail n\u00e3o encontrado no sistema",
                         "content": {
                             "*/*": {
                                 "schema": {
@@ -1524,62 +1580,6 @@
                     },
                     "429": {
                         "description": "Conta bloqueada temporariamente por excesso de tentativas incorretas",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/auth/esqueci-senha": {
-            "post": {
-                "tags": [
-                    "Autentica\u00e7\u00e3o"
-                ],
-                "summary": "Solicitar c\u00f3digo de recupera\u00e7\u00e3o de senha",
-                "description": "Gera um c\u00f3digo tempor\u00e1rio de 6 d\u00edgitos v\u00e1lido por 15 minutos para o e-mail cadastrado.",
-                "operationId": "esqueciSenha",
-                "requestBody": {
-                    "description": "E-mail do usu\u00e1rio",
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/EsqueciSenhaRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "200": {
-                        "description": "C\u00f3digo de recupera\u00e7\u00e3o gerado",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "type": "object",
-                                    "additionalProperties": {
-                                        "type": "string"
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "E-mail inv\u00e1lido",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "E-mail n\u00e3o encontrado no sistema",
                         "content": {
                             "*/*": {
                                 "schema": {
@@ -3092,6 +3092,22 @@
                     "novaSenha"
                 ]
             },
+            "EsqueciSenhaRequest": {
+                "type": "object",
+                "description": "Solicita\u00e7\u00e3o de c\u00f3digo de recupera\u00e7\u00e3o de senha.",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "description": "E-mail cadastrado na conta",
+                        "example": "admin@sisbolsa.com",
+                        "minLength": 1
+                    }
+                },
+                "required": [
+                    "email"
+                ]
+            },
             "LoginRequest": {
                 "type": "object",
                 "description": "Credenciais necess\u00e1rias para autentica\u00e7\u00e3o no sistema.",
@@ -3110,22 +3126,6 @@
                 "required": [
                     "email",
                     "senha"
-                ]
-            },
-            "EsqueciSenhaRequest": {
-                "type": "object",
-                "description": "Solicita\u00e7\u00e3o de c\u00f3digo de recupera\u00e7\u00e3o de senha.",
-                "properties": {
-                    "email": {
-                        "type": "string",
-                        "format": "email",
-                        "description": "E-mail cadastrado na conta",
-                        "example": "admin@sisbolsa.com",
-                        "minLength": 1
-                    }
-                },
-                "required": [
-                    "email"
                 ]
             },
             "CadastroAdminRequest": {

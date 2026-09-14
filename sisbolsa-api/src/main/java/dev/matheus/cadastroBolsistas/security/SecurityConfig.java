@@ -40,8 +40,8 @@ public class SecurityConfig {
                     "/api/auth/login",
                     "/api/auth/cadastro-admin",
                     "/api/auth/admins-restantes",
-                    "/api/auth/esqueci-senha",
-                    "/api/auth/redefinir-senha"
+                    "/api/auth/password-reset-requests",
+                    "/api/auth/password-resets"
                 ).permitAll()
                 .requestMatchers("/api/relatorios/**").hasRole("ADMIN")
                 .anyRequest().authenticated())
