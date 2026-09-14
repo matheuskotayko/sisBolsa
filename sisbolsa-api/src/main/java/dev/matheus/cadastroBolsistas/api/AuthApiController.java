@@ -27,7 +27,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -79,7 +78,6 @@ public class AuthApiController {
     @PostMapping("/login")
     public UsuarioResponse login(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Credenciais de e-mail e senha", required = true)
                                  @RequestBody LoginRequest body,
-                                 HttpSession session,
                                  HttpServletRequest request,
                                  HttpServletResponse response) {
         String email = body.email() != null ? body.email().trim() : "";
@@ -114,7 +112,6 @@ public class AuthApiController {
         loginAttemptService.registrarSucesso(email);
         String token = jwtService.gerarToken(usuario.getEmail(), usuario.getTipoUsuario());
         CookieJwt.gravar(response, token, jwtService.getExpiracaoMinutos());
-        session.setAttribute("usuario", usuario);
         auditoriaService.registrar(usuario, "LOGIN", "AUTH", "Login efetuado com sucesso (" + usuario.getTipoUsuario() + ")", ip);
         return UsuarioResponse.de(usuario);
     }
@@ -133,13 +130,10 @@ public class AuthApiController {
             @ApiResponse(responseCode = "204", description = "Sessão encerrada com sucesso")
     })
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpSession session, HttpServletResponse response) {
-        Usuario usuario = (Usuario) session.getAttribute("usuario");
-        if (usuario != null) {
-            auditoriaService.registrar(usuario, "LOGOUT", "AUTH", "Sessão encerrada pelo usuário", null);
-        }
+    public ResponseEntity<Void> logout(HttpServletResponse response) {
+        Usuario usuario = usuarioLogado.obrigatorio();
+        auditoriaService.registrar(usuario, "LOGOUT", "AUTH", "Sessão encerrada pelo usuário", null);
         CookieJwt.limpar(response);
-        session.invalidate();
         return ResponseEntity.noContent().build();
     }
 
@@ -149,8 +143,8 @@ public class AuthApiController {
             @ApiResponse(responseCode = "401", description = "Não autenticado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/me")
-    public UsuarioResponse eu(HttpSession session) {
-        return UsuarioResponse.de(usuarioLogado.obrigatorio(session));
+    public UsuarioResponse eu() {
+        return UsuarioResponse.de(usuarioLogado.obrigatorio());
     }
 
     @Operation(summary = "Atualizar perfil próprio", description = "Permite a alteração do nome, e-mail, foto e senha do usuário logado. A alteração de senha exige a validação prévia da senha atual.")
@@ -161,9 +155,8 @@ public class AuthApiController {
     })
     @PutMapping("/perfil")
     public UsuarioResponse atualizarPerfil(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados para atualização de perfil e senha", required = true)
-                                           @RequestBody PerfilRequest body,
-                                           HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+                                           @RequestBody PerfilRequest body) {
+        Usuario logado = usuarioLogado.obrigatorio();
 
         String nome = StringUtil.limpar(body.nome());
         String email = StringUtil.limpar(body.email());
@@ -213,8 +206,6 @@ public class AuthApiController {
             bolsistaService.atualizar(b);
             atualizado = b;
         }
-
-        session.setAttribute("usuario", atualizado);
 
         if (senhaNova != null) {
             auditoriaService.registrar(atualizado, "ALTERAR_SENHA", "USUARIO", "Senha de acesso alterada pelo próprio usuário com sucesso.", null);

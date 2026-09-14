@@ -2,6 +2,7 @@ package dev.matheus.cadastroBolsistas.api;
 
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Professor;
+import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.security.JwtCookieFilter;
 import dev.matheus.cadastroBolsistas.security.JwtService;
 import dev.matheus.cadastroBolsistas.security.LoginAttemptService;
@@ -10,6 +11,7 @@ import dev.matheus.cadastroBolsistas.service.AuditoriaService;
 import dev.matheus.cadastroBolsistas.service.BolsistaService;
 import dev.matheus.cadastroBolsistas.service.LoginService;
 import dev.matheus.cadastroBolsistas.service.ProfessorService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -21,11 +23,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -97,6 +103,18 @@ class AuthApiControllerTest {
         bolsistaLogado.setSenha(passwordEncoder.encode(SENHA_ATUAL));
     }
 
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    /* simula o que o JwtCookieFilter faz de verdade: poe o Usuario como principal no SecurityContext */
+    private void logarComo(Usuario usuario) {
+        var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getTipoUsuario()));
+        var auth = new UsernamePasswordAuthenticationToken(usuario, null, authorities);
+        SecurityContextHolder.getContext().setAuthentication(auth);
+    }
+
     private String json(String... pares) {
         StringBuilder sb = new StringBuilder("{");
         for (int i = 0; i < pares.length; i += 2) {
@@ -164,6 +182,8 @@ class AuthApiControllerTest {
 
     @Test
     void logout_limpaOCookie() throws Exception {
+        logarComo(bolsistaLogado);
+
         mockMvc.perform(post("/api/auth/logout"))
                 .andExpect(status().isNoContent())
                 .andExpect(cookie().maxAge("token", 0));
@@ -177,7 +197,9 @@ class AuthApiControllerTest {
 
     @Test
     void me_comSessao_devolveOUsuario() throws Exception {
-        mockMvc.perform(get("/api/auth/me").sessionAttr("usuario", bolsistaLogado))
+        logarComo(bolsistaLogado);
+
+        mockMvc.perform(get("/api/auth/me"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nome").value("Thiago Rocha"));
     }
@@ -185,9 +207,9 @@ class AuthApiControllerTest {
     @Test
     void perfil_semTrocarSenha_atualizaOsDados() throws Exception {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
+        logarComo(bolsistaLogado);
 
         mockMvc.perform(put("/api/auth/perfil")
-                        .sessionAttr("usuario", bolsistaLogado)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Thiago Editado", "email", "novo@teste.com")))
                 .andExpect(status().isOk())
@@ -202,9 +224,9 @@ class AuthApiControllerTest {
     @Test
     void perfil_comSenhaAtualCorreta_gravaNovoHash() throws Exception {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
+        logarComo(bolsistaLogado);
 
         mockMvc.perform(put("/api/auth/perfil")
-                        .sessionAttr("usuario", bolsistaLogado)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Thiago Rocha", "email", "thiago@teste.com",
                                 "senhaAtual", SENHA_ATUAL, "senha", "novaSenha123", "confirmaSenha", "novaSenha123")))
@@ -219,9 +241,9 @@ class AuthApiControllerTest {
     @Test
     void perfil_comSenhaAtualErrada_recusa() throws Exception {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
+        logarComo(bolsistaLogado);
 
         mockMvc.perform(put("/api/auth/perfil")
-                        .sessionAttr("usuario", bolsistaLogado)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Thiago Rocha", "email", "thiago@teste.com",
                                 "senhaAtual", "chuteErrado", "senha", "hackeado123", "confirmaSenha", "hackeado123")))
@@ -234,9 +256,9 @@ class AuthApiControllerTest {
     @Test
     void perfil_comConfirmacaoDiferente_recusa() throws Exception {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
+        logarComo(bolsistaLogado);
 
         mockMvc.perform(put("/api/auth/perfil")
-                        .sessionAttr("usuario", bolsistaLogado)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Thiago Rocha", "email", "thiago@teste.com",
                                 "senhaAtual", SENHA_ATUAL, "senha", "novaSenha123", "confirmaSenha", "outraCoisa")))
@@ -248,9 +270,9 @@ class AuthApiControllerTest {
     @Test
     void perfil_comSenhaNovaCurta_recusa() throws Exception {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
+        logarComo(bolsistaLogado);
 
         mockMvc.perform(put("/api/auth/perfil")
-                        .sessionAttr("usuario", bolsistaLogado)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Thiago Rocha", "email", "thiago@teste.com",
                                 "senhaAtual", SENHA_ATUAL, "senha", "123", "confirmaSenha", "123")))
@@ -261,8 +283,9 @@ class AuthApiControllerTest {
 
     @Test
     void perfil_comNomeCurto_recusa() throws Exception {
+        logarComo(bolsistaLogado);
+
         mockMvc.perform(put("/api/auth/perfil")
-                        .sessionAttr("usuario", bolsistaLogado)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Jo", "email", "thiago@teste.com")))
                 .andExpect(status().isBadRequest())
@@ -278,9 +301,9 @@ class AuthApiControllerTest {
         professor.setEmail("roberto@teste.com");
         professor.setSenha(passwordEncoder.encode(SENHA_ATUAL));
         when(professorService.buscarPorId(profId)).thenReturn(professor);
+        logarComo(professor);
 
         mockMvc.perform(put("/api/auth/perfil")
-                        .sessionAttr("usuario", professor)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Dr. Roberto Mendes", "email", "roberto@teste.com")))
                 .andExpect(status().isOk());
@@ -292,9 +315,9 @@ class AuthApiControllerTest {
     @Test
     void perfil_quandoOUsuarioSumiuDoBanco_retorna404() throws Exception {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(null);
+        logarComo(bolsistaLogado);
 
         mockMvc.perform(put("/api/auth/perfil")
-                        .sessionAttr("usuario", bolsistaLogado)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Thiago Rocha", "email", "thiago@teste.com")))
                 .andExpect(status().isNotFound());

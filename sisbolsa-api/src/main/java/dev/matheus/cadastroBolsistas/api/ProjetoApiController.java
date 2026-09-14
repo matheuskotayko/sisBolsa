@@ -18,7 +18,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -56,9 +55,8 @@ public class ProjetoApiController {
     @GetMapping
     public List<ProjetoResponse> listar(
             @Parameter(description = "Filtro por nome do projeto", example = "Processamento") @RequestParam(required = false) String buscaNome,
-            @Parameter(description = "Filtro por ID do laboratório (UUID)") @RequestParam(required = false) UUID labId,
-            HttpSession session) {
-        usuarioLogado.obrigatorio(session);
+            @Parameter(description = "Filtro por ID do laboratório (UUID)") @RequestParam(required = false) UUID labId) {
+        usuarioLogado.obrigatorio();
         return projetoService.buscarProjetos(buscaNome, labId).stream().map(this::comMembros).toList();
     }
 
@@ -68,8 +66,8 @@ public class ProjetoApiController {
             @ApiResponse(responseCode = "404", description = "Projeto não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public ProjetoResponse buscar(@Parameter(description = "ID do projeto (UUID)", required = true) @PathVariable UUID id, HttpSession session) {
-        usuarioLogado.obrigatorio(session);
+    public ProjetoResponse buscar(@Parameter(description = "ID do projeto (UUID)", required = true) @PathVariable UUID id) {
+        usuarioLogado.obrigatorio();
         return comMembros(exigirProjeto(id));
     }
 
@@ -79,8 +77,8 @@ public class ProjetoApiController {
             @ApiResponse(responseCode = "404", description = "Projeto não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}/membros")
-    public List<UsuarioResponse> membros(@Parameter(description = "ID do projeto (UUID)", required = true) @PathVariable UUID id, HttpSession session) {
-        usuarioLogado.obrigatorio(session);
+    public List<UsuarioResponse> membros(@Parameter(description = "ID do projeto (UUID)", required = true) @PathVariable UUID id) {
+        usuarioLogado.obrigatorio();
         exigirProjeto(id);
         return bolsistaService.buscarPorProjeto(id).stream().map(UsuarioResponse::de).toList();
     }
@@ -93,9 +91,8 @@ public class ProjetoApiController {
     })
     @PostMapping
     public ResponseEntity<ProjetoResponse> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do projeto", required = true)
-                                                 @RequestBody ProjetoRequest body,
-                                                 HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+                                                 @RequestBody ProjetoRequest body) {
+        Usuario logado = usuarioLogado.obrigatorio();
         validar(body);
         usuarioLogado.exigir(laboratorioService.podeGerenciar(logado, body.laboratorioId()),
                 "Sem permissao para criar projeto neste laboratorio.");
@@ -117,9 +114,8 @@ public class ProjetoApiController {
     @PutMapping("/{id}")
     public ProjetoResponse atualizar(@Parameter(description = "ID do projeto (UUID)", required = true) @PathVariable UUID id,
                                      @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do projeto", required = true)
-                                     @RequestBody ProjetoRequest body,
-                                     HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+                                     @RequestBody ProjetoRequest body) {
+        Usuario logado = usuarioLogado.obrigatorio();
         Projeto p = exigirProjeto(id);
         validar(body);
         exigirPermissaoNoLab(logado, p.getLaboratorioId());
@@ -140,8 +136,8 @@ public class ProjetoApiController {
             @ApiResponse(responseCode = "404", description = "Projeto não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@Parameter(description = "ID do projeto (UUID)", required = true) @PathVariable UUID id, HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+    public ResponseEntity<Void> excluir(@Parameter(description = "ID do projeto (UUID)", required = true) @PathVariable UUID id) {
+        Usuario logado = usuarioLogado.obrigatorio();
         Projeto p = exigirProjeto(id);
         exigirPermissaoNoLab(logado, p.getLaboratorioId());
         projetoService.excluir(id);
@@ -158,9 +154,8 @@ public class ProjetoApiController {
     @PostMapping("/{id}/membros/{bolsistaId}")
     public ResponseEntity<Void> vincular(
             @Parameter(description = "ID do projeto (UUID)", required = true) @PathVariable UUID id,
-            @Parameter(description = "ID do bolsista a vincular (UUID)", required = true) @PathVariable UUID bolsistaId,
-            HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+            @Parameter(description = "ID do bolsista a vincular (UUID)", required = true) @PathVariable UUID bolsistaId) {
+        Usuario logado = usuarioLogado.obrigatorio();
         Projeto p = exigirProjeto(id);
         exigirPermissaoNoLab(logado, p.getLaboratorioId());
         if (bolsistaService.buscarPorId(bolsistaId) == null) {
@@ -180,9 +175,8 @@ public class ProjetoApiController {
     @DeleteMapping("/{id}/membros/{bolsistaId}")
     public ResponseEntity<Void> desvincular(
             @Parameter(description = "ID do projeto (UUID)", required = true) @PathVariable UUID id,
-            @Parameter(description = "ID do bolsista a desvincular (UUID)", required = true) @PathVariable UUID bolsistaId,
-            HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+            @Parameter(description = "ID do bolsista a desvincular (UUID)", required = true) @PathVariable UUID bolsistaId) {
+        Usuario logado = usuarioLogado.obrigatorio();
         Projeto p = exigirProjeto(id);
         exigirPermissaoNoLab(logado, p.getLaboratorioId());
         projetoService.desvincularBolsista(bolsistaId, id);

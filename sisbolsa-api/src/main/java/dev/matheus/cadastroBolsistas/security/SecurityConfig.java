@@ -33,8 +33,8 @@ public class SecurityConfig {
         http
             .securityMatcher("/api/**")
             .csrf(csrf -> csrf.disable())
-            /* a api nao depende de sessao para autenticar: quem manda e o token */
-            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+            /* stateless de verdade: nada de sessao de servidor, o token e a unica fonte de autenticacao */
+            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/api/auth/login",

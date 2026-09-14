@@ -7,7 +7,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,12 +19,9 @@ import java.util.List;
 /*
  * le o jwt do cookie e autentica a requisicao.
  *
- * as jsp e os controllers ainda leem o usuario da HttpSession. entao, alem de
- * popular o SecurityContext, o filtro repoe o atributo "usuario" na sessao
- * quando ele nao esta la (sessao expirada com token ainda valido, por exemplo).
- * assim quem manda e o token, e a sessao vira so cache da view.
- *
- * ponytail: essa reposicao existe so enquanto as jsp existirem. some na etapa 6.
+ * sem sessao de servidor: o token e a unica fonte de verdade. a cada
+ * requisicao o usuario e recarregado do banco a partir do e-mail do
+ * claim e vira o principal do SecurityContext.
  */
 @Component
 public class JwtCookieFilter extends OncePerRequestFilter {
@@ -46,33 +42,23 @@ public class JwtCookieFilter extends OncePerRequestFilter {
         if (token != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             Claims claims = jwtService.validar(token);
             if (claims != null) {
-                autenticar(request, claims);
+                autenticar(claims);
             }
         }
         chain.doFilter(request, response);
     }
 
-    private void autenticar(HttpServletRequest request, Claims claims) {
+    private void autenticar(Claims claims) {
         String email = claims.getSubject();
         String tipo = claims.get("tipo", String.class);
 
-        HttpSession session = request.getSession(true);
-        Usuario usuario = (Usuario) session.getAttribute("usuario");
-
-        /*
-         * so vai no banco quando a sessao perdeu o usuario. no caminho normal
-         * o objeto ja esta la desde o login.
-         */
-        if (usuario == null || !email.equals(usuario.getEmail())) {
-            usuario = loginService.buscarPorEmail(email);
-            if (usuario == null) {
-                return;
-            }
-            session.setAttribute("usuario", usuario);
+        Usuario usuario = loginService.buscarPorEmail(email);
+        if (usuario == null) {
+            return;
         }
 
         var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + tipo));
-        var auth = new UsernamePasswordAuthenticationToken(email, null, authorities);
+        var auth = new UsernamePasswordAuthenticationToken(usuario, null, authorities);
         SecurityContextHolder.getContext().setAuthentication(auth);
     }
 }

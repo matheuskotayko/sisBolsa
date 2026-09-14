@@ -19,7 +19,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -55,8 +54,8 @@ public class LaboratorioApiController {
             @ApiResponse(responseCode = "401", description = "Não autenticado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping
-    public List<LaboratorioResponse> listar(HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+    public List<LaboratorioResponse> listar() {
+        Usuario logado = usuarioLogado.obrigatorio();
         List<Laboratorio> labs = logado.isProfessor()
                 ? laboratorioService.listarPorCoordenador(logado.getId())
                 : laboratorioService.listarTodos();
@@ -69,8 +68,8 @@ public class LaboratorioApiController {
             @ApiResponse(responseCode = "404", description = "Laboratório não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public LaboratorioResponse buscar(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id, HttpSession session) {
-        usuarioLogado.obrigatorio(session);
+    public LaboratorioResponse buscar(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id) {
+        usuarioLogado.obrigatorio();
         return comOcupacao(exigirLab(id));
     }
 
@@ -80,8 +79,8 @@ public class LaboratorioApiController {
             @ApiResponse(responseCode = "404", description = "Laboratório não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}/bolsistas")
-    public List<UsuarioResponse> bolsistas(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id, HttpSession session) {
-        usuarioLogado.obrigatorio(session);
+    public List<UsuarioResponse> bolsistas(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id) {
+        usuarioLogado.obrigatorio();
         exigirLab(id);
         return bolsistaService.buscarPorLaboratorio(id).stream().map(UsuarioResponse::de).toList();
     }
@@ -92,8 +91,8 @@ public class LaboratorioApiController {
             @ApiResponse(responseCode = "404", description = "Laboratório não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}/projetos")
-    public List<ProjetoResponse> projetos(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id, HttpSession session) {
-        usuarioLogado.obrigatorio(session);
+    public List<ProjetoResponse> projetos(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id) {
+        usuarioLogado.obrigatorio();
         exigirLab(id);
         return projetoService.listarPorLaboratorio(id).stream()
                 .map(p -> ProjetoResponse.de(p, projetoService.contarMembros(p.getId())))
@@ -108,9 +107,8 @@ public class LaboratorioApiController {
     })
     @PostMapping
     public ResponseEntity<LaboratorioResponse> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do laboratório", required = true)
-                                                     @RequestBody LaboratorioRequest body,
-                                                     HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+                                                     @RequestBody LaboratorioRequest body) {
+        Usuario logado = usuarioLogado.obrigatorio();
         usuarioLogado.exigirAdmin(logado);
         validar(body);
 
@@ -131,9 +129,8 @@ public class LaboratorioApiController {
     @PutMapping("/{id}")
     public LaboratorioResponse atualizar(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id,
                                          @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do laboratório", required = true)
-                                         @RequestBody LaboratorioRequest body,
-                                         HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+                                         @RequestBody LaboratorioRequest body) {
+        Usuario logado = usuarioLogado.obrigatorio();
         Laboratorio lab = exigirLab(id);
         usuarioLogado.exigir(laboratorioService.podeGerenciar(logado, id), "Sem permissao para editar este laboratorio.");
         validar(body);
@@ -152,8 +149,8 @@ public class LaboratorioApiController {
             @ApiResponse(responseCode = "404", description = "Laboratório não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id, HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+    public ResponseEntity<Void> excluir(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id) {
+        Usuario logado = usuarioLogado.obrigatorio();
         Laboratorio lab = exigirLab(id);
         usuarioLogado.exigir(laboratorioService.podeGerenciar(logado, id), "Sem permissao para excluir este laboratorio.");
         laboratorioService.excluir(id);
