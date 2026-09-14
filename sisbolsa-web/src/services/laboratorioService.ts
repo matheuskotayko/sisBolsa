@@ -1,9 +1,17 @@
 import { api } from './api';
-import type { Laboratorio, LaboratorioRequest, Projeto, Usuario } from '../types';
+import type { Laboratorio, LaboratorioRequest, Projeto, Usuario, Paginacao } from '../types';
+
+/* usado quando o chamador so quer "todos os laboratorios" pra popular um
+ * dropdown/lookup, sem controle de pagina - suficiente enquanto o numero de
+ * laboratorios de um departamento nao passar disso. */
+const TAMANHO_TODOS = 200;
 
 export const laboratorioService = {
-  listar: () =>
-    api.get<Laboratorio[]>('/laboratorios'),
+  listar: (params?: { pagina?: number; tamanho?: number }) =>
+    api.get<Paginacao<Laboratorio>>('/laboratorios', params),
+
+  listarTodos: () =>
+    api.get<Paginacao<Laboratorio>>('/laboratorios', { tamanho: TAMANHO_TODOS }).then((r) => r.itens),
 
   buscarPorId: (id: string) =>
     api.get<Laboratorio>(`/laboratorios/${id}`),

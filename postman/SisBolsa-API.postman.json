@@ -939,10 +939,33 @@
                 "tags": [
                     "Projetos"
                 ],
-                "summary": "Listar projetos",
-                "description": "Retorna todos os projetos ativos, com filtros opcionais por nome ou por laborat\u00f3rio de pesquisa.",
+                "summary": "Listar projetos paginados",
+                "description": "Retorna projetos ativos, com filtros opcionais por nome ou por laborat\u00f3rio de pesquisa.",
                 "operationId": "listar_1",
                 "parameters": [
+                    {
+                        "name": "pagina",
+                        "in": "query",
+                        "description": "N\u00famero da p\u00e1gina",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "tamanho",
+                        "in": "query",
+                        "description": "Quantidade de itens por p\u00e1gina",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32"
+                        },
+                        "example": 10
+                    },
                     {
                         "name": "buscaNome",
                         "in": "query",
@@ -966,14 +989,11 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Lista de projetos",
+                        "description": "Lista paginada de projetos",
                         "content": {
                             "*/*": {
                                 "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/ProjetoResponse"
-                                    }
+                                    "$ref": "#/components/schemas/PaginaResponseProjetoResponse"
                                 }
                             }
                         }
@@ -1159,19 +1179,41 @@
                 "tags": [
                     "Laborat\u00f3rios"
                 ],
-                "summary": "Listar laborat\u00f3rios",
-                "description": "Retorna todos os laborat\u00f3rios ativos do sistema ou apenas os que o professor autenticado coordena.",
+                "summary": "Listar laborat\u00f3rios paginados",
+                "description": "Retorna laborat\u00f3rios ativos do sistema ou apenas os que o professor autenticado coordena.",
                 "operationId": "listar_2",
+                "parameters": [
+                    {
+                        "name": "pagina",
+                        "in": "query",
+                        "description": "N\u00famero da p\u00e1gina",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "tamanho",
+                        "in": "query",
+                        "description": "Quantidade de itens por p\u00e1gina",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32"
+                        },
+                        "example": 10
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Lista de laborat\u00f3rios com ocupa\u00e7\u00e3o",
+                        "description": "Lista paginada de laborat\u00f3rios com ocupa\u00e7\u00e3o",
                         "content": {
                             "*/*": {
                                 "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/LaboratorioResponse"
-                                    }
+                                    "$ref": "#/components/schemas/PaginaResponseLaboratorioResponse"
                                 }
                             }
                         }
@@ -3203,6 +3245,68 @@
                     "totalBolsistas": {
                         "type": "integer",
                         "format": "int64"
+                    }
+                }
+            },
+            "PaginaResponseProjetoResponse": {
+                "type": "object",
+                "description": "Envelope gen\u00e9rico para respostas paginadas de listas.",
+                "properties": {
+                    "itens": {
+                        "type": "array",
+                        "description": "Lista de itens da p\u00e1gina atual",
+                        "items": {
+                            "$ref": "#/components/schemas/ProjetoResponse"
+                        }
+                    },
+                    "pagina": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "N\u00famero da p\u00e1gina atual (1-indexado)",
+                        "example": 1
+                    },
+                    "totalPaginas": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Total de p\u00e1ginas dispon\u00edveis",
+                        "example": 5
+                    },
+                    "totalItens": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Total geral de registros encontrados",
+                        "example": 42
+                    }
+                }
+            },
+            "PaginaResponseLaboratorioResponse": {
+                "type": "object",
+                "description": "Envelope gen\u00e9rico para respostas paginadas de listas.",
+                "properties": {
+                    "itens": {
+                        "type": "array",
+                        "description": "Lista de itens da p\u00e1gina atual",
+                        "items": {
+                            "$ref": "#/components/schemas/LaboratorioResponse"
+                        }
+                    },
+                    "pagina": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "N\u00famero da p\u00e1gina atual (1-indexado)",
+                        "example": 1
+                    },
+                    "totalPaginas": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Total de p\u00e1ginas dispon\u00edveis",
+                        "example": 5
+                    },
+                    "totalItens": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Total geral de registros encontrados",
+                        "example": 42
                     }
                 }
             },

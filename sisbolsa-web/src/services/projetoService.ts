@@ -1,9 +1,9 @@
 import { api } from './api';
-import type { Projeto, ProjetoRequest, MembroProjeto } from '../types';
+import type { Projeto, ProjetoRequest, MembroProjeto, Paginacao } from '../types';
 
 export const projetoService = {
-  listar: (filtros?: { buscaNome?: string; labId?: string }) =>
-    api.get<Projeto[]>('/projetos', filtros),
+  listar: (filtros?: { buscaNome?: string; labId?: string; pagina?: number; tamanho?: number }) =>
+    api.get<Paginacao<Projeto>>('/projetos', filtros),
 
   buscarPorId: (id: string) =>
     api.get<Projeto>(`/projetos/${id}`),

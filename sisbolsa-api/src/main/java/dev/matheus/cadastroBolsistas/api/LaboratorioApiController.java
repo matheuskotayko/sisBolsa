@@ -3,6 +3,7 @@ package dev.matheus.cadastroBolsistas.api;
 import dev.matheus.cadastroBolsistas.dto.ErroResponse;
 import dev.matheus.cadastroBolsistas.dto.LaboratorioRequest;
 import dev.matheus.cadastroBolsistas.dto.LaboratorioResponse;
+import dev.matheus.cadastroBolsistas.dto.PaginaResponse;
 import dev.matheus.cadastroBolsistas.dto.ProjetoResponse;
 import dev.matheus.cadastroBolsistas.dto.UsuarioResponse;
 import dev.matheus.cadastroBolsistas.model.Laboratorio;
@@ -11,6 +12,7 @@ import dev.matheus.cadastroBolsistas.service.AuditoriaService;
 import dev.matheus.cadastroBolsistas.service.BolsistaService;
 import dev.matheus.cadastroBolsistas.service.LaboratorioService;
 import dev.matheus.cadastroBolsistas.service.ProjetoService;
+import dev.matheus.cadastroBolsistas.util.PaginacaoUtil;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,6 +37,9 @@ import java.util.UUID;
 @RequestMapping("/api/laboratorios")
 public class LaboratorioApiController {
 
+    private static final int TAMANHO_PADRAO = 10;
+    private static final int TAMANHO_MAXIMO = 200;
+
     private final LaboratorioService laboratorioService;
     private final BolsistaService bolsistaService;
     private final ProjetoService projetoService;
@@ -51,18 +56,20 @@ public class LaboratorioApiController {
         this.auditoriaService = auditoriaService;
     }
 
-    @Operation(summary = "Listar laboratórios", description = "Retorna todos os laboratórios ativos do sistema ou apenas os que o professor autenticado coordena.")
+    @Operation(summary = "Listar laboratórios paginados", description = "Retorna laboratórios ativos do sistema ou apenas os que o professor autenticado coordena.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Lista de laboratórios com ocupação"),
+            @ApiResponse(responseCode = "200", description = "Lista paginada de laboratórios com ocupação"),
             @ApiResponse(responseCode = "401", description = "Não autenticado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping
-    public List<LaboratorioResponse> listar() {
+    public PaginaResponse<LaboratorioResponse> listar(
+            @Parameter(description = "Número da página", example = "1") @RequestParam(defaultValue = "1") int pagina,
+            @Parameter(description = "Quantidade de itens por página", example = "10") @RequestParam(required = false) Integer tamanho) {
         Usuario logado = usuarioLogado.obrigatorio();
         List<Laboratorio> labs = logado.isProfessor()
                 ? laboratorioService.listarPorCoordenador(logado.getId())
                 : laboratorioService.listarTodos();
-        return labs.stream().map(this::comOcupacao).toList();
+        return PaginacaoUtil.paginar(labs, pagina, tamanho, TAMANHO_PADRAO, TAMANHO_MAXIMO, this::comOcupacao);
     }
 
     @Operation(summary = "Buscar laboratório por ID", description = "Retorna os detalhes de um laboratório específico incluindo capacidade e percentual de ocupação.")
