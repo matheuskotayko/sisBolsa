@@ -52,6 +52,24 @@
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 
+		<!--
+			hateoas (links de navegacao nas respostas). nao existe
+			spring-boot-starter-hateoas pro boot 4 ainda (para no 3.5.3), e a
+			propria lib spring-hateoas so tem 3.0.0 em milestone (sem GA). usando a
+			2.5.1 estavel (feita pra spring 6) direto sem o starter - o
+			dependencyManagement do boot 4 forca ela a rodar em cima do spring
+			framework 7.0.7 na pratica. testado manualmente: sobe sem erro de bean
+			e serializa certo. sem o starter nao tem autoconfig de content
+			negotiation, entao o formato de link e o generico do spring-hateoas
+			("links": [...]), nao o hal ("_links") - suficiente pra richardson
+			nivel 3, so nao e o media type hal.
+		-->
+		<dependency>
+			<groupId>org.springframework.hateoas</groupId>
+			<artifactId>spring-hateoas</artifactId>
+			<version>2.5.1</version>
+		</dependency>
+
 		<!-- swagger / openapi. a linha 3.x e a que suporta boot 4 -->
 		<dependency>
 			<groupId>org.springdoc</groupId>

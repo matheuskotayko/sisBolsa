@@ -25,6 +25,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -208,11 +210,11 @@ public class FrequenciaApiController {
             @ApiResponse(responseCode = "404", description = "Frequência não encontrada", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public FrequenciaResponse buscar(@Parameter(description = "ID da frequência (UUID)", required = true) @PathVariable UUID id) {
+    public EntityModel<FrequenciaResponse> buscar(@Parameter(description = "ID da frequência (UUID)", required = true) @PathVariable UUID id) {
         Usuario logado = usuarioLogado.obrigatorio();
         Frequencia f = exigirFrequencia(id);
         exigirPermissao(logado, f.getBolsistaId());
-        return FrequenciaResponse.de(f);
+        return comLinks(FrequenciaResponse.de(f));
     }
 
     @Operation(summary = "Registrar novo apontamento de frequência", description = "Aponta horas trabalhadas e descrição das atividades realizadas.")
@@ -221,7 +223,7 @@ public class FrequenciaApiController {
             @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PostMapping
-    public ResponseEntity<FrequenciaResponse> registrar(
+    public ResponseEntity<EntityModel<FrequenciaResponse>> registrar(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do apontamento de horas", required = true)
             @Valid @RequestBody FrequenciaRequest body,
             UriComponentsBuilder uriBuilder) {
@@ -239,7 +241,7 @@ public class FrequenciaApiController {
         frequenciaService.registrar(f);
         auditoriaService.registrar(logado, "REGISTRAR_FREQUENCIA", "FREQUENCIA", "Apontamento de " + f.getHorasTrabalhadas() + "h para o dia " + f.getData() + ".", null);
         URI uri = uriBuilder.replacePath("/api/v1/frequencias/{id}").buildAndExpand(f.getId()).toUri();
-        return ResponseEntity.created(uri).body(FrequenciaResponse.de(f));
+        return ResponseEntity.created(uri).body(comLinks(FrequenciaResponse.de(f)));
     }
 
     @Operation(summary = "Atualizar apontamento de frequência", description = "Altera as horas, data, descrição ou link de entregável de um registro de frequência.")
@@ -249,7 +251,7 @@ public class FrequenciaApiController {
             @ApiResponse(responseCode = "404", description = "Frequência não encontrada", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PutMapping("/{id}")
-    public FrequenciaResponse atualizar(
+    public EntityModel<FrequenciaResponse> atualizar(
             @Parameter(description = "ID da frequência (UUID)", required = true) @PathVariable UUID id,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados da frequência", required = true)
             @Valid @RequestBody FrequenciaRequest body) {
@@ -263,7 +265,7 @@ public class FrequenciaApiController {
         f.setLinkComprovante(StringUtil.limpar(body.linkComprovante()));
         frequenciaService.atualizar(f);
         auditoriaService.registrar(logado, "ATUALIZAR_FREQUENCIA", "FREQUENCIA", "Apontamento de frequência atualizado (" + f.getHorasTrabalhadas() + "h em " + f.getData() + ").", null);
-        return FrequenciaResponse.de(f);
+        return comLinks(FrequenciaResponse.de(f));
     }
 
     @Operation(summary = "Desativar frequência (Soft Delete)", description = "Desativa um registro de apontamento de horas.")
@@ -328,4 +330,9 @@ public class FrequenciaApiController {
         return f;
     }
 
+    private EntityModel<FrequenciaResponse> comLinks(FrequenciaResponse resp) {
+        return EntityModel.of(resp,
+                Link.of("/api/v1/frequencias/" + resp.id()).withSelfRel(),
+                Link.of("/api/v1/usuarios/" + resp.bolsistaId()).withRel("bolsista"));
+    }
 }

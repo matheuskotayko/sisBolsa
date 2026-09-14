@@ -21,6 +21,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -77,9 +79,10 @@ public class ProjetoApiController {
             @ApiResponse(responseCode = "404", description = "Projeto não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public ProjetoResponse buscar(@Parameter(description = "ID do projeto (UUID)", required = true) @PathVariable UUID id) {
+    public EntityModel<ProjetoResponse> buscar(@Parameter(description = "ID do projeto (UUID)", required = true) @PathVariable UUID id) {
         usuarioLogado.obrigatorio();
-        return comMembros(exigirProjeto(id));
+        Projeto p = exigirProjeto(id);
+        return comLinks(comMembros(p), p.getLaboratorioId());
     }
 
     @Operation(summary = "Listar membros de um projeto", description = "Retorna a lista de bolsistas e pesquisadores vinculados à equipe do projeto.")
@@ -101,7 +104,7 @@ public class ProjetoApiController {
             @ApiResponse(responseCode = "403", description = "Sem permissão para criar projeto no laboratório", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PostMapping
-    public ResponseEntity<ProjetoResponse> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do projeto", required = true)
+    public ResponseEntity<EntityModel<ProjetoResponse>> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do projeto", required = true)
                                                  @Valid @RequestBody ProjetoRequest body,
                                                  UriComponentsBuilder uriBuilder) {
         Usuario logado = usuarioLogado.obrigatorio();
@@ -113,7 +116,7 @@ public class ProjetoApiController {
         projetoService.cadastrar(p);
         auditoriaService.registrar(logado, "CRIAR_PROJETO", "PROJETO", "Projeto '" + p.getNome() + "' criado com sucesso.", null);
         URI uri = uriBuilder.replacePath("/api/v1/projetos/{id}").buildAndExpand(p.getId()).toUri();
-        return ResponseEntity.created(uri).body(ProjetoResponse.de(p));
+        return ResponseEntity.created(uri).body(comLinks(ProjetoResponse.de(p), p.getLaboratorioId()));
     }
 
     @Operation(summary = "Atualizar projeto", description = "Atualiza o título, descrição, links externos de entregáveis ou laboratório de lotação do projeto.")
@@ -124,7 +127,7 @@ public class ProjetoApiController {
             @ApiResponse(responseCode = "404", description = "Projeto não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PutMapping("/{id}")
-    public ProjetoResponse atualizar(@Parameter(description = "ID do projeto (UUID)", required = true) @PathVariable UUID id,
+    public EntityModel<ProjetoResponse> atualizar(@Parameter(description = "ID do projeto (UUID)", required = true) @PathVariable UUID id,
                                      @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do projeto", required = true)
                                      @Valid @RequestBody ProjetoRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
@@ -137,7 +140,7 @@ public class ProjetoApiController {
         p.setAtivo(true);
         projetoService.atualizar(p);
         auditoriaService.registrar(logado, "ATUALIZAR_PROJETO", "PROJETO", "Projeto '" + p.getNome() + "' atualizado.", null);
-        return ProjetoResponse.de(p);
+        return comLinks(ProjetoResponse.de(p), p.getLaboratorioId());
     }
 
     @Operation(summary = "Desativar projeto (Soft Delete)", description = "Desativa o projeto mantendo o histórico de vínculos.")
@@ -218,5 +221,15 @@ public class ProjetoApiController {
 
     private ProjetoResponse comMembros(Projeto p) {
         return ProjetoResponse.de(p, projetoService.contarMembros(p.getId()));
+    }
+
+    private EntityModel<ProjetoResponse> comLinks(ProjetoResponse resp, UUID laboratorioId) {
+        EntityModel<ProjetoResponse> modelo = EntityModel.of(resp,
+                Link.of("/api/v1/projetos/" + resp.id()).withSelfRel(),
+                Link.of("/api/v1/projetos/" + resp.id() + "/membros").withRel("membros"));
+        if (laboratorioId != null) {
+            modelo.add(Link.of("/api/v1/laboratorios/" + laboratorioId).withRel("laboratorio"));
+        }
+        return modelo;
     }
 }
