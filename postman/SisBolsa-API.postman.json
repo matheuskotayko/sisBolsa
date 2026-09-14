@@ -83,200 +83,6 @@
         }
     ],
     "paths": {
-        "/api/usuarios/{id}": {
-            "get": {
-                "tags": [
-                    "Bolsistas & Usu\u00e1rios"
-                ],
-                "summary": "Buscar usu\u00e1rio por ID",
-                "description": "Recupera as informa\u00e7\u00f5es detalhadas de um bolsista ou professor pelo seu identificador UUID.",
-                "operationId": "buscar",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "ID do usu\u00e1rio (UUID)",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid"
-                        }
-                    },
-                    {
-                        "name": "tipo",
-                        "in": "query",
-                        "description": "Tipo de perfil",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "default": "BOLSISTA"
-                        },
-                        "example": "BOLSISTA"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Dados do usu\u00e1rio",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/UsuarioResponse"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Acesso n\u00e3o autorizado para o perfil do usu\u00e1rio",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Usu\u00e1rio n\u00e3o encontrado",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "put": {
-                "tags": [
-                    "Bolsistas & Usu\u00e1rios"
-                ],
-                "summary": "Atualizar bolsista ou professor",
-                "description": "Atualiza os dados de um usu\u00e1rio existente. Se o campo de senha for enviado em branco, a senha atual \u00e9 preservada.",
-                "operationId": "atualizar",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "ID do usu\u00e1rio a atualizar",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "Novos dados do usu\u00e1rio",
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/BolsistaRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "200": {
-                        "description": "Usu\u00e1rio atualizado com sucesso",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/UsuarioResponse"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Dados inv\u00e1lidos",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Sem permiss\u00e3o para editar este usu\u00e1rio",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Usu\u00e1rio n\u00e3o encontrado",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "Bolsistas & Usu\u00e1rios"
-                ],
-                "summary": "Desativar usu\u00e1rio (Soft Delete)",
-                "description": "Desativa um usu\u00e1rio (bolsista ou professor), mantendo o hist\u00f3rico de frequ\u00eancia e projetos \u00edntegros no banco de dados.",
-                "operationId": "excluir",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "ID do usu\u00e1rio a desativar",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid"
-                        }
-                    },
-                    {
-                        "name": "tipo",
-                        "in": "query",
-                        "description": "Tipo de usu\u00e1rio",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "default": "BOLSISTA"
-                        },
-                        "example": "BOLSISTA"
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Usu\u00e1rio desativado com sucesso"
-                    },
-                    "403": {
-                        "description": "Sem permiss\u00e3o para desativar este usu\u00e1rio",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Usu\u00e1rio n\u00e3o encontrado",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/api/projetos/{id}": {
             "get": {
                 "tags": [
@@ -284,7 +90,7 @@
                 ],
                 "summary": "Buscar projeto por ID",
                 "description": "Retorna os detalhes de um projeto de pesquisa pelo seu identificador UUID.",
-                "operationId": "buscar_1",
+                "operationId": "buscar",
                 "parameters": [
                     {
                         "name": "id",
@@ -326,7 +132,7 @@
                 ],
                 "summary": "Atualizar projeto",
                 "description": "Atualiza o t\u00edtulo, descri\u00e7\u00e3o, links externos de entreg\u00e1veis ou laborat\u00f3rio de lota\u00e7\u00e3o do projeto.",
-                "operationId": "atualizar_1",
+                "operationId": "atualizar",
                 "parameters": [
                     {
                         "name": "id",
@@ -399,7 +205,7 @@
                 ],
                 "summary": "Desativar projeto (Soft Delete)",
                 "description": "Desativa o projeto mantendo o hist\u00f3rico de v\u00ednculos.",
-                "operationId": "excluir_1",
+                "operationId": "excluir",
                 "parameters": [
                     {
                         "name": "id",
@@ -446,7 +252,7 @@
                 ],
                 "summary": "Buscar laborat\u00f3rio por ID",
                 "description": "Retorna os detalhes de um laborat\u00f3rio espec\u00edfico incluindo capacidade e percentual de ocupa\u00e7\u00e3o.",
-                "operationId": "buscar_2",
+                "operationId": "buscar_1",
                 "parameters": [
                     {
                         "name": "id",
@@ -488,7 +294,7 @@
                 ],
                 "summary": "Atualizar laborat\u00f3rio",
                 "description": "Atualiza os dados de capacidade, nome, \u00e1rea de pesquisa ou coordenador do laborat\u00f3rio.",
-                "operationId": "atualizar_2",
+                "operationId": "atualizar_1",
                 "parameters": [
                     {
                         "name": "id",
@@ -561,7 +367,7 @@
                 ],
                 "summary": "Desativar laborat\u00f3rio (Soft Delete)",
                 "description": "Desativa o laborat\u00f3rio no sistema.",
-                "operationId": "excluir_2",
+                "operationId": "excluir_1",
                 "parameters": [
                     {
                         "name": "id",
@@ -608,7 +414,7 @@
                 ],
                 "summary": "Buscar frequ\u00eancia por ID",
                 "description": "Retorna um apontamento de frequ\u00eancia individual pelo identificador UUID.",
-                "operationId": "buscar_3",
+                "operationId": "buscar_2",
                 "parameters": [
                     {
                         "name": "id",
@@ -650,7 +456,7 @@
                 ],
                 "summary": "Atualizar apontamento de frequ\u00eancia",
                 "description": "Altera as horas, data, descri\u00e7\u00e3o ou link de entreg\u00e1vel de um registro de frequ\u00eancia.",
-                "operationId": "atualizar_3",
+                "operationId": "atualizar_2",
                 "parameters": [
                     {
                         "name": "id",
@@ -713,7 +519,7 @@
                 ],
                 "summary": "Desativar frequ\u00eancia (Soft Delete)",
                 "description": "Desativa um registro de apontamento de horas.",
-                "operationId": "excluir_3",
+                "operationId": "excluir_2",
                 "parameters": [
                     {
                         "name": "id",
@@ -732,59 +538,6 @@
                     },
                     "404": {
                         "description": "Frequ\u00eancia n\u00e3o encontrada",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/auth/perfil": {
-            "put": {
-                "tags": [
-                    "Autentica\u00e7\u00e3o"
-                ],
-                "summary": "Atualizar perfil pr\u00f3prio",
-                "description": "Permite a altera\u00e7\u00e3o do nome, e-mail, foto e senha do usu\u00e1rio logado. A altera\u00e7\u00e3o de senha exige a valida\u00e7\u00e3o pr\u00e9via da senha atual.",
-                "operationId": "atualizarPerfil",
-                "requestBody": {
-                    "description": "Dados para atualiza\u00e7\u00e3o de perfil e senha",
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/PerfilRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "200": {
-                        "description": "Perfil atualizado com sucesso",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/UsuarioResponse"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Dados inv\u00e1lidos ou senha atual incorreta",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "N\u00e3o autenticado",
                         "content": {
                             "*/*": {
                                 "schema": {
@@ -1644,6 +1397,253 @@
                 }
             }
         },
+        "/api/usuarios/{id}": {
+            "get": {
+                "tags": [
+                    "Bolsistas & Usu\u00e1rios"
+                ],
+                "summary": "Buscar usu\u00e1rio por ID",
+                "description": "Recupera as informa\u00e7\u00f5es detalhadas de um bolsista ou professor pelo seu identificador UUID.",
+                "operationId": "buscar_3",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do usu\u00e1rio (UUID)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "tipo",
+                        "in": "query",
+                        "description": "Tipo de perfil",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "BOLSISTA"
+                        },
+                        "example": "BOLSISTA"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Dados do usu\u00e1rio",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UsuarioResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso n\u00e3o autorizado para o perfil do usu\u00e1rio",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Usu\u00e1rio n\u00e3o encontrado",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Bolsistas & Usu\u00e1rios"
+                ],
+                "summary": "Desativar usu\u00e1rio (Soft Delete)",
+                "description": "Desativa um usu\u00e1rio (bolsista ou professor), mantendo o hist\u00f3rico de frequ\u00eancia e projetos \u00edntegros no banco de dados.",
+                "operationId": "excluir_3",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do usu\u00e1rio a desativar",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "tipo",
+                        "in": "query",
+                        "description": "Tipo de usu\u00e1rio",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "BOLSISTA"
+                        },
+                        "example": "BOLSISTA"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Usu\u00e1rio desativado com sucesso"
+                    },
+                    "403": {
+                        "description": "Sem permiss\u00e3o para desativar este usu\u00e1rio",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Usu\u00e1rio n\u00e3o encontrado",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "tags": [
+                    "Bolsistas & Usu\u00e1rios"
+                ],
+                "summary": "Atualizar bolsista ou professor",
+                "description": "Atualiza os dados de um usu\u00e1rio existente. Se o campo de senha for enviado em branco, a senha atual \u00e9 preservada.",
+                "operationId": "atualizar_3",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do usu\u00e1rio a atualizar",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Novos dados do usu\u00e1rio",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BolsistaRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Usu\u00e1rio atualizado com sucesso",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UsuarioResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Dados inv\u00e1lidos",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Sem permiss\u00e3o para editar este usu\u00e1rio",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Usu\u00e1rio n\u00e3o encontrado",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/perfil": {
+            "patch": {
+                "tags": [
+                    "Autentica\u00e7\u00e3o"
+                ],
+                "summary": "Atualizar perfil pr\u00f3prio",
+                "description": "Permite a altera\u00e7\u00e3o do nome, e-mail, foto e senha do usu\u00e1rio logado. A altera\u00e7\u00e3o de senha exige a valida\u00e7\u00e3o pr\u00e9via da senha atual.",
+                "operationId": "atualizarPerfil",
+                "requestBody": {
+                    "description": "Dados para atualiza\u00e7\u00e3o de perfil e senha",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PerfilRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Perfil atualizado com sucesso",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UsuarioResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Dados inv\u00e1lidos ou senha atual incorreta",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "N\u00e3o autenticado",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/usuarios/{id}/projetos": {
             "get": {
                 "tags": [
@@ -2416,6 +2416,309 @@
     },
     "components": {
         "schemas": {
+            "ProjetoRequest": {
+                "type": "object",
+                "description": "Dados para cria\u00e7\u00e3o ou edi\u00e7\u00e3o de um projeto de pesquisa.",
+                "properties": {
+                    "nome": {
+                        "type": "string",
+                        "description": "T\u00edtulo / Nome do projeto de pesquisa",
+                        "example": "Processamento de Linguagem Natural para Documentos M\u00e9dicos",
+                        "minLength": 1
+                    },
+                    "descricao": {
+                        "type": "string",
+                        "description": "Descri\u00e7\u00e3o dos objetivos e escopo do projeto",
+                        "example": "Desenvolvimento de modelos LLM para sumariza\u00e7\u00e3o de prontu\u00e1rios cl\u00ednicos.",
+                        "minLength": 1
+                    },
+                    "laboratorioId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "ID do laborat\u00f3rio ao qual o projeto pertence",
+                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    },
+                    "linkRepositorio": {
+                        "type": "string",
+                        "description": "Link para o reposit\u00f3rio externo (ex: GitHub, GitLab)",
+                        "example": "https://github.com/lab-lsi/nlp-medico"
+                    },
+                    "linkDocumentacao": {
+                        "type": "string",
+                        "description": "Link para documenta\u00e7\u00e3o ou artigo (ex: Overleaf, Docs)",
+                        "example": "https://www.overleaf.com/read/exemplo123"
+                    }
+                },
+                "required": [
+                    "descricao",
+                    "laboratorioId",
+                    "nome"
+                ]
+            },
+            "ProjetoResponse": {
+                "type": "object",
+                "description": "Dados detalhados do projeto com m\u00e9tricas de membros e links.",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Identificador \u00fanico do projeto (UUID)",
+                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    },
+                    "nome": {
+                        "type": "string",
+                        "description": "T\u00edtulo / Nome do projeto",
+                        "example": "Processamento de Linguagem Natural para Documentos M\u00e9dicos"
+                    },
+                    "descricao": {
+                        "type": "string",
+                        "description": "Descri\u00e7\u00e3o detalhada do projeto",
+                        "example": "Desenvolvimento de modelos LLM para sumariza\u00e7\u00e3o de prontu\u00e1rios cl\u00ednicos."
+                    },
+                    "laboratorioId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "ID do laborat\u00f3rio vinculado",
+                        "example": "4fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    },
+                    "nomeLaboratorio": {
+                        "type": "string",
+                        "description": "Nome do laborat\u00f3rio",
+                        "example": "Laborat\u00f3rio de Sistemas Inteligentes (LSI)"
+                    },
+                    "ativo": {
+                        "type": "boolean",
+                        "description": "Indica se o projeto est\u00e1 ativo",
+                        "example": true
+                    },
+                    "totalMembros": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Total de bolsistas e pesquisadores membros do projeto",
+                        "example": 4
+                    },
+                    "linkRepositorio": {
+                        "type": "string",
+                        "description": "Link do reposit\u00f3rio externo no GitHub/GitLab",
+                        "example": "https://github.com/lab-lsi/nlp-medico"
+                    },
+                    "linkDocumentacao": {
+                        "type": "string",
+                        "description": "Link da documenta\u00e7\u00e3o ou artigo publicado",
+                        "example": "https://www.overleaf.com/read/exemplo123"
+                    }
+                }
+            },
+            "ErroResponse": {
+                "type": "object",
+                "description": "Estrutura padr\u00e3o para retorno de erros e exce\u00e7\u00f5es da API.",
+                "properties": {
+                    "mensagem": {
+                        "type": "string",
+                        "description": "Mensagem explicativa do erro",
+                        "example": "E-mail ou senha incorretos."
+                    }
+                }
+            },
+            "LaboratorioRequest": {
+                "type": "object",
+                "description": "Dados para cria\u00e7\u00e3o ou atualiza\u00e7\u00e3o de um laborat\u00f3rio de pesquisa.",
+                "properties": {
+                    "nome": {
+                        "type": "string",
+                        "description": "Nome do laborat\u00f3rio",
+                        "example": "Laborat\u00f3rio de Sistemas Inteligentes (LSI)",
+                        "minLength": 1
+                    },
+                    "areaPesquisa": {
+                        "type": "string",
+                        "description": "\u00c1rea de pesquisa principal",
+                        "example": "Intelig\u00eancia Artificial e Rob\u00f3tica"
+                    },
+                    "status": {
+                        "type": "string",
+                        "description": "Status operacional",
+                        "enum": [
+                            "Ativo",
+                            "Em Manuten\u00e7\u00e3o",
+                            "Inativo"
+                        ],
+                        "example": "Ativo"
+                    },
+                    "capacidade": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Capacidade m\u00e1xima de bolsistas e pesquisadores simult\u00e2neos",
+                        "example": 10,
+                        "minimum": 1
+                    },
+                    "coordenadorId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "ID do professor coordenador respons\u00e1vel",
+                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    }
+                },
+                "required": [
+                    "areaPesquisa",
+                    "capacidade",
+                    "nome",
+                    "status"
+                ]
+            },
+            "LaboratorioResponse": {
+                "type": "object",
+                "description": "Dados detalhados do laborat\u00f3rio com m\u00e9tricas de ocupa\u00e7\u00e3o.",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Identificador \u00fanico do laborat\u00f3rio (UUID)",
+                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    },
+                    "nome": {
+                        "type": "string",
+                        "description": "Nome do laborat\u00f3rio",
+                        "example": "Laborat\u00f3rio de Sistemas Inteligentes (LSI)"
+                    },
+                    "areaPesquisa": {
+                        "type": "string",
+                        "description": "\u00c1rea de pesquisa",
+                        "example": "Intelig\u00eancia Artificial"
+                    },
+                    "status": {
+                        "type": "string",
+                        "description": "Status operacional",
+                        "example": "Ativo"
+                    },
+                    "capacidade": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Capacidade total de vagas",
+                        "example": 10
+                    },
+                    "coordenadorId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "ID do professor coordenador",
+                        "example": "4fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    },
+                    "coordenador": {
+                        "type": "string",
+                        "description": "Nome do professor coordenador",
+                        "example": "Prof. Dra. Ana Mendes"
+                    },
+                    "ativo": {
+                        "type": "boolean",
+                        "description": "Indica se o laborat\u00f3rio est\u00e1 ativo",
+                        "example": true
+                    },
+                    "totalBolsistas": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Quantidade atual de bolsistas alocados",
+                        "example": 6
+                    },
+                    "percentualOcupacao": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Percentual de ocupa\u00e7\u00e3o em rela\u00e7\u00e3o \u00e0 capacidade (0 a 100%)",
+                        "example": 60.0
+                    }
+                }
+            },
+            "FrequenciaRequest": {
+                "type": "object",
+                "description": "Dados para apontamento de horas de frequ\u00eancia e atividades realizadas.",
+                "properties": {
+                    "bolsistaId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "ID do bolsista (apenas para Admin e Professor; Bolsistas sempre registram para si mesmos)",
+                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    },
+                    "data": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Data do apontamento de horas",
+                        "example": "2026-08-29"
+                    },
+                    "horasTrabalhadas": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Quantidade de horas trabalhadas no dia (entre 0.5 e 24.0)",
+                        "example": 4.0,
+                        "maximum": 24,
+                        "minimum": 0.5
+                    },
+                    "descricao": {
+                        "type": "string",
+                        "description": "Descri\u00e7\u00e3o detalhada das atividades executadas",
+                        "example": "Implementa\u00e7\u00e3o dos testes unit\u00e1rios e refatora\u00e7\u00e3o do pipeline de dados.",
+                        "minLength": 1
+                    },
+                    "linkComprovante": {
+                        "type": "string",
+                        "description": "Link para o entreg\u00e1vel ou pull request referente \u00e0s atividades",
+                        "example": "https://github.com/lab-lsi/nlp-medico/pull/42"
+                    }
+                },
+                "required": [
+                    "data",
+                    "descricao",
+                    "horasTrabalhadas"
+                ]
+            },
+            "FrequenciaResponse": {
+                "type": "object",
+                "description": "Registro de frequ\u00eancia com horas apontadas e entreg\u00e1veis.",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Identificador \u00fanico da frequ\u00eancia (UUID)",
+                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    },
+                    "bolsistaId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "ID do bolsista respons\u00e1vel",
+                        "example": "4fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    },
+                    "nomeBolsista": {
+                        "type": "string",
+                        "description": "Nome do bolsista",
+                        "example": "Lucas Oliveira"
+                    },
+                    "data": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Data da realiza\u00e7\u00e3o da atividade",
+                        "example": "2026-08-29"
+                    },
+                    "horasTrabalhadas": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Horas trabalhadas apontadas",
+                        "example": 4.0
+                    },
+                    "descricao": {
+                        "type": "string",
+                        "description": "Descri\u00e7\u00e3o detalhada das tarefas executadas",
+                        "example": "Implementa\u00e7\u00e3o dos testes unit\u00e1rios e refatora\u00e7\u00e3o do pipeline de dados."
+                    },
+                    "linkComprovante": {
+                        "type": "string",
+                        "description": "Link do entreg\u00e1vel / pull request",
+                        "example": "https://github.com/lab-lsi/nlp-medico/pull/42"
+                    },
+                    "ativo": {
+                        "type": "boolean",
+                        "description": "Indica se o registro est\u00e1 ativo",
+                        "example": true
+                    }
+                }
+            },
             "BolsistaRequest": {
                 "type": "object",
                 "description": "Dados para cadastro ou atualiza\u00e7\u00e3o de bolsista / professor.",
@@ -2677,358 +2980,6 @@
                     }
                 }
             },
-            "ErroResponse": {
-                "type": "object",
-                "description": "Estrutura padr\u00e3o para retorno de erros e exce\u00e7\u00f5es da API.",
-                "properties": {
-                    "mensagem": {
-                        "type": "string",
-                        "description": "Mensagem explicativa do erro",
-                        "example": "E-mail ou senha incorretos."
-                    }
-                }
-            },
-            "ProjetoRequest": {
-                "type": "object",
-                "description": "Dados para cria\u00e7\u00e3o ou edi\u00e7\u00e3o de um projeto de pesquisa.",
-                "properties": {
-                    "nome": {
-                        "type": "string",
-                        "description": "T\u00edtulo / Nome do projeto de pesquisa",
-                        "example": "Processamento de Linguagem Natural para Documentos M\u00e9dicos",
-                        "minLength": 1
-                    },
-                    "descricao": {
-                        "type": "string",
-                        "description": "Descri\u00e7\u00e3o dos objetivos e escopo do projeto",
-                        "example": "Desenvolvimento de modelos LLM para sumariza\u00e7\u00e3o de prontu\u00e1rios cl\u00ednicos.",
-                        "minLength": 1
-                    },
-                    "laboratorioId": {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "ID do laborat\u00f3rio ao qual o projeto pertence",
-                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                    },
-                    "linkRepositorio": {
-                        "type": "string",
-                        "description": "Link para o reposit\u00f3rio externo (ex: GitHub, GitLab)",
-                        "example": "https://github.com/lab-lsi/nlp-medico"
-                    },
-                    "linkDocumentacao": {
-                        "type": "string",
-                        "description": "Link para documenta\u00e7\u00e3o ou artigo (ex: Overleaf, Docs)",
-                        "example": "https://www.overleaf.com/read/exemplo123"
-                    }
-                },
-                "required": [
-                    "descricao",
-                    "laboratorioId",
-                    "nome"
-                ]
-            },
-            "ProjetoResponse": {
-                "type": "object",
-                "description": "Dados detalhados do projeto com m\u00e9tricas de membros e links.",
-                "properties": {
-                    "id": {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "Identificador \u00fanico do projeto (UUID)",
-                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                    },
-                    "nome": {
-                        "type": "string",
-                        "description": "T\u00edtulo / Nome do projeto",
-                        "example": "Processamento de Linguagem Natural para Documentos M\u00e9dicos"
-                    },
-                    "descricao": {
-                        "type": "string",
-                        "description": "Descri\u00e7\u00e3o detalhada do projeto",
-                        "example": "Desenvolvimento de modelos LLM para sumariza\u00e7\u00e3o de prontu\u00e1rios cl\u00ednicos."
-                    },
-                    "laboratorioId": {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "ID do laborat\u00f3rio vinculado",
-                        "example": "4fa85f64-5717-4562-b3fc-2c963f66afa6"
-                    },
-                    "nomeLaboratorio": {
-                        "type": "string",
-                        "description": "Nome do laborat\u00f3rio",
-                        "example": "Laborat\u00f3rio de Sistemas Inteligentes (LSI)"
-                    },
-                    "ativo": {
-                        "type": "boolean",
-                        "description": "Indica se o projeto est\u00e1 ativo",
-                        "example": true
-                    },
-                    "totalMembros": {
-                        "type": "integer",
-                        "format": "int32",
-                        "description": "Total de bolsistas e pesquisadores membros do projeto",
-                        "example": 4
-                    },
-                    "linkRepositorio": {
-                        "type": "string",
-                        "description": "Link do reposit\u00f3rio externo no GitHub/GitLab",
-                        "example": "https://github.com/lab-lsi/nlp-medico"
-                    },
-                    "linkDocumentacao": {
-                        "type": "string",
-                        "description": "Link da documenta\u00e7\u00e3o ou artigo publicado",
-                        "example": "https://www.overleaf.com/read/exemplo123"
-                    }
-                }
-            },
-            "LaboratorioRequest": {
-                "type": "object",
-                "description": "Dados para cria\u00e7\u00e3o ou atualiza\u00e7\u00e3o de um laborat\u00f3rio de pesquisa.",
-                "properties": {
-                    "nome": {
-                        "type": "string",
-                        "description": "Nome do laborat\u00f3rio",
-                        "example": "Laborat\u00f3rio de Sistemas Inteligentes (LSI)",
-                        "minLength": 1
-                    },
-                    "areaPesquisa": {
-                        "type": "string",
-                        "description": "\u00c1rea de pesquisa principal",
-                        "example": "Intelig\u00eancia Artificial e Rob\u00f3tica"
-                    },
-                    "status": {
-                        "type": "string",
-                        "description": "Status operacional",
-                        "enum": [
-                            "Ativo",
-                            "Em Manuten\u00e7\u00e3o",
-                            "Inativo"
-                        ],
-                        "example": "Ativo"
-                    },
-                    "capacidade": {
-                        "type": "integer",
-                        "format": "int32",
-                        "description": "Capacidade m\u00e1xima de bolsistas e pesquisadores simult\u00e2neos",
-                        "example": 10,
-                        "minimum": 1
-                    },
-                    "coordenadorId": {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "ID do professor coordenador respons\u00e1vel",
-                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                    }
-                },
-                "required": [
-                    "areaPesquisa",
-                    "capacidade",
-                    "nome",
-                    "status"
-                ]
-            },
-            "LaboratorioResponse": {
-                "type": "object",
-                "description": "Dados detalhados do laborat\u00f3rio com m\u00e9tricas de ocupa\u00e7\u00e3o.",
-                "properties": {
-                    "id": {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "Identificador \u00fanico do laborat\u00f3rio (UUID)",
-                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                    },
-                    "nome": {
-                        "type": "string",
-                        "description": "Nome do laborat\u00f3rio",
-                        "example": "Laborat\u00f3rio de Sistemas Inteligentes (LSI)"
-                    },
-                    "areaPesquisa": {
-                        "type": "string",
-                        "description": "\u00c1rea de pesquisa",
-                        "example": "Intelig\u00eancia Artificial"
-                    },
-                    "status": {
-                        "type": "string",
-                        "description": "Status operacional",
-                        "example": "Ativo"
-                    },
-                    "capacidade": {
-                        "type": "integer",
-                        "format": "int32",
-                        "description": "Capacidade total de vagas",
-                        "example": 10
-                    },
-                    "coordenadorId": {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "ID do professor coordenador",
-                        "example": "4fa85f64-5717-4562-b3fc-2c963f66afa6"
-                    },
-                    "coordenador": {
-                        "type": "string",
-                        "description": "Nome do professor coordenador",
-                        "example": "Prof. Dra. Ana Mendes"
-                    },
-                    "ativo": {
-                        "type": "boolean",
-                        "description": "Indica se o laborat\u00f3rio est\u00e1 ativo",
-                        "example": true
-                    },
-                    "totalBolsistas": {
-                        "type": "integer",
-                        "format": "int32",
-                        "description": "Quantidade atual de bolsistas alocados",
-                        "example": 6
-                    },
-                    "percentualOcupacao": {
-                        "type": "number",
-                        "format": "double",
-                        "description": "Percentual de ocupa\u00e7\u00e3o em rela\u00e7\u00e3o \u00e0 capacidade (0 a 100%)",
-                        "example": 60.0
-                    }
-                }
-            },
-            "FrequenciaRequest": {
-                "type": "object",
-                "description": "Dados para apontamento de horas de frequ\u00eancia e atividades realizadas.",
-                "properties": {
-                    "bolsistaId": {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "ID do bolsista (apenas para Admin e Professor; Bolsistas sempre registram para si mesmos)",
-                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                    },
-                    "data": {
-                        "type": "string",
-                        "format": "date",
-                        "description": "Data do apontamento de horas",
-                        "example": "2026-08-29"
-                    },
-                    "horasTrabalhadas": {
-                        "type": "number",
-                        "format": "double",
-                        "description": "Quantidade de horas trabalhadas no dia (entre 0.5 e 24.0)",
-                        "example": 4.0,
-                        "maximum": 24,
-                        "minimum": 0.5
-                    },
-                    "descricao": {
-                        "type": "string",
-                        "description": "Descri\u00e7\u00e3o detalhada das atividades executadas",
-                        "example": "Implementa\u00e7\u00e3o dos testes unit\u00e1rios e refatora\u00e7\u00e3o do pipeline de dados.",
-                        "minLength": 1
-                    },
-                    "linkComprovante": {
-                        "type": "string",
-                        "description": "Link para o entreg\u00e1vel ou pull request referente \u00e0s atividades",
-                        "example": "https://github.com/lab-lsi/nlp-medico/pull/42"
-                    }
-                },
-                "required": [
-                    "data",
-                    "descricao",
-                    "horasTrabalhadas"
-                ]
-            },
-            "FrequenciaResponse": {
-                "type": "object",
-                "description": "Registro de frequ\u00eancia com horas apontadas e entreg\u00e1veis.",
-                "properties": {
-                    "id": {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "Identificador \u00fanico da frequ\u00eancia (UUID)",
-                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                    },
-                    "bolsistaId": {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "ID do bolsista respons\u00e1vel",
-                        "example": "4fa85f64-5717-4562-b3fc-2c963f66afa6"
-                    },
-                    "nomeBolsista": {
-                        "type": "string",
-                        "description": "Nome do bolsista",
-                        "example": "Lucas Oliveira"
-                    },
-                    "data": {
-                        "type": "string",
-                        "format": "date",
-                        "description": "Data da realiza\u00e7\u00e3o da atividade",
-                        "example": "2026-08-29"
-                    },
-                    "horasTrabalhadas": {
-                        "type": "number",
-                        "format": "double",
-                        "description": "Horas trabalhadas apontadas",
-                        "example": 4.0
-                    },
-                    "descricao": {
-                        "type": "string",
-                        "description": "Descri\u00e7\u00e3o detalhada das tarefas executadas",
-                        "example": "Implementa\u00e7\u00e3o dos testes unit\u00e1rios e refatora\u00e7\u00e3o do pipeline de dados."
-                    },
-                    "linkComprovante": {
-                        "type": "string",
-                        "description": "Link do entreg\u00e1vel / pull request",
-                        "example": "https://github.com/lab-lsi/nlp-medico/pull/42"
-                    },
-                    "ativo": {
-                        "type": "boolean",
-                        "description": "Indica se o registro est\u00e1 ativo",
-                        "example": true
-                    }
-                }
-            },
-            "PerfilRequest": {
-                "type": "object",
-                "description": "Dados para atualiza\u00e7\u00e3o de perfil e altera\u00e7\u00e3o opcional de senha.",
-                "properties": {
-                    "nome": {
-                        "type": "string",
-                        "description": "Nome completo",
-                        "example": "Maria Silva",
-                        "maxLength": 2147483647,
-                        "minLength": 3
-                    },
-                    "email": {
-                        "type": "string",
-                        "format": "email",
-                        "description": "E-mail de acesso",
-                        "example": "maria.silva@sisbolsa.com",
-                        "minLength": 1
-                    },
-                    "fotoUrl": {
-                        "type": "string",
-                        "description": "URL p\u00fablica da foto de perfil",
-                        "example": "https://images.unsplash.com/photo-1494790108377-be9c29b29330"
-                    },
-                    "bio": {
-                        "type": "string",
-                        "description": "Biografia ou resumo acad\u00eamico",
-                        "example": "Pesquisadora em Intelig\u00eancia Artificial e Processamento de Linguagem Natural."
-                    },
-                    "senhaAtual": {
-                        "type": "string",
-                        "description": "Senha atual (obrigat\u00f3ria apenas se desejar trocar a senha)",
-                        "example": "12345678"
-                    },
-                    "senha": {
-                        "type": "string",
-                        "description": "Nova senha desejada (m\u00ednimo 6 caracteres)",
-                        "example": "NovaSenha@2026"
-                    },
-                    "confirmaSenha": {
-                        "type": "string",
-                        "description": "Confirma\u00e7\u00e3o da nova senha",
-                        "example": "NovaSenha@2026"
-                    }
-                },
-                "required": [
-                    "email",
-                    "nome"
-                ]
-            },
             "RedefinirSenhaRequest": {
                 "type": "object",
                 "description": "Dados para redefini\u00e7\u00e3o de senha com c\u00f3digo tempor\u00e1rio.",
@@ -3139,6 +3090,55 @@
                     "email",
                     "nome",
                     "senha"
+                ]
+            },
+            "PerfilRequest": {
+                "type": "object",
+                "description": "Dados para atualiza\u00e7\u00e3o de perfil e altera\u00e7\u00e3o opcional de senha.",
+                "properties": {
+                    "nome": {
+                        "type": "string",
+                        "description": "Nome completo",
+                        "example": "Maria Silva",
+                        "maxLength": 2147483647,
+                        "minLength": 3
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "description": "E-mail de acesso",
+                        "example": "maria.silva@sisbolsa.com",
+                        "minLength": 1
+                    },
+                    "fotoUrl": {
+                        "type": "string",
+                        "description": "URL p\u00fablica da foto de perfil",
+                        "example": "https://images.unsplash.com/photo-1494790108377-be9c29b29330"
+                    },
+                    "bio": {
+                        "type": "string",
+                        "description": "Biografia ou resumo acad\u00eamico",
+                        "example": "Pesquisadora em Intelig\u00eancia Artificial e Processamento de Linguagem Natural."
+                    },
+                    "senhaAtual": {
+                        "type": "string",
+                        "description": "Senha atual (obrigat\u00f3ria apenas se desejar trocar a senha)",
+                        "example": "12345678"
+                    },
+                    "senha": {
+                        "type": "string",
+                        "description": "Nova senha desejada (m\u00ednimo 6 caracteres)",
+                        "example": "NovaSenha@2026"
+                    },
+                    "confirmaSenha": {
+                        "type": "string",
+                        "description": "Confirma\u00e7\u00e3o da nova senha",
+                        "example": "NovaSenha@2026"
+                    }
+                },
+                "required": [
+                    "email",
+                    "nome"
                 ]
             },
             "PaginaResponseUsuarioResponse": {

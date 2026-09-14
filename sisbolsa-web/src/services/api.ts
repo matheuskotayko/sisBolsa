@@ -81,6 +81,12 @@ export const api = {
       body: body !== undefined ? JSON.stringify(body) : undefined,
     }),
 
+  patch: <T>(endpoint: string, body?: unknown) =>
+    request<T>(endpoint, {
+      method: 'PATCH',
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    }),
+
   delete: <T>(endpoint: string, params?: Record<string, string | number | boolean | null | undefined>) => {
     let url = endpoint;
     if (params) {

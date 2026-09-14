@@ -270,7 +270,7 @@ public class UsuarioApiController {
             @ApiResponse(responseCode = "403", description = "Sem permissão para editar este usuário", content = @Content(schema = @Schema(implementation = ErroResponse.class))),
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     public UsuarioResponse atualizar(@Parameter(description = "ID do usuário a atualizar", required = true) @PathVariable UUID id,
                                      @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do usuário", required = true)
                                      @Valid @RequestBody BolsistaRequest body) {

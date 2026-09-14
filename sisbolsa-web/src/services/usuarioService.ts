@@ -17,7 +17,7 @@ export const usuarioService = {
     api.post<Usuario>('/usuarios', dados),
 
   atualizar: (id: string, dados: UsuarioRequest) =>
-    api.put<Usuario>(`/usuarios/${id}`, dados),
+    api.patch<Usuario>(`/usuarios/${id}`, dados),
 
   excluir: (id: string, tipo?: string) =>
     api.delete<void>(`/usuarios/${id}`, tipo ? { tipo } : undefined),
