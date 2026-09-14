@@ -15,6 +15,7 @@ import dev.matheus.cadastroBolsistas.service.ComprovanteFrequenciaPdfService;
 import dev.matheus.cadastroBolsistas.service.FrequenciaService;
 import dev.matheus.cadastroBolsistas.service.LaboratorioService;
 import dev.matheus.cadastroBolsistas.service.ProfessorService;
+import dev.matheus.cadastroBolsistas.util.ArquivoDownloadUtil;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -23,7 +24,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -128,14 +128,13 @@ public class FrequenciaApiController {
 
     @Operation(summary = "Exportar frequências em CSV", description = "Gera um arquivo CSV contendo os apontamentos de frequência filtrados por intervalo de datas.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Arquivo CSV gerado")
+            @ApiResponse(responseCode = "200", description = "Arquivo CSV gerado", content = @Content(mediaType = "text/csv"))
     })
     @GetMapping("/exportar")
-    public void exportar(
+    public ResponseEntity<byte[]> exportar(
             @Parameter(description = "ID do bolsista") @RequestParam(required = false) UUID bolsistaId,
             @Parameter(description = "Data inicial") @RequestParam(required = false) LocalDate dataInicio,
-            @Parameter(description = "Data final") @RequestParam(required = false) LocalDate dataFim,
-            HttpServletResponse response) throws java.io.IOException {
+            @Parameter(description = "Data final") @RequestParam(required = false) LocalDate dataFim) {
         Usuario logado = usuarioLogado.obrigatorio();
         UUID filtro = logado.isBolsista() ? logado.getId() : bolsistaId;
         if (filtro != null) {
@@ -146,20 +145,18 @@ public class FrequenciaApiController {
                 ? frequenciaService.buscarPorBolsistas(idsDosMeusBolsistas(logado), dataInicio, dataFim, null, null)
                 : frequenciaService.buscarFrequencias(filtro, dataInicio, dataFim, null, null);
 
-        response.setContentType("text/csv; charset=UTF-8");
-        response.setHeader("Content-Disposition", "attachment; filename=frequencias.csv");
-        try (java.io.PrintWriter writer = response.getWriter()) {
-            writer.println("ID,Bolsista,Data,Horas Trabalhadas,Descricao,LinkComprovante");
-            for (Frequencia f : lista) {
-                writer.println(String.join(",",
-                        String.valueOf(f.getId()),
-                        csv(f.getNomeBolsista()),
-                        f.getData() != null ? f.getData().toString() : "",
-                        String.valueOf(f.getHorasTrabalhadas()),
-                        csv(f.getDescricao()),
-                        csv(f.getLinkComprovante())));
-            }
+        StringBuilder sb = new StringBuilder("ID,Bolsista,Data,Horas Trabalhadas,Descricao,LinkComprovante\n");
+        for (Frequencia f : lista) {
+            sb.append(String.join(",",
+                    String.valueOf(f.getId()),
+                    csv(f.getNomeBolsista()),
+                    f.getData() != null ? f.getData().toString() : "",
+                    String.valueOf(f.getHorasTrabalhadas()),
+                    csv(f.getDescricao()),
+                    csv(f.getLinkComprovante()))).append("\n");
         }
+
+        return ArquivoDownloadUtil.csv("frequencias.csv", sb.toString());
     }
 
     private static String csv(String valor) {
@@ -171,15 +168,14 @@ public class FrequenciaApiController {
 
     @Operation(summary = "Emitir comprovante de frequência em PDF", description = "Gera documento PDF formatado com dados cadastrais do bolsista, laboratório, orientador, tabela zebrada de horas e campos para assinatura.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Comprovante oficial em PDF"),
+            @ApiResponse(responseCode = "200", description = "Comprovante oficial em PDF", content = @Content(mediaType = "application/pdf")),
             @ApiResponse(responseCode = "404", description = "Bolsista não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/comprovante-pdf")
-    public void comprovantePdf(
+    public ResponseEntity<byte[]> comprovantePdf(
             @Parameter(description = "ID do bolsista") @RequestParam(required = false) UUID bolsistaId,
             @Parameter(description = "Data inicial de referência") @RequestParam(required = false) LocalDate dataInicio,
-            @Parameter(description = "Data final de referência") @RequestParam(required = false) LocalDate dataFim,
-            HttpServletResponse response) throws java.io.IOException {
+            @Parameter(description = "Data final de referência") @RequestParam(required = false) LocalDate dataFim) {
         Usuario logado = usuarioLogado.obrigatorio();
         UUID alvo = resolverBolsistaAlvo(logado, bolsistaId);
         exigirPermissao(logado, alvo);
@@ -199,13 +195,8 @@ public class FrequenciaApiController {
 
         try {
             byte[] pdfBytes = comprovantePdfService.gerarComprovante(b, lab, coord, frequencias, inicio, fim);
-            response.setContentType("application/pdf");
-            response.setHeader("Content-Disposition", "inline; filename=comprovante_frequencia_" + b.getMatricula() + ".pdf");
-            response.setContentLength(pdfBytes.length);
-            response.getOutputStream().write(pdfBytes);
-            response.getOutputStream().flush();
-
             auditoriaService.registrar(logado, "EMISSAO_COMPROVANTE_PDF", "FREQUENCIA", "Comprovante PDF emitido para bolsista " + b.getNome() + " referente ao período " + inicio + " a " + fim + ".", null);
+            return ArquivoDownloadUtil.pdf("comprovante_frequencia_" + b.getMatricula() + ".pdf", pdfBytes);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Erro ao gerar PDF do comprovante: " + e.getMessage());
         }

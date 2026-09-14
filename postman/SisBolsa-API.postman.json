@@ -1729,7 +1729,10 @@
                 "operationId": "exportar",
                 "responses": {
                     "200": {
-                        "description": "Arquivo CSV para download"
+                        "description": "Arquivo CSV para download",
+                        "content": {
+                            "text/csv": {}
+                        }
                     },
                     "403": {
                         "description": "Acesso negado para bolsistas",
@@ -2166,7 +2169,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Arquivo CSV gerado"
+                        "description": "Arquivo CSV gerado",
+                        "content": {
+                            "text/csv": {}
+                        }
                     }
                 }
             }
@@ -2213,7 +2219,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Comprovante oficial em PDF"
+                        "description": "Comprovante oficial em PDF",
+                        "content": {
+                            "application/pdf": {}
+                        }
                     },
                     "404": {
                         "description": "Bolsista n\u00e3o encontrado",
@@ -2398,7 +2407,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Arquivo CSV gerado"
+                        "description": "Arquivo CSV gerado",
+                        "content": {
+                            "text/csv": {}
+                        }
                     },
                     "403": {
                         "description": "Acesso negado para bolsistas",

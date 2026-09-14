@@ -6,6 +6,7 @@ import dev.matheus.cadastroBolsistas.dto.PaginaResponse;
 import dev.matheus.cadastroBolsistas.model.Auditoria;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.service.AuditoriaService;
+import dev.matheus.cadastroBolsistas.util.ArquivoDownloadUtil;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -14,14 +15,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -72,16 +71,15 @@ public class AuditoriaApiController {
 
     @Operation(summary = "Exportar logs de auditoria em CSV", description = "Gera um relatório em arquivo CSV contendo os logs de auditoria filtrados.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Arquivo CSV gerado"),
+            @ApiResponse(responseCode = "200", description = "Arquivo CSV gerado", content = @Content(mediaType = "text/csv")),
             @ApiResponse(responseCode = "403", description = "Acesso negado para bolsistas", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/exportar")
-    public void exportar(
+    public ResponseEntity<byte[]> exportar(
             @Parameter(description = "Filtro por entidade afetada") @RequestParam(required = false) String entidade,
             @Parameter(description = "Filtro por ação") @RequestParam(required = false) String acao,
             @Parameter(description = "Data inicial") @RequestParam(required = false) LocalDate dataInicio,
-            @Parameter(description = "Data final") @RequestParam(required = false) LocalDate dataFim,
-            HttpServletResponse response) throws IOException {
+            @Parameter(description = "Data final") @RequestParam(required = false) LocalDate dataFim) {
         Usuario logado = usuarioLogado.obrigatorio();
         usuarioLogado.exigir(logado.isAdmin() || logado.isProfessor(), "Acesso restrito a administradores e professores.");
 
@@ -92,20 +90,18 @@ public class AuditoriaApiController {
 
         List<Auditoria> lista = auditoriaService.buscarLogs(ent, ac, inicio, fim, null, null);
 
-        response.setContentType("text/csv; charset=UTF-8");
-        response.setHeader("Content-Disposition", "attachment; filename=auditoria.csv");
-        try (PrintWriter writer = response.getWriter()) {
-            writer.println("Data/Hora,Usuario,Acao,Entidade,Detalhes,IP");
-            for (Auditoria a : lista) {
-                writer.println(String.join(",",
-                        a.getDataHora() != null ? a.getDataHora().toString() : "",
-                        csv(a.getUsuarioNome()),
-                        csv(a.getAcao()),
-                        csv(a.getEntidade()),
-                        csv(a.getDetalhes()),
-                        csv(a.getIpOrigem())));
-            }
+        StringBuilder sb = new StringBuilder("Data/Hora,Usuario,Acao,Entidade,Detalhes,IP\n");
+        for (Auditoria a : lista) {
+            sb.append(String.join(",",
+                    a.getDataHora() != null ? a.getDataHora().toString() : "",
+                    csv(a.getUsuarioNome()),
+                    csv(a.getAcao()),
+                    csv(a.getEntidade()),
+                    csv(a.getDetalhes()),
+                    csv(a.getIpOrigem()))).append("\n");
         }
+
+        return ArquivoDownloadUtil.csv("auditoria.csv", sb.toString());
     }
 
     private static String csv(String valor) {
