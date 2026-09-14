@@ -27,6 +27,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -155,17 +156,11 @@ public class AuthApiController {
     })
     @PutMapping("/perfil")
     public UsuarioResponse atualizarPerfil(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados para atualização de perfil e senha", required = true)
-                                           @RequestBody PerfilRequest body) {
+                                           @Valid @RequestBody PerfilRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
 
         String nome = StringUtil.limpar(body.nome());
         String email = StringUtil.limpar(body.email());
-        if (nome.length() < 3) {
-            throw new IllegalArgumentException("O nome deve ter pelo menos 3 caracteres.");
-        }
-        if (StringUtil.estaVazio(email)) {
-            throw new IllegalArgumentException("E-mail e obrigatorio.");
-        }
 
         String senhaNova = null;
         boolean trocandoSenha = !StringUtil.estaVazio(body.senhaAtual())
@@ -243,21 +238,12 @@ public class AuthApiController {
     })
     @PostMapping("/cadastro-admin")
     public ResponseEntity<UsuarioResponse> cadastrarAdmin(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados para cadastro de administrador", required = true)
-                                                         @RequestBody CadastroAdminRequest body) {
+                                                         @Valid @RequestBody CadastroAdminRequest body) {
         String nome = StringUtil.limpar(body.nome());
         String email = StringUtil.limpar(body.email());
         String senha = StringUtil.limpar(body.senha());
         String confirma = StringUtil.limpar(body.confirmaSenha());
 
-        if (nome.length() < 3) {
-            throw new IllegalArgumentException("O nome deve ter pelo menos 3 caracteres.");
-        }
-        if (!email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
-            throw new IllegalArgumentException("Informe um e-mail valido.");
-        }
-        if (senha.length() < 6) {
-            throw new IllegalArgumentException("A senha deve ter pelo menos 6 caracteres.");
-        }
         if (!senha.equals(confirma)) {
             throw new IllegalArgumentException("As senhas nao coincidem.");
         }
@@ -288,12 +274,9 @@ public class AuthApiController {
     })
     @PostMapping("/esqueci-senha")
     public Map<String, String> esqueciSenha(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "E-mail do usuário", required = true)
-                                           @RequestBody EsqueciSenhaRequest body,
+                                           @Valid @RequestBody EsqueciSenhaRequest body,
                                            HttpServletRequest request) {
         String email = StringUtil.limpar(body.email());
-        if (StringUtil.estaVazio(email) || !email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
-            throw new IllegalArgumentException("Informe um e-mail válido.");
-        }
 
         Usuario u = loginService.buscarPorEmail(email);
         if (u == null) {
@@ -318,23 +301,15 @@ public class AuthApiController {
     })
     @PostMapping("/redefinir-senha")
     public Map<String, String> redefinirSenha(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados para redefinição de senha", required = true)
-                                              @RequestBody RedefinirSenhaRequest body,
+                                              @Valid @RequestBody RedefinirSenhaRequest body,
                                               HttpServletRequest request) {
         String email = StringUtil.limpar(body.email());
         String codigo = StringUtil.limpar(body.codigo());
         String novaSenha = StringUtil.limpar(body.novaSenha());
         String confirma = StringUtil.limpar(body.confirmaSenha());
 
-        if (StringUtil.estaVazio(email) || StringUtil.estaVazio(codigo)) {
-            throw new IllegalArgumentException("E-mail e código de verificação são obrigatórios.");
-        }
-
         if (!passwordResetService.validarCodigo(email, codigo)) {
             throw new IllegalArgumentException("Código de verificação inválido ou expirado.");
-        }
-
-        if (novaSenha.length() < 6) {
-            throw new IllegalArgumentException("A nova senha deve ter pelo menos 6 caracteres.");
         }
 
         if (!novaSenha.equals(confirma)) {

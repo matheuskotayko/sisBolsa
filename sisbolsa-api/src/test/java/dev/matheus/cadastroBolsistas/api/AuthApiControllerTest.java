@@ -289,7 +289,8 @@ class AuthApiControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Jo", "email", "thiago@teste.com")))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.mensagem").value("O nome deve ter pelo menos 3 caracteres."));
+                .andExpect(jsonPath("$[0].campo").value("nome"))
+                .andExpect(jsonPath("$[0].mensagem").value("O nome deve ter pelo menos 3 caracteres."));
     }
 
     @Test

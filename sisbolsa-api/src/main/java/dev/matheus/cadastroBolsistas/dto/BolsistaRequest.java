@@ -1,19 +1,25 @@
 package dev.matheus.cadastroBolsistas.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 
 import java.time.LocalDate;
 import java.util.UUID;
 
 /*
  * o que a api aceita para criar ou editar um usuario.
- * senha opcional na edicao: vazia significa "mantem a que ja esta la".
+ * senha opcional na edicao: vazia significa "mantem a que ja esta la", entao
+ * o tamanho minimo dela e checado na mao no controller, nao aqui.
  */
 @Schema(description = "Dados para cadastro ou atualização de bolsista / professor.")
 public record BolsistaRequest(
+        @NotBlank(message = "Nome e obrigatorio.")
         @Schema(description = "Nome completo", example = "Lucas Oliveira", requiredMode = Schema.RequiredMode.REQUIRED)
         String nome,
 
+        @NotBlank(message = "E-mail e obrigatorio.")
+        @Email(message = "Informe um e-mail valido.")
         @Schema(description = "E-mail de acesso institucional", example = "lucas.oliveira@aluno.sisbolsa.com", requiredMode = Schema.RequiredMode.REQUIRED)
         String email,
 

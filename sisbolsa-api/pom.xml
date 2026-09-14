@@ -46,6 +46,12 @@
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 
+		<!-- bean validation (jsr 380) para @Valid nos dtos de request -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+
 		<!-- swagger / openapi. a linha 3.x e a que suporta boot 4 -->
 		<dependency>
 			<groupId>org.springdoc</groupId>

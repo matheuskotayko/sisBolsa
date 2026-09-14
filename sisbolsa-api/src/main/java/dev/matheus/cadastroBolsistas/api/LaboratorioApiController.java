@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -107,10 +108,9 @@ public class LaboratorioApiController {
     })
     @PostMapping
     public ResponseEntity<LaboratorioResponse> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do laboratório", required = true)
-                                                     @RequestBody LaboratorioRequest body) {
+                                                     @Valid @RequestBody LaboratorioRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
         usuarioLogado.exigirAdmin(logado);
-        validar(body);
 
         Laboratorio lab = new Laboratorio();
         aplicar(lab, body);
@@ -129,11 +129,10 @@ public class LaboratorioApiController {
     @PutMapping("/{id}")
     public LaboratorioResponse atualizar(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id,
                                          @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do laboratório", required = true)
-                                         @RequestBody LaboratorioRequest body) {
+                                         @Valid @RequestBody LaboratorioRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
         Laboratorio lab = exigirLab(id);
         usuarioLogado.exigir(laboratorioService.podeGerenciar(logado, id), "Sem permissao para editar este laboratorio.");
-        validar(body);
 
         aplicar(lab, body);
         lab.setAtivo(true);
@@ -164,15 +163,6 @@ public class LaboratorioApiController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Laboratorio nao encontrado.");
         }
         return lab;
-    }
-
-    private void validar(LaboratorioRequest body) {
-        if (StringUtil.estaVazio(body.nome())) {
-            throw new IllegalArgumentException("Nome do laboratorio e obrigatorio.");
-        }
-        if (body.capacidade() == null || body.capacidade() < 1) {
-            throw new IllegalArgumentException("Capacidade precisa ser maior que zero.");
-        }
     }
 
     private void aplicar(Laboratorio lab, LaboratorioRequest body) {
