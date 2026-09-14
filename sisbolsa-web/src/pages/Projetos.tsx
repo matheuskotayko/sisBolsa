@@ -15,17 +15,24 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { projetoService } from '../services/projetoService';
 import { laboratorioService } from '../services/laboratorioService';
-import type { Projeto, ProjetoRequest, Laboratorio } from '../types';
+import type { Projeto, ProjetoRequest, Laboratorio, Paginacao } from '../types';
 import { Modal } from '../components/ui/Modal';
+import { Pagination } from '../components/ui/Pagination';
 
 export const Projetos: React.FC = () => {
   const { canManage } = useAuth();
   const { showToast } = useToast();
 
-  const [projetos, setProjetos] = useState<Projeto[]>([]);
+  const [paginacao, setPaginacao] = useState<Paginacao<Projeto>>({
+    itens: [],
+    totalItens: 0,
+    pagina: 1,
+    totalPaginas: 1,
+  });
   const [laboratorios, setLaboratorios] = useState<Laboratorio[]>([]);
   const [buscaNome, setBuscaNome] = useState('');
   const [filtroLab, setFiltroLab] = useState('');
+  const [pagina, setPagina] = useState(1);
   const [loading, setLoading] = useState(true);
 
   // Modal State
@@ -40,17 +47,18 @@ export const Projetos: React.FC = () => {
   });
   const [saving, setSaving] = useState(false);
 
-  const carregarDados = async () => {
+  const carregarDados = async (pag = pagina) => {
     setLoading(true);
     try {
       const [projs, labs] = await Promise.all([
         projetoService.listar({
           buscaNome: buscaNome.trim() || undefined,
           labId: filtroLab || undefined,
+          pagina: pag,
         }),
-        laboratorioService.listar(),
+        laboratorioService.listarTodos(),
       ]);
-      setProjetos(projs);
+      setPaginacao(projs);
       setLaboratorios(labs);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Erro ao carregar projetos';
@@ -61,7 +69,8 @@ export const Projetos: React.FC = () => {
   };
 
   useEffect(() => {
-    carregarDados();
+    setPagina(1);
+    carregarDados(1);
   }, [buscaNome, filtroLab]);
 
   const handleOpenCreate = () => {
@@ -208,14 +217,14 @@ export const Projetos: React.FC = () => {
             <Loader2 className="spin" size={28} style={{ margin: '0 auto 12px' }} />
             <p>Carregando projetos de pesquisa...</p>
           </div>
-        ) : projetos.length === 0 ? (
+        ) : paginacao.itens.length === 0 ? (
           <div className="empty-state-cell" style={{ padding: '40px', textAlign: 'center' }}>
             <FolderKanban size={48} style={{ margin: '0 auto 12px', color: 'var(--text-muted)' }} />
             <p>Nenhum projeto encontrado com os filtros aplicados.</p>
           </div>
         ) : (
           <div className="projects-grid">
-            {projetos.map((proj) => (
+            {paginacao.itens.map((proj) => (
               <div key={proj.id} className="project-card">
                 <div>
                   <div className="project-card-header">
@@ -333,6 +342,15 @@ export const Projetos: React.FC = () => {
             ))}
           </div>
         )}
+
+        <Pagination
+          page={paginacao.pagina}
+          totalPages={paginacao.totalPaginas}
+          onPageChange={(novaPag) => {
+            setPagina(novaPag);
+            carregarDados(novaPag);
+          }}
+        />
       </div>
 
       {/* Modal Criar / Editar Projeto */}

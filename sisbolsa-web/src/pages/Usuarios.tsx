@@ -95,7 +95,7 @@ export const Usuarios: React.FC = () => {
     async function loadAux() {
       try {
         const [labs, cargs, mods] = await Promise.all([
-          laboratorioService.listar().catch(() => []),
+          laboratorioService.listarTodos().catch(() => []),
           usuarioService.listarCargos().catch(() => []),
           usuarioService.listarModalidades().catch(() => []),
         ]);

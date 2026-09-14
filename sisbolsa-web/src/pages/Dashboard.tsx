@@ -444,7 +444,7 @@ const DashboardProfessor: React.FC = () => {
   useEffect(() => {
     async function carregar() {
       try {
-        const labs = await laboratorioService.listar();
+        const labs = await laboratorioService.listarTodos();
         setLaboratorios(labs);
       } catch {
         // ignore

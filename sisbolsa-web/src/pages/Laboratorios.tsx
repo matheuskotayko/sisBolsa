@@ -5,17 +5,32 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { laboratorioService } from '../services/laboratorioService';
 import { usuarioService } from '../services/usuarioService';
-import type { Laboratorio, LaboratorioRequest, LaboratorioStatus, Usuario } from '../types';
+import type { Laboratorio, LaboratorioRequest, LaboratorioStatus, Usuario, Paginacao } from '../types';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
+import { Pagination } from '../components/ui/Pagination';
 
 export const Laboratorios: React.FC = () => {
   const { canManage, isAdmin } = useAuth();
   const { showToast } = useToast();
 
-  const [laboratorios, setLaboratorios] = useState<Laboratorio[]>([]);
+  /*
+   * a busca abaixo e client-side sobre a pagina inteira - o backend nao tem
+   * filtro por nome pra laboratorios. por isso pedimos uma pagina grande
+   * (tamanho maximo) em vez de paginar de fato: hoje o numero de laboratorios
+   * de um departamento fica bem abaixo disso, entao na pratica isso continua
+   * trazendo "tudo" como antes. o <Pagination> abaixo so aparece se um dia
+   * passar dos 200 registros.
+   */
+  const [paginacao, setPaginacao] = useState<Paginacao<Laboratorio>>({
+    itens: [],
+    totalItens: 0,
+    pagina: 1,
+    totalPaginas: 1,
+  });
   const [professores, setProfessores] = useState<Usuario[]>([]);
   const [busca, setBusca] = useState('');
+  const [pagina, setPagina] = useState(1);
   const [loading, setLoading] = useState(true);
 
   // Modal State
@@ -30,14 +45,14 @@ export const Laboratorios: React.FC = () => {
   });
   const [saving, setSaving] = useState(false);
 
-  const carregarDados = async () => {
+  const carregarDados = async (pag = pagina) => {
     setLoading(true);
     try {
       const [labs, usersData] = await Promise.all([
-        laboratorioService.listar(),
+        laboratorioService.listar({ pagina: pag, tamanho: 200 }),
         isAdmin ? usuarioService.listar({ tipo: 'PROFESSOR', tamanho: 100 }) : Promise.resolve({ itens: [] }),
       ]);
-      setLaboratorios(labs);
+      setPaginacao(labs);
       setProfessores(usersData.itens || []);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Erro ao carregar laboratórios';
@@ -113,7 +128,7 @@ export const Laboratorios: React.FC = () => {
     }
   };
 
-  const labsFiltrados = laboratorios.filter(
+  const labsFiltrados = paginacao.itens.filter(
     (l) =>
       l.nome.toLowerCase().includes(busca.toLowerCase()) ||
       l.areaPesquisa.toLowerCase().includes(busca.toLowerCase()) ||
@@ -249,6 +264,15 @@ export const Laboratorios: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        <Pagination
+          page={paginacao.pagina}
+          totalPages={paginacao.totalPaginas}
+          onPageChange={(novaPag) => {
+            setPagina(novaPag);
+            carregarDados(novaPag);
+          }}
+        />
       </div>
 
       {/* Modal Criar / Editar Laboratório */}

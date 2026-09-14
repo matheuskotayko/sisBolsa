@@ -16,6 +16,7 @@ import dev.matheus.cadastroBolsistas.service.BolsistaService;
 import dev.matheus.cadastroBolsistas.service.LaboratorioService;
 import dev.matheus.cadastroBolsistas.service.ProfessorService;
 import dev.matheus.cadastroBolsistas.service.ProjetoService;
+import dev.matheus.cadastroBolsistas.util.PaginacaoUtil;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -394,18 +395,6 @@ public class UsuarioApiController {
     }
 
     private PaginaResponse<UsuarioResponse> paginar(List<Usuario> lista, int pagina, Integer tamanhoPedido) {
-        int tamanho = tamanhoPedido != null && tamanhoPedido > 0
-                ? Math.min(tamanhoPedido, TAMANHO_MAXIMO)
-                : TAMANHO_PADRAO;
-        int total = lista.size();
-        int totalPaginas = Math.max(1, (int) Math.ceil(total / (double) tamanho));
-        int atual = Math.min(Math.max(pagina, 1), totalPaginas);
-        int de = (atual - 1) * tamanho;
-        int ate = Math.min(de + tamanho, total);
-
-        List<UsuarioResponse> itens = de < total
-                ? lista.subList(de, ate).stream().map(UsuarioResponse::de).toList()
-                : List.of();
-        return new PaginaResponse<>(itens, atual, totalPaginas, total);
+        return PaginacaoUtil.paginar(lista, pagina, tamanhoPedido, TAMANHO_PADRAO, TAMANHO_MAXIMO, UsuarioResponse::de);
     }
 }

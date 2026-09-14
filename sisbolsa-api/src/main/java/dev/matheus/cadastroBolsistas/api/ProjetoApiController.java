@@ -1,6 +1,7 @@
 package dev.matheus.cadastroBolsistas.api;
 
 import dev.matheus.cadastroBolsistas.dto.ErroResponse;
+import dev.matheus.cadastroBolsistas.dto.PaginaResponse;
 import dev.matheus.cadastroBolsistas.dto.ProjetoRequest;
 import dev.matheus.cadastroBolsistas.dto.ProjetoResponse;
 import dev.matheus.cadastroBolsistas.dto.UsuarioResponse;
@@ -10,6 +11,7 @@ import dev.matheus.cadastroBolsistas.service.AuditoriaService;
 import dev.matheus.cadastroBolsistas.service.BolsistaService;
 import dev.matheus.cadastroBolsistas.service.LaboratorioService;
 import dev.matheus.cadastroBolsistas.service.ProjetoService;
+import dev.matheus.cadastroBolsistas.util.PaginacaoUtil;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -34,6 +36,9 @@ import java.util.UUID;
 @RequestMapping("/api/projetos")
 public class ProjetoApiController {
 
+    private static final int TAMANHO_PADRAO = 10;
+    private static final int TAMANHO_MAXIMO = 200;
+
     private final ProjetoService projetoService;
     private final LaboratorioService laboratorioService;
     private final BolsistaService bolsistaService;
@@ -50,17 +55,20 @@ public class ProjetoApiController {
         this.auditoriaService = auditoriaService;
     }
 
-    @Operation(summary = "Listar projetos", description = "Retorna todos os projetos ativos, com filtros opcionais por nome ou por laboratório de pesquisa.")
+    @Operation(summary = "Listar projetos paginados", description = "Retorna projetos ativos, com filtros opcionais por nome ou por laboratório de pesquisa.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Lista de projetos"),
+            @ApiResponse(responseCode = "200", description = "Lista paginada de projetos"),
             @ApiResponse(responseCode = "401", description = "Não autenticado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping
-    public List<ProjetoResponse> listar(
+    public PaginaResponse<ProjetoResponse> listar(
+            @Parameter(description = "Número da página", example = "1") @RequestParam(defaultValue = "1") int pagina,
+            @Parameter(description = "Quantidade de itens por página", example = "10") @RequestParam(required = false) Integer tamanho,
             @Parameter(description = "Filtro por nome do projeto", example = "Processamento") @RequestParam(required = false) String buscaNome,
             @Parameter(description = "Filtro por ID do laboratório (UUID)") @RequestParam(required = false) UUID labId) {
         usuarioLogado.obrigatorio();
-        return projetoService.buscarProjetos(buscaNome, labId).stream().map(this::comMembros).toList();
+        List<Projeto> lista = projetoService.buscarProjetos(buscaNome, labId);
+        return PaginacaoUtil.paginar(lista, pagina, tamanho, TAMANHO_PADRAO, TAMANHO_MAXIMO, this::comMembros);
     }
 
     @Operation(summary = "Buscar projeto por ID", description = "Retorna os detalhes de um projeto de pesquisa pelo seu identificador UUID.")
