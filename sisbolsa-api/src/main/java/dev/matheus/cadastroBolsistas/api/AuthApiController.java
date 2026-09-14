@@ -156,7 +156,7 @@ public class AuthApiController {
             @ApiResponse(responseCode = "400", description = "Dados inválidos ou senha atual incorreta", content = @Content(schema = @Schema(implementation = ErroResponse.class))),
             @ApiResponse(responseCode = "401", description = "Não autenticado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
-    @PutMapping("/perfil")
+    @PatchMapping("/perfil")
     public UsuarioResponse atualizarPerfil(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados para atualização de perfil e senha", required = true)
                                            @Valid @RequestBody PerfilRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();

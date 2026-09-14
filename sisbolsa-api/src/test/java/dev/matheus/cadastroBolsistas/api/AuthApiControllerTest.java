@@ -209,7 +209,7 @@ class AuthApiControllerTest {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
         logarComo(bolsistaLogado);
 
-        mockMvc.perform(put("/api/auth/perfil")
+        mockMvc.perform(patch("/api/auth/perfil")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Thiago Editado", "email", "novo@teste.com")))
                 .andExpect(status().isOk())
@@ -226,7 +226,7 @@ class AuthApiControllerTest {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
         logarComo(bolsistaLogado);
 
-        mockMvc.perform(put("/api/auth/perfil")
+        mockMvc.perform(patch("/api/auth/perfil")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Thiago Rocha", "email", "thiago@teste.com",
                                 "senhaAtual", SENHA_ATUAL, "senha", "novaSenha123", "confirmaSenha", "novaSenha123")))
@@ -243,7 +243,7 @@ class AuthApiControllerTest {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
         logarComo(bolsistaLogado);
 
-        mockMvc.perform(put("/api/auth/perfil")
+        mockMvc.perform(patch("/api/auth/perfil")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Thiago Rocha", "email", "thiago@teste.com",
                                 "senhaAtual", "chuteErrado", "senha", "hackeado123", "confirmaSenha", "hackeado123")))
@@ -258,7 +258,7 @@ class AuthApiControllerTest {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
         logarComo(bolsistaLogado);
 
-        mockMvc.perform(put("/api/auth/perfil")
+        mockMvc.perform(patch("/api/auth/perfil")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Thiago Rocha", "email", "thiago@teste.com",
                                 "senhaAtual", SENHA_ATUAL, "senha", "novaSenha123", "confirmaSenha", "outraCoisa")))
@@ -272,7 +272,7 @@ class AuthApiControllerTest {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
         logarComo(bolsistaLogado);
 
-        mockMvc.perform(put("/api/auth/perfil")
+        mockMvc.perform(patch("/api/auth/perfil")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Thiago Rocha", "email", "thiago@teste.com",
                                 "senhaAtual", SENHA_ATUAL, "senha", "123", "confirmaSenha", "123")))
@@ -285,7 +285,7 @@ class AuthApiControllerTest {
     void perfil_comNomeCurto_recusa() throws Exception {
         logarComo(bolsistaLogado);
 
-        mockMvc.perform(put("/api/auth/perfil")
+        mockMvc.perform(patch("/api/auth/perfil")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Jo", "email", "thiago@teste.com")))
                 .andExpect(status().isBadRequest())
@@ -304,7 +304,7 @@ class AuthApiControllerTest {
         when(professorService.buscarPorId(profId)).thenReturn(professor);
         logarComo(professor);
 
-        mockMvc.perform(put("/api/auth/perfil")
+        mockMvc.perform(patch("/api/auth/perfil")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Dr. Roberto Mendes", "email", "roberto@teste.com")))
                 .andExpect(status().isOk());
@@ -318,7 +318,7 @@ class AuthApiControllerTest {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(null);
         logarComo(bolsistaLogado);
 
-        mockMvc.perform(put("/api/auth/perfil")
+        mockMvc.perform(patch("/api/auth/perfil")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Thiago Rocha", "email", "thiago@teste.com")))
                 .andExpect(status().isNotFound());

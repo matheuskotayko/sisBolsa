@@ -18,7 +18,7 @@ export const authService = {
     senhaAtual?: string;
     senha?: string;
     confirmaSenha?: string;
-  }) => api.put<UsuarioAuth>('/auth/perfil', dados),
+  }) => api.patch<UsuarioAuth>('/auth/perfil', dados),
 
   esqueciSenha: (email: string) =>
     api.post<{ mensagem: string; codigoDev?: string }>('/auth/password-reset-requests', { email }),
