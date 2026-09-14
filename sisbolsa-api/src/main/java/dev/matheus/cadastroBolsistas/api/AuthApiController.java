@@ -223,15 +223,6 @@ public class AuthApiController {
         }
     }
 
-    @Operation(summary = "Vagas de administrador restantes", description = "Informa quantas contas com perfil ADMIN ainda podem ser cadastradas (limite máximo de 3).")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Quantidade de vagas restantes")
-    })
-    @GetMapping("/admins-restantes")
-    public Map<String, Integer> adminsRestantes() {
-        return Map.of("restantes", Math.max(0, LIMITE_ADMINS - bolsistaService.contarAdmins()));
-    }
-
     @Operation(summary = "Cadastro inicial de Administrador", description = "Permite a criação pública de uma conta de Administrador caso o limite de 3 vagas não tenha sido atingido.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Administrador cadastrado com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResponse.class))),

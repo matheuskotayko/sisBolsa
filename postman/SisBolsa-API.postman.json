@@ -2260,32 +2260,6 @@
                 }
             }
         },
-        "/api/auth/admins-restantes": {
-            "get": {
-                "tags": [
-                    "Autentica\u00e7\u00e3o"
-                ],
-                "summary": "Vagas de administrador restantes",
-                "description": "Informa quantas contas com perfil ADMIN ainda podem ser cadastradas (limite m\u00e1ximo de 3).",
-                "operationId": "adminsRestantes",
-                "responses": {
-                    "200": {
-                        "description": "Quantidade de vagas restantes",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "type": "object",
-                                    "additionalProperties": {
-                                        "type": "integer",
-                                        "format": "int32"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/api/auditoria": {
             "get": {
                 "tags": [

@@ -39,7 +39,6 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/auth/login",
                     "/api/auth/cadastro-admin",
-                    "/api/auth/admins-restantes",
                     "/api/auth/password-reset-requests",
                     "/api/auth/password-resets"
                 ).permitAll()

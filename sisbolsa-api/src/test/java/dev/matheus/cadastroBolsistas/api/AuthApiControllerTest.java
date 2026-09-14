@@ -363,13 +363,4 @@ class AuthApiControllerTest {
 
         verify(bolsistaService, never()).inserir(any());
     }
-
-    @Test
-    void adminsRestantes_descontaOsJaCadastrados() throws Exception {
-        when(bolsistaService.contarAdmins()).thenReturn(2);
-
-        mockMvc.perform(get("/api/auth/admins-restantes"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.restantes").value(1));
-    }
 }
