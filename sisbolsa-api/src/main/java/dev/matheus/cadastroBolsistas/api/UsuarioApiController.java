@@ -43,7 +43,7 @@ import java.util.UUID;
 
 @Tag(name = "Bolsistas & Usuários", description = "Gestão de bolsistas, professores e administradores, incluindo vigência, modalidades e cargos.")
 @RestController
-@RequestMapping("/api/usuarios")
+@RequestMapping("/api/v1/usuarios")
 public class UsuarioApiController {
 
     private static final int TAMANHO_PADRAO = 10;
@@ -240,7 +240,7 @@ public class UsuarioApiController {
             p.setAtivo(true);
             professorService.inserir(p);
             auditoriaService.registrar(logado, "CRIAR_PROFESSOR", "USUARIO", "Professor '" + p.getNome() + "' (" + p.getEmail() + ") cadastrado.", null);
-            URI uri = uriBuilder.replacePath("/api/usuarios/{id}").buildAndExpand(p.getId()).toUri();
+            URI uri = uriBuilder.replacePath("/api/v1/usuarios/{id}").buildAndExpand(p.getId()).toUri();
             return ResponseEntity.created(uri).body(UsuarioResponse.de(p));
         }
 
@@ -257,7 +257,7 @@ public class UsuarioApiController {
         b.setSenha(passwordEncoder.encode(body.senha()));
         bolsistaService.inserir(b);
         auditoriaService.registrar(logado, "CRIAR_USUARIO", "USUARIO", "Usuário '" + b.getNome() + "' (" + b.getTipoUsuario() + ") cadastrado.", null);
-        URI uri = uriBuilder.replacePath("/api/usuarios/{id}").buildAndExpand(b.getId()).toUri();
+        URI uri = uriBuilder.replacePath("/api/v1/usuarios/{id}").buildAndExpand(b.getId()).toUri();
         return ResponseEntity.created(uri).body(UsuarioResponse.de(b));
     }
 

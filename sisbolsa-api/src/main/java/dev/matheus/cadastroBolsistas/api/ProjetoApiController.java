@@ -33,7 +33,7 @@ import java.util.UUID;
 
 @Tag(name = "Projetos", description = "Gerenciamento de projetos de pesquisa, alocação de pesquisadores e entregáveis (repositórios, documentação).")
 @RestController
-@RequestMapping("/api/projetos")
+@RequestMapping("/api/v1/projetos")
 public class ProjetoApiController {
 
     private static final int TAMANHO_PADRAO = 10;
@@ -112,7 +112,7 @@ public class ProjetoApiController {
         aplicar(p, body);
         projetoService.cadastrar(p);
         auditoriaService.registrar(logado, "CRIAR_PROJETO", "PROJETO", "Projeto '" + p.getNome() + "' criado com sucesso.", null);
-        URI uri = uriBuilder.replacePath("/api/projetos/{id}").buildAndExpand(p.getId()).toUri();
+        URI uri = uriBuilder.replacePath("/api/v1/projetos/{id}").buildAndExpand(p.getId()).toUri();
         return ResponseEntity.created(uri).body(ProjetoResponse.de(p));
     }
 

@@ -40,7 +40,7 @@ import java.util.UUID;
 
 @Tag(name = "Frequência & Horas", description = "Controle de apontamento de horas, relatórios de produtividade, exportação CSV e emissão de comprovantes em PDF.")
 @RestController
-@RequestMapping("/api/frequencias")
+@RequestMapping("/api/v1/frequencias")
 public class FrequenciaApiController {
 
     private static final int TAMANHO_PAGINA = 10;
@@ -238,7 +238,7 @@ public class FrequenciaApiController {
         f.setLinkComprovante(StringUtil.limpar(body.linkComprovante()));
         frequenciaService.registrar(f);
         auditoriaService.registrar(logado, "REGISTRAR_FREQUENCIA", "FREQUENCIA", "Apontamento de " + f.getHorasTrabalhadas() + "h para o dia " + f.getData() + ".", null);
-        URI uri = uriBuilder.replacePath("/api/frequencias/{id}").buildAndExpand(f.getId()).toUri();
+        URI uri = uriBuilder.replacePath("/api/v1/frequencias/{id}").buildAndExpand(f.getId()).toUri();
         return ResponseEntity.created(uri).body(FrequenciaResponse.de(f));
     }
 

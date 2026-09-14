@@ -34,7 +34,7 @@ import java.util.UUID;
 
 @Tag(name = "Laboratórios", description = "Gerenciamento de laboratórios de pesquisa, equipe alocada, capacidade e cálculo de ocupação.")
 @RestController
-@RequestMapping("/api/laboratorios")
+@RequestMapping("/api/v1/laboratorios")
 public class LaboratorioApiController {
 
     private static final int TAMANHO_PADRAO = 10;
@@ -142,7 +142,7 @@ public class LaboratorioApiController {
         aplicar(lab, body);
         laboratorioService.cadastrar(lab);
         auditoriaService.registrar(logado, "CRIAR_LABORATORIO", "LABORATORIO", "Laboratório '" + lab.getNome() + "' criado com sucesso.", null);
-        URI uri = uriBuilder.replacePath("/api/laboratorios/{id}").buildAndExpand(lab.getId()).toUri();
+        URI uri = uriBuilder.replacePath("/api/v1/laboratorios/{id}").buildAndExpand(lab.getId()).toUri();
         return ResponseEntity.created(uri).body(comOcupacao(lab));
     }
 

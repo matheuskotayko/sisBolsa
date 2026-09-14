@@ -40,7 +40,7 @@ import java.util.Map;
 
 @Tag(name = "Autenticação", description = "Endpoints para autenticação, controle de sessão via JWT HttpOnly, perfil e recuperação de senha.")
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 public class AuthApiController {
 
     private static final int LIMITE_ADMINS = 3;
@@ -258,7 +258,7 @@ public class AuthApiController {
         bolsistaService.inserir(admin);
 
         /* admin cadastrado aqui vira um Bolsista com tipoUsuario=ADMIN, o recurso mora em /api/usuarios */
-        URI uri = uriBuilder.replacePath("/api/usuarios/{id}").buildAndExpand(admin.getId()).toUri();
+        URI uri = uriBuilder.replacePath("/api/v1/usuarios/{id}").buildAndExpand(admin.getId()).toUri();
         return ResponseEntity.created(uri).body(UsuarioResponse.de(admin));
     }
 

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { BASE_URL } from '../services/api';
 import { usuarioService } from '../services/usuarioService';
 import { laboratorioService } from '../services/laboratorioService';
 import type {
@@ -253,7 +254,7 @@ export const Usuarios: React.FC = () => {
         </div>
         <div className="header-buttons">
           <a
-            href="/api/usuarios/exportar"
+            href={`${BASE_URL}/usuarios/exportar`}
             className="btn-new btn-export"
             target="_blank"
             rel="noreferrer"

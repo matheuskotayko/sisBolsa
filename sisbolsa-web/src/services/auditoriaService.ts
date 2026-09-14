@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, BASE_URL } from './api';
 import type { Auditoria, Paginacao } from '../types';
 
 export const auditoriaService = {
@@ -22,6 +22,6 @@ export const auditoriaService = {
     if (params?.dataInicio) qs.append('dataInicio', params.dataInicio);
     if (params?.dataFim) qs.append('dataFim', params.dataFim);
     const str = qs.toString();
-    return `/api/auditoria/exportar${str ? `?${str}` : ''}`;
+    return `${BASE_URL}/auditoria/exportar${str ? `?${str}` : ''}`;
   },
 };

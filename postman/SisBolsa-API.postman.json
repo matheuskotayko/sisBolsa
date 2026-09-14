@@ -83,7 +83,7 @@
         }
     ],
     "paths": {
-        "/api/projetos/{id}": {
+        "/api/v1/projetos/{id}": {
             "get": {
                 "tags": [
                     "Projetos"
@@ -245,7 +245,7 @@
                 }
             }
         },
-        "/api/laboratorios/{id}": {
+        "/api/v1/laboratorios/{id}": {
             "get": {
                 "tags": [
                     "Laborat\u00f3rios"
@@ -407,7 +407,7 @@
                 }
             }
         },
-        "/api/frequencias/{id}": {
+        "/api/v1/frequencias/{id}": {
             "get": {
                 "tags": [
                     "Frequ\u00eancia & Horas"
@@ -549,7 +549,7 @@
                 }
             }
         },
-        "/api/usuarios": {
+        "/api/v1/usuarios": {
             "get": {
                 "tags": [
                     "Bolsistas & Usu\u00e1rios"
@@ -687,7 +687,7 @@
                 }
             }
         },
-        "/api/projetos": {
+        "/api/v1/projetos": {
             "get": {
                 "tags": [
                     "Projetos"
@@ -815,7 +815,7 @@
                 }
             }
         },
-        "/api/projetos/{id}/membros/{bolsistaId}": {
+        "/api/v1/projetos/{id}/membros/{bolsistaId}": {
             "post": {
                 "tags": [
                     "Projetos"
@@ -927,7 +927,7 @@
                 }
             }
         },
-        "/api/laboratorios": {
+        "/api/v1/laboratorios": {
             "get": {
                 "tags": [
                     "Laborat\u00f3rios"
@@ -1045,7 +1045,7 @@
                 }
             }
         },
-        "/api/frequencias": {
+        "/api/v1/frequencias": {
             "get": {
                 "tags": [
                     "Frequ\u00eancia & Horas"
@@ -1164,7 +1164,7 @@
                 }
             }
         },
-        "/api/auth/password-resets": {
+        "/api/v1/auth/password-resets": {
             "post": {
                 "tags": [
                     "Autentica\u00e7\u00e3o"
@@ -1220,7 +1220,7 @@
                 }
             }
         },
-        "/api/auth/password-reset-requests": {
+        "/api/v1/auth/password-reset-requests": {
             "post": {
                 "tags": [
                     "Autentica\u00e7\u00e3o"
@@ -1276,7 +1276,7 @@
                 }
             }
         },
-        "/api/auth/logout": {
+        "/api/v1/auth/logout": {
             "post": {
                 "tags": [
                     "Autentica\u00e7\u00e3o"
@@ -1291,7 +1291,7 @@
                 }
             }
         },
-        "/api/auth/login": {
+        "/api/v1/auth/login": {
             "post": {
                 "tags": [
                     "Autentica\u00e7\u00e3o"
@@ -1344,7 +1344,7 @@
                 }
             }
         },
-        "/api/auth/cadastro-admin": {
+        "/api/v1/auth/cadastro-admin": {
             "post": {
                 "tags": [
                     "Autentica\u00e7\u00e3o"
@@ -1397,7 +1397,7 @@
                 }
             }
         },
-        "/api/usuarios/{id}": {
+        "/api/v1/usuarios/{id}": {
             "get": {
                 "tags": [
                     "Bolsistas & Usu\u00e1rios"
@@ -1591,7 +1591,7 @@
                 }
             }
         },
-        "/api/auth/perfil": {
+        "/api/v1/auth/perfil": {
             "patch": {
                 "tags": [
                     "Autentica\u00e7\u00e3o"
@@ -1644,7 +1644,7 @@
                 }
             }
         },
-        "/api/usuarios/{id}/projetos": {
+        "/api/v1/usuarios/{id}/projetos": {
             "get": {
                 "tags": [
                     "Bolsistas & Usu\u00e1rios"
@@ -1691,7 +1691,7 @@
                 }
             }
         },
-        "/api/usuarios/modalidades": {
+        "/api/v1/usuarios/modalidades": {
             "get": {
                 "tags": [
                     "Bolsistas & Usu\u00e1rios"
@@ -1719,7 +1719,7 @@
                 }
             }
         },
-        "/api/usuarios/exportar": {
+        "/api/v1/usuarios/exportar": {
             "get": {
                 "tags": [
                     "Bolsistas & Usu\u00e1rios"
@@ -1747,7 +1747,7 @@
                 }
             }
         },
-        "/api/usuarios/cargos": {
+        "/api/v1/usuarios/cargos": {
             "get": {
                 "tags": [
                     "Bolsistas & Usu\u00e1rios"
@@ -1775,7 +1775,7 @@
                 }
             }
         },
-        "/api/relatorios/resumo": {
+        "/api/v1/relatorios/resumo": {
             "get": {
                 "tags": [
                     "Relat\u00f3rios & Estat\u00edsticas"
@@ -1808,7 +1808,7 @@
                 }
             }
         },
-        "/api/relatorios/projetos-por-laboratorio": {
+        "/api/v1/relatorios/projetos-por-laboratorio": {
             "get": {
                 "tags": [
                     "Relat\u00f3rios & Estat\u00edsticas"
@@ -1843,7 +1843,7 @@
                 }
             }
         },
-        "/api/relatorios/ocupacao": {
+        "/api/v1/relatorios/ocupacao": {
             "get": {
                 "tags": [
                     "Relat\u00f3rios & Estat\u00edsticas"
@@ -1878,7 +1878,7 @@
                 }
             }
         },
-        "/api/relatorios/horas-mes": {
+        "/api/v1/relatorios/horas-mes": {
             "get": {
                 "tags": [
                     "Relat\u00f3rios & Estat\u00edsticas"
@@ -1913,7 +1913,7 @@
                 }
             }
         },
-        "/api/relatorios/bolsistas-por-cargo": {
+        "/api/v1/relatorios/bolsistas-por-cargo": {
             "get": {
                 "tags": [
                     "Relat\u00f3rios & Estat\u00edsticas"
@@ -1948,7 +1948,7 @@
                 }
             }
         },
-        "/api/projetos/{id}/membros": {
+        "/api/v1/projetos/{id}/membros": {
             "get": {
                 "tags": [
                     "Projetos"
@@ -1995,7 +1995,7 @@
                 }
             }
         },
-        "/api/laboratorios/{id}/projetos": {
+        "/api/v1/laboratorios/{id}/projetos": {
             "get": {
                 "tags": [
                     "Laborat\u00f3rios"
@@ -2042,7 +2042,7 @@
                 }
             }
         },
-        "/api/laboratorios/{id}/bolsistas": {
+        "/api/v1/laboratorios/{id}/bolsistas": {
             "get": {
                 "tags": [
                     "Laborat\u00f3rios"
@@ -2089,7 +2089,7 @@
                 }
             }
         },
-        "/api/frequencias/resumo": {
+        "/api/v1/frequencias/resumo": {
             "get": {
                 "tags": [
                     "Frequ\u00eancia & Horas"
@@ -2127,7 +2127,7 @@
                 }
             }
         },
-        "/api/frequencias/exportar": {
+        "/api/v1/frequencias/exportar": {
             "get": {
                 "tags": [
                     "Frequ\u00eancia & Horas"
@@ -2177,7 +2177,7 @@
                 }
             }
         },
-        "/api/frequencias/comprovante-pdf": {
+        "/api/v1/frequencias/comprovante-pdf": {
             "get": {
                 "tags": [
                     "Frequ\u00eancia & Horas"
@@ -2237,7 +2237,7 @@
                 }
             }
         },
-        "/api/auth/me": {
+        "/api/v1/auth/me": {
             "get": {
                 "tags": [
                     "Autentica\u00e7\u00e3o"
@@ -2269,7 +2269,7 @@
                 }
             }
         },
-        "/api/auditoria": {
+        "/api/v1/auditoria": {
             "get": {
                 "tags": [
                     "Auditoria"
@@ -2357,7 +2357,7 @@
                 }
             }
         },
-        "/api/auditoria/exportar": {
+        "/api/v1/auditoria/exportar": {
             "get": {
                 "tags": [
                     "Auditoria"

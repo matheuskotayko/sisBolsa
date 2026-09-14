@@ -134,7 +134,7 @@ class AuthApiControllerTest {
         when(jwtService.gerarToken("thiago@teste.com", "BOLSISTA")).thenReturn("token-fake");
         when(jwtService.getExpiracaoMinutos()).thenReturn(120L);
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("email", "thiago@teste.com", "senha", "12345678")))
                 .andExpect(status().isOk())
@@ -148,7 +148,7 @@ class AuthApiControllerTest {
         when(loginAttemptService.isBloqueado("bloqueado@teste.com")).thenReturn(true);
         when(loginAttemptService.getSegundosRestantesBloqueio("bloqueado@teste.com")).thenReturn(300L);
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("email", "bloqueado@teste.com", "senha", "qualquer")))
                 .andExpect(status().isTooManyRequests());
@@ -162,7 +162,7 @@ class AuthApiControllerTest {
         when(loginService.autenticar(any(), any())).thenReturn(u);
         when(jwtService.gerarToken(any(), any())).thenReturn("t");
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("email", "thiago@teste.com", "senha", "12345678")))
                 .andExpect(status().isOk())
@@ -173,7 +173,7 @@ class AuthApiControllerTest {
     void login_comCredenciaisInvalidas_retorna401SemCookie() throws Exception {
         when(loginService.autenticar(any(), any())).thenReturn(null);
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("email", "x@teste.com", "senha", "errada")))
                 .andExpect(status().isUnauthorized())
@@ -184,14 +184,14 @@ class AuthApiControllerTest {
     void logout_limpaOCookie() throws Exception {
         logarComo(bolsistaLogado);
 
-        mockMvc.perform(post("/api/auth/logout"))
+        mockMvc.perform(post("/api/v1/auth/logout"))
                 .andExpect(status().isNoContent())
                 .andExpect(cookie().maxAge("token", 0));
     }
 
     @Test
     void me_semSessao_retorna401() throws Exception {
-        mockMvc.perform(get("/api/auth/me"))
+        mockMvc.perform(get("/api/v1/auth/me"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -199,7 +199,7 @@ class AuthApiControllerTest {
     void me_comSessao_devolveOUsuario() throws Exception {
         logarComo(bolsistaLogado);
 
-        mockMvc.perform(get("/api/auth/me"))
+        mockMvc.perform(get("/api/v1/auth/me"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nome").value("Thiago Rocha"));
     }
@@ -209,7 +209,7 @@ class AuthApiControllerTest {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
         logarComo(bolsistaLogado);
 
-        mockMvc.perform(patch("/api/auth/perfil")
+        mockMvc.perform(patch("/api/v1/auth/perfil")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Thiago Editado", "email", "novo@teste.com")))
                 .andExpect(status().isOk())
@@ -226,7 +226,7 @@ class AuthApiControllerTest {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
         logarComo(bolsistaLogado);
 
-        mockMvc.perform(patch("/api/auth/perfil")
+        mockMvc.perform(patch("/api/v1/auth/perfil")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Thiago Rocha", "email", "thiago@teste.com",
                                 "senhaAtual", SENHA_ATUAL, "senha", "novaSenha123", "confirmaSenha", "novaSenha123")))
@@ -243,7 +243,7 @@ class AuthApiControllerTest {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
         logarComo(bolsistaLogado);
 
-        mockMvc.perform(patch("/api/auth/perfil")
+        mockMvc.perform(patch("/api/v1/auth/perfil")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Thiago Rocha", "email", "thiago@teste.com",
                                 "senhaAtual", "chuteErrado", "senha", "hackeado123", "confirmaSenha", "hackeado123")))
@@ -258,7 +258,7 @@ class AuthApiControllerTest {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
         logarComo(bolsistaLogado);
 
-        mockMvc.perform(patch("/api/auth/perfil")
+        mockMvc.perform(patch("/api/v1/auth/perfil")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Thiago Rocha", "email", "thiago@teste.com",
                                 "senhaAtual", SENHA_ATUAL, "senha", "novaSenha123", "confirmaSenha", "outraCoisa")))
@@ -272,7 +272,7 @@ class AuthApiControllerTest {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
         logarComo(bolsistaLogado);
 
-        mockMvc.perform(patch("/api/auth/perfil")
+        mockMvc.perform(patch("/api/v1/auth/perfil")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Thiago Rocha", "email", "thiago@teste.com",
                                 "senhaAtual", SENHA_ATUAL, "senha", "123", "confirmaSenha", "123")))
@@ -285,7 +285,7 @@ class AuthApiControllerTest {
     void perfil_comNomeCurto_recusa() throws Exception {
         logarComo(bolsistaLogado);
 
-        mockMvc.perform(patch("/api/auth/perfil")
+        mockMvc.perform(patch("/api/v1/auth/perfil")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Jo", "email", "thiago@teste.com")))
                 .andExpect(status().isBadRequest())
@@ -304,7 +304,7 @@ class AuthApiControllerTest {
         when(professorService.buscarPorId(profId)).thenReturn(professor);
         logarComo(professor);
 
-        mockMvc.perform(patch("/api/auth/perfil")
+        mockMvc.perform(patch("/api/v1/auth/perfil")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Dr. Roberto Mendes", "email", "roberto@teste.com")))
                 .andExpect(status().isOk());
@@ -318,7 +318,7 @@ class AuthApiControllerTest {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(null);
         logarComo(bolsistaLogado);
 
-        mockMvc.perform(patch("/api/auth/perfil")
+        mockMvc.perform(patch("/api/v1/auth/perfil")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Thiago Rocha", "email", "thiago@teste.com")))
                 .andExpect(status().isNotFound());
@@ -328,7 +328,7 @@ class AuthApiControllerTest {
     void cadastroAdmin_dentroDoLimite_cria() throws Exception {
         when(bolsistaService.contarAdmins()).thenReturn(1);
 
-        mockMvc.perform(post("/api/auth/cadastro-admin")
+        mockMvc.perform(post("/api/v1/auth/cadastro-admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Novo Admin", "email", "novo@teste.com",
                                 "senha", "123456", "confirmaSenha", "123456")))
@@ -344,7 +344,7 @@ class AuthApiControllerTest {
     void cadastroAdmin_noLimite_retorna409() throws Exception {
         when(bolsistaService.contarAdmins()).thenReturn(3);
 
-        mockMvc.perform(post("/api/auth/cadastro-admin")
+        mockMvc.perform(post("/api/v1/auth/cadastro-admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Quarto Admin", "email", "quarto@teste.com",
                                 "senha", "123456", "confirmaSenha", "123456")))
@@ -355,7 +355,7 @@ class AuthApiControllerTest {
 
     @Test
     void cadastroAdmin_comEmailInvalido_recusa() throws Exception {
-        mockMvc.perform(post("/api/auth/cadastro-admin")
+        mockMvc.perform(post("/api/v1/auth/cadastro-admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Alguem", "email", "nao-e-email",
                                 "senha", "123456", "confirmaSenha", "123456")))

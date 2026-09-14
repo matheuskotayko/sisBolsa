@@ -25,6 +25,7 @@ import {
 } from 'recharts';
 import { useToast } from '../contexts/ToastContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { BASE_URL } from '../services/api';
 import {
   relatorioService,
   type ResumoAdmin,
@@ -151,7 +152,7 @@ export const Relatorios: React.FC = () => {
           </div>
 
           <a
-            href="/api/usuarios/exportar"
+            href={`${BASE_URL}/usuarios/exportar`}
             className="btn-new btn-export"
             target="_blank"
             rel="noreferrer"

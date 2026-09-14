@@ -28,7 +28,7 @@ import java.util.List;
 
 @Tag(name = "Auditoria", description = "Trilha de auditoria para rastreamento de acessos, alterações de cadastros, logins e emissões de comprovantes.")
 @RestController
-@RequestMapping("/api/auditoria")
+@RequestMapping("/api/v1/auditoria")
 public class AuditoriaApiController {
 
     private static final int TAMANHO_PAGINA = 15;

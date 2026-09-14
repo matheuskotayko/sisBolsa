@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, BASE_URL } from './api';
 import type { Frequencia, FrequenciaRequest, FrequenciaResumo, Paginacao } from '../types';
 
 export const frequenciaService = {
@@ -31,6 +31,6 @@ export const frequenciaService = {
     if (params?.dataInicio) qs.append('dataInicio', params.dataInicio);
     if (params?.dataFim) qs.append('dataFim', params.dataFim);
     const str = qs.toString();
-    return `/api/frequencias/comprovante-pdf${str ? `?${str}` : ''}`;
+    return `${BASE_URL}/frequencias/comprovante-pdf${str ? `?${str}` : ''}`;
   },
 };

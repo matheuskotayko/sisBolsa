@@ -7,7 +7,7 @@ export class ApiError extends Error {
   }
 }
 
-const BASE_URL = '/api';
+export const BASE_URL = '/api/v1';
 
 async function request<T>(
   endpoint: string,
