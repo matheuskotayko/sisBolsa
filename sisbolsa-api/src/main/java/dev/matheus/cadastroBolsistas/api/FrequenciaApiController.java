@@ -24,7 +24,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -75,9 +74,8 @@ public class FrequenciaApiController {
             @Parameter(description = "Número da página", example = "1") @RequestParam(defaultValue = "1") int pagina,
             @Parameter(description = "ID do bolsista (UUID)") @RequestParam(required = false) UUID bolsistaId,
             @Parameter(description = "Data de início do intervalo", example = "2026-08-01") @RequestParam(required = false) LocalDate dataInicio,
-            @Parameter(description = "Data de término do intervalo", example = "2026-08-31") @RequestParam(required = false) LocalDate dataFim,
-            HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+            @Parameter(description = "Data de término do intervalo", example = "2026-08-31") @RequestParam(required = false) LocalDate dataFim) {
+        Usuario logado = usuarioLogado.obrigatorio();
         UUID filtro = logado.isBolsista() ? logado.getId() : bolsistaId;
 
         if (filtro != null) {
@@ -108,8 +106,8 @@ public class FrequenciaApiController {
             @ApiResponse(responseCode = "200", description = "Resumo de horas calculado")
     })
     @GetMapping("/resumo")
-    public Map<String, Double> resumo(@Parameter(description = "ID do bolsista (UUID)") @RequestParam(required = false) UUID bolsistaId, HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+    public Map<String, Double> resumo(@Parameter(description = "ID do bolsista (UUID)") @RequestParam(required = false) UUID bolsistaId) {
+        Usuario logado = usuarioLogado.obrigatorio();
         UUID alvo = logado.isBolsista() ? logado.getId()
                  : (bolsistaId != null ? bolsistaId : logado.getId());
         exigirPermissao(logado, alvo);
@@ -134,9 +132,8 @@ public class FrequenciaApiController {
             @Parameter(description = "ID do bolsista") @RequestParam(required = false) UUID bolsistaId,
             @Parameter(description = "Data inicial") @RequestParam(required = false) LocalDate dataInicio,
             @Parameter(description = "Data final") @RequestParam(required = false) LocalDate dataFim,
-            HttpSession session,
             HttpServletResponse response) throws java.io.IOException {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+        Usuario logado = usuarioLogado.obrigatorio();
         UUID filtro = logado.isBolsista() ? logado.getId() : bolsistaId;
         if (filtro != null) {
             exigirPermissao(logado, filtro);
@@ -179,9 +176,8 @@ public class FrequenciaApiController {
             @Parameter(description = "ID do bolsista") @RequestParam(required = false) UUID bolsistaId,
             @Parameter(description = "Data inicial de referência") @RequestParam(required = false) LocalDate dataInicio,
             @Parameter(description = "Data final de referência") @RequestParam(required = false) LocalDate dataFim,
-            HttpSession session,
             HttpServletResponse response) throws java.io.IOException {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+        Usuario logado = usuarioLogado.obrigatorio();
         UUID alvo = resolverBolsistaAlvo(logado, bolsistaId);
         exigirPermissao(logado, alvo);
 
@@ -218,8 +214,8 @@ public class FrequenciaApiController {
             @ApiResponse(responseCode = "404", description = "Frequência não encontrada", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public FrequenciaResponse buscar(@Parameter(description = "ID da frequência (UUID)", required = true) @PathVariable UUID id, HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+    public FrequenciaResponse buscar(@Parameter(description = "ID da frequência (UUID)", required = true) @PathVariable UUID id) {
+        Usuario logado = usuarioLogado.obrigatorio();
         Frequencia f = exigirFrequencia(id);
         exigirPermissao(logado, f.getBolsistaId());
         return FrequenciaResponse.de(f);
@@ -233,9 +229,8 @@ public class FrequenciaApiController {
     @PostMapping
     public ResponseEntity<FrequenciaResponse> registrar(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do apontamento de horas", required = true)
-            @RequestBody FrequenciaRequest body,
-            HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+            @RequestBody FrequenciaRequest body) {
+        Usuario logado = usuarioLogado.obrigatorio();
         validar(body);
 
         UUID alvo = resolverBolsistaAlvo(logado, body.bolsistaId());
@@ -262,9 +257,8 @@ public class FrequenciaApiController {
     public FrequenciaResponse atualizar(
             @Parameter(description = "ID da frequência (UUID)", required = true) @PathVariable UUID id,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados da frequência", required = true)
-            @RequestBody FrequenciaRequest body,
-            HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+            @RequestBody FrequenciaRequest body) {
+        Usuario logado = usuarioLogado.obrigatorio();
         Frequencia f = exigirFrequencia(id);
         exigirPermissao(logado, f.getBolsistaId());
         validar(body);
@@ -284,8 +278,8 @@ public class FrequenciaApiController {
             @ApiResponse(responseCode = "404", description = "Frequência não encontrada", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@Parameter(description = "ID da frequência (UUID)", required = true) @PathVariable UUID id, HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+    public ResponseEntity<Void> excluir(@Parameter(description = "ID da frequência (UUID)", required = true) @PathVariable UUID id) {
+        Usuario logado = usuarioLogado.obrigatorio();
         Frequencia f = exigirFrequencia(id);
         exigirPermissao(logado, f.getBolsistaId());
         frequenciaService.excluir(id);

@@ -25,7 +25,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -78,9 +77,8 @@ public class UsuarioApiController {
             @Parameter(description = "Quantidade de itens por página", example = "10") @RequestParam(required = false) Integer tamanho,
             @Parameter(description = "Filtro por perfil (ADMIN, PROFESSOR, BOLSISTA)", example = "BOLSISTA") @RequestParam(required = false) String tipo,
             @Parameter(description = "Filtro de busca textual por nome", example = "Lucas") @RequestParam(required = false) String buscaNome,
-            @Parameter(description = "Filtro de busca textual por curso", example = "Engenharia") @RequestParam(required = false) String buscaCurso,
-            HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+            @Parameter(description = "Filtro de busca textual por curso", example = "Engenharia") @RequestParam(required = false) String buscaCurso) {
+        Usuario logado = usuarioLogado.obrigatorio();
 
         ArrayList<Usuario> lista = new ArrayList<>();
         if (!StringUtil.estaVazio(buscaNome)) {
@@ -117,9 +115,8 @@ public class UsuarioApiController {
     @GetMapping("/{id}")
     public UsuarioResponse buscar(
             @Parameter(description = "ID do usuário (UUID)", required = true) @PathVariable UUID id,
-            @Parameter(description = "Tipo de perfil", example = "BOLSISTA") @RequestParam(defaultValue = "BOLSISTA") String tipo,
-            HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+            @Parameter(description = "Tipo de perfil", example = "BOLSISTA") @RequestParam(defaultValue = "BOLSISTA") String tipo) {
+        Usuario logado = usuarioLogado.obrigatorio();
 
         if ("PROFESSOR".equalsIgnoreCase(tipo)) {
             usuarioLogado.exigirAdmin(logado);
@@ -167,8 +164,8 @@ public class UsuarioApiController {
             @ApiResponse(responseCode = "403", description = "Acesso negado para bolsistas", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/exportar")
-    public void exportar(HttpSession session, HttpServletResponse response) throws java.io.IOException {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+    public void exportar(HttpServletResponse response) throws java.io.IOException {
+        Usuario logado = usuarioLogado.obrigatorio();
         usuarioLogado.exigir(!logado.isBolsista(), "Bolsista nao exporta a lista de usuarios.");
 
         ArrayList<Usuario> lista = new ArrayList<>(bolsistaService.listarTodos());
@@ -208,8 +205,8 @@ public class UsuarioApiController {
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}/projetos")
-    public List<ProjetoResponse> projetos(@Parameter(description = "ID do bolsista", required = true) @PathVariable UUID id, HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+    public List<ProjetoResponse> projetos(@Parameter(description = "ID do bolsista", required = true) @PathVariable UUID id) {
+        Usuario logado = usuarioLogado.obrigatorio();
         Bolsista b = bolsistaService.buscarPorId(id);
         if (b == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario nao encontrado.");
@@ -227,9 +224,8 @@ public class UsuarioApiController {
     })
     @PostMapping
     public ResponseEntity<UsuarioResponse> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do usuário a ser cadastrado", required = true)
-                                                 @RequestBody BolsistaRequest body,
-                                                 HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+                                                 @RequestBody BolsistaRequest body) {
+        Usuario logado = usuarioLogado.obrigatorio();
         usuarioLogado.exigir(!logado.isBolsista(), "Bolsista nao cadastra usuario.");
         validarObrigatorios(body, true);
 
@@ -270,9 +266,8 @@ public class UsuarioApiController {
     @PutMapping("/{id}")
     public UsuarioResponse atualizar(@Parameter(description = "ID do usuário a atualizar", required = true) @PathVariable UUID id,
                                      @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do usuário", required = true)
-                                     @RequestBody BolsistaRequest body,
-                                     HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+                                     @RequestBody BolsistaRequest body) {
+        Usuario logado = usuarioLogado.obrigatorio();
         validarObrigatorios(body, false);
 
         if ("PROFESSOR".equalsIgnoreCase(body.tipoUsuario())) {
@@ -314,9 +309,8 @@ public class UsuarioApiController {
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@Parameter(description = "ID do usuário a desativar", required = true) @PathVariable UUID id,
-                                        @Parameter(description = "Tipo de usuário", example = "BOLSISTA") @RequestParam(defaultValue = "BOLSISTA") String tipo,
-                                        HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+                                        @Parameter(description = "Tipo de usuário", example = "BOLSISTA") @RequestParam(defaultValue = "BOLSISTA") String tipo) {
+        Usuario logado = usuarioLogado.obrigatorio();
 
         if ("PROFESSOR".equalsIgnoreCase(tipo)) {
             usuarioLogado.exigirAdmin(logado);

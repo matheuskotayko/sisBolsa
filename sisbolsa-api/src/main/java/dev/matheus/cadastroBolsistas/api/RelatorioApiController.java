@@ -13,7 +13,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -52,8 +51,8 @@ public class RelatorioApiController {
             @ApiResponse(responseCode = "403", description = "Acesso negado para perfis não administradores", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/resumo")
-    public Map<String, Object> resumo(HttpSession session) {
-        exigirAdmin(session);
+    public Map<String, Object> resumo() {
+        exigirAdmin();
         return Map.of(
                 "totalBolsistas", bolsistaService.listarTodos().size(),
                 "totalLaboratorios", laboratorioService.listarTodos().size(),
@@ -66,8 +65,8 @@ public class RelatorioApiController {
             @ApiResponse(responseCode = "403", description = "Acesso restrito ao perfil ADMIN", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/horas-mes")
-    public List<RelatorioRepository.HorasBolsista> horasDoMes(HttpSession session) {
-        exigirAdmin(session);
+    public List<RelatorioRepository.HorasBolsista> horasDoMes() {
+        exigirAdmin();
         return relatorioService.getHorasBolsistasMesCorrente();
     }
 
@@ -77,8 +76,8 @@ public class RelatorioApiController {
             @ApiResponse(responseCode = "403", description = "Acesso restrito ao perfil ADMIN", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/projetos-por-laboratorio")
-    public List<RelatorioRepository.ProjetosPorLaboratorio> projetosPorLaboratorio(HttpSession session) {
-        exigirAdmin(session);
+    public List<RelatorioRepository.ProjetosPorLaboratorio> projetosPorLaboratorio() {
+        exigirAdmin();
         return relatorioService.getProjetosAtivosPorLaboratorio();
     }
 
@@ -88,8 +87,8 @@ public class RelatorioApiController {
             @ApiResponse(responseCode = "403", description = "Acesso restrito ao perfil ADMIN", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/bolsistas-por-cargo")
-    public List<RelatorioRepository.BolsistasPorCargo> bolsistasPorCargo(HttpSession session) {
-        exigirAdmin(session);
+    public List<RelatorioRepository.BolsistasPorCargo> bolsistasPorCargo() {
+        exigirAdmin();
         return relatorioService.getBolsistasPorCargo();
     }
 
@@ -99,13 +98,13 @@ public class RelatorioApiController {
             @ApiResponse(responseCode = "403", description = "Acesso restrito ao perfil ADMIN", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/ocupacao")
-    public List<RelatorioRepository.OcupacaoLaboratorio> ocupacao(HttpSession session) {
-        exigirAdmin(session);
+    public List<RelatorioRepository.OcupacaoLaboratorio> ocupacao() {
+        exigirAdmin();
         return relatorioService.getLaboratoriosOcupacao();
     }
 
-    private void exigirAdmin(HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+    private void exigirAdmin() {
+        Usuario logado = usuarioLogado.obrigatorio();
         usuarioLogado.exigirAdmin(logado);
     }
 }

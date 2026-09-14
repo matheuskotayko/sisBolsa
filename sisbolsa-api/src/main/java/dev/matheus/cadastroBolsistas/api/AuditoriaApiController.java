@@ -15,7 +15,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -54,9 +53,8 @@ public class AuditoriaApiController {
             @Parameter(description = "Filtro por entidade afetada", example = "AUTH") @RequestParam(required = false) String entidade,
             @Parameter(description = "Filtro por ação realizada", example = "LOGIN") @RequestParam(required = false) String acao,
             @Parameter(description = "Data de início", example = "2026-08-01") @RequestParam(required = false) LocalDate dataInicio,
-            @Parameter(description = "Data de término", example = "2026-08-31") @RequestParam(required = false) LocalDate dataFim,
-            HttpSession session) {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+            @Parameter(description = "Data de término", example = "2026-08-31") @RequestParam(required = false) LocalDate dataFim) {
+        Usuario logado = usuarioLogado.obrigatorio();
         usuarioLogado.exigir(logado.isAdmin() || logado.isProfessor(), "Acesso restrito a administradores e professores.");
 
         LocalDateTime inicio = dataInicio != null ? dataInicio.atStartOfDay() : null;
@@ -83,9 +81,8 @@ public class AuditoriaApiController {
             @Parameter(description = "Filtro por ação") @RequestParam(required = false) String acao,
             @Parameter(description = "Data inicial") @RequestParam(required = false) LocalDate dataInicio,
             @Parameter(description = "Data final") @RequestParam(required = false) LocalDate dataFim,
-            HttpSession session,
             HttpServletResponse response) throws IOException {
-        Usuario logado = usuarioLogado.obrigatorio(session);
+        Usuario logado = usuarioLogado.obrigatorio();
         usuarioLogado.exigir(logado.isAdmin() || logado.isProfessor(), "Acesso restrito a administradores e professores.");
 
         LocalDateTime inicio = dataInicio != null ? dataInicio.atStartOfDay() : null;
