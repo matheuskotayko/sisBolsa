@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -229,9 +230,8 @@ public class FrequenciaApiController {
     @PostMapping
     public ResponseEntity<FrequenciaResponse> registrar(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do apontamento de horas", required = true)
-            @RequestBody FrequenciaRequest body) {
+            @Valid @RequestBody FrequenciaRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
-        validar(body);
 
         UUID alvo = resolverBolsistaAlvo(logado, body.bolsistaId());
         exigirPermissao(logado, alvo);
@@ -257,11 +257,10 @@ public class FrequenciaApiController {
     public FrequenciaResponse atualizar(
             @Parameter(description = "ID da frequência (UUID)", required = true) @PathVariable UUID id,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados da frequência", required = true)
-            @RequestBody FrequenciaRequest body) {
+            @Valid @RequestBody FrequenciaRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
         Frequencia f = exigirFrequencia(id);
         exigirPermissao(logado, f.getBolsistaId());
-        validar(body);
 
         f.setData(body.data());
         f.setHorasTrabalhadas(body.horasTrabalhadas());
@@ -334,15 +333,4 @@ public class FrequenciaApiController {
         return f;
     }
 
-    private void validar(FrequenciaRequest body) {
-        if (body.data() == null) {
-            throw new IllegalArgumentException("Data da frequencia e obrigatoria.");
-        }
-        if (body.horasTrabalhadas() == null || body.horasTrabalhadas() < 0.5 || body.horasTrabalhadas() > 24) {
-            throw new IllegalArgumentException("Horas trabalhadas precisam ser entre 0.5 e 24.");
-        }
-        if (StringUtil.estaVazio(body.descricao())) {
-            throw new IllegalArgumentException("Descricao da atividade e obrigatoria.");
-        }
-    }
 }

@@ -1,17 +1,22 @@
 package dev.matheus.cadastroBolsistas.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import java.util.UUID;
 
 @Schema(description = "Dados para criação ou edição de um projeto de pesquisa.")
 public record ProjetoRequest(
+        @NotBlank(message = "Nome do projeto e obrigatorio.")
         @Schema(description = "Título / Nome do projeto de pesquisa", example = "Processamento de Linguagem Natural para Documentos Médicos", requiredMode = Schema.RequiredMode.REQUIRED)
         String nome,
 
+        @NotBlank(message = "Descricao do projeto e obrigatoria.")
         @Schema(description = "Descrição dos objetivos e escopo do projeto", example = "Desenvolvimento de modelos LLM para sumarização de prontuários clínicos.", requiredMode = Schema.RequiredMode.REQUIRED)
         String descricao,
 
+        @NotNull(message = "Projeto precisa estar vinculado a um laboratorio.")
         @Schema(description = "ID do laboratório ao qual o projeto pertence", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6", requiredMode = Schema.RequiredMode.REQUIRED)
         UUID laboratorioId,
 

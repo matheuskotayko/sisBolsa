@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -91,9 +92,8 @@ public class ProjetoApiController {
     })
     @PostMapping
     public ResponseEntity<ProjetoResponse> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do projeto", required = true)
-                                                 @RequestBody ProjetoRequest body) {
+                                                 @Valid @RequestBody ProjetoRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
-        validar(body);
         usuarioLogado.exigir(laboratorioService.podeGerenciar(logado, body.laboratorioId()),
                 "Sem permissao para criar projeto neste laboratorio.");
 
@@ -114,10 +114,9 @@ public class ProjetoApiController {
     @PutMapping("/{id}")
     public ProjetoResponse atualizar(@Parameter(description = "ID do projeto (UUID)", required = true) @PathVariable UUID id,
                                      @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do projeto", required = true)
-                                     @RequestBody ProjetoRequest body) {
+                                     @Valid @RequestBody ProjetoRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
         Projeto p = exigirProjeto(id);
-        validar(body);
         exigirPermissaoNoLab(logado, p.getLaboratorioId());
         usuarioLogado.exigir(laboratorioService.podeGerenciar(logado, body.laboratorioId()),
                 "Sem permissao para mover o projeto para este laboratorio.");
@@ -195,15 +194,6 @@ public class ProjetoApiController {
     private void exigirPermissaoNoLab(Usuario logado, UUID labId) {
         usuarioLogado.exigir(laboratorioService.podeGerenciar(logado, labId),
                 "Sem permissao para gerenciar projetos deste laboratorio.");
-    }
-
-    private void validar(ProjetoRequest body) {
-        if (StringUtil.estaVazio(body.nome())) {
-            throw new IllegalArgumentException("Nome do projeto e obrigatorio.");
-        }
-        if (body.laboratorioId() == null) {
-            throw new IllegalArgumentException("Projeto precisa estar vinculado a um laboratorio.");
-        }
     }
 
     private void aplicar(Projeto p, ProjetoRequest body) {

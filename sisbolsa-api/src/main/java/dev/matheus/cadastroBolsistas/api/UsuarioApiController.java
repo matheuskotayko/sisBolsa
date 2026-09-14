@@ -25,6 +25,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -224,10 +225,10 @@ public class UsuarioApiController {
     })
     @PostMapping
     public ResponseEntity<UsuarioResponse> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do usuário a ser cadastrado", required = true)
-                                                 @RequestBody BolsistaRequest body) {
+                                                 @Valid @RequestBody BolsistaRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
         usuarioLogado.exigir(!logado.isBolsista(), "Bolsista nao cadastra usuario.");
-        validarObrigatorios(body, true);
+        validarSenha(body, true);
 
         if ("PROFESSOR".equalsIgnoreCase(body.tipoUsuario())) {
             usuarioLogado.exigirAdmin(logado);
@@ -266,9 +267,9 @@ public class UsuarioApiController {
     @PutMapping("/{id}")
     public UsuarioResponse atualizar(@Parameter(description = "ID do usuário a atualizar", required = true) @PathVariable UUID id,
                                      @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do usuário", required = true)
-                                     @RequestBody BolsistaRequest body) {
+                                     @Valid @RequestBody BolsistaRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
-        validarObrigatorios(body, false);
+        validarSenha(body, false);
 
         if ("PROFESSOR".equalsIgnoreCase(body.tipoUsuario())) {
             usuarioLogado.exigirAdmin(logado);
@@ -333,13 +334,12 @@ public class UsuarioApiController {
         return ResponseEntity.noContent().build();
     }
 
-    private void validarObrigatorios(BolsistaRequest body, boolean exigirSenha) {
-        if (StringUtil.estaVazio(body.nome())) {
-            throw new IllegalArgumentException("Nome e obrigatorio.");
-        }
-        if (StringUtil.estaVazio(body.email())) {
-            throw new IllegalArgumentException("E-mail e obrigatorio.");
-        }
+    /*
+     * nome e email ja sao cobertos por bean validation no BolsistaRequest.
+     * a senha fica de fora de la porque a regra depende do contexto: obrigatoria
+     * na criacao, opcional na edicao (vazio = mantem a senha atual).
+     */
+    private void validarSenha(BolsistaRequest body, boolean exigirSenha) {
         if (exigirSenha && (StringUtil.estaVazio(body.senha()) || body.senha().length() < 6)) {
             throw new IllegalArgumentException("Senha e obrigatoria e precisa ter ao menos 6 caracteres.");
         }

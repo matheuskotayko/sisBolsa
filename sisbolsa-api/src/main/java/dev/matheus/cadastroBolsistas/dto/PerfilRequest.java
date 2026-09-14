@@ -1,16 +1,24 @@
 package dev.matheus.cadastroBolsistas.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 /*
  * atualizacao do proprio perfil. os tres campos de senha so importam juntos:
- * trocar a senha exige a atual, a nova e a confirmacao.
+ * trocar a senha exige a atual, a nova e a confirmacao - fica manual no
+ * controller porque e regra entre tres campos, bean validation nao cobre.
  */
 @Schema(description = "Dados para atualização de perfil e alteração opcional de senha.")
 public record PerfilRequest(
+        @NotBlank(message = "O nome deve ter pelo menos 3 caracteres.")
+        @Size(min = 3, message = "O nome deve ter pelo menos 3 caracteres.")
         @Schema(description = "Nome completo", example = "Maria Silva", requiredMode = Schema.RequiredMode.REQUIRED)
         String nome,
 
+        @NotBlank(message = "E-mail e obrigatorio.")
+        @Email(message = "Informe um e-mail valido.")
         @Schema(description = "E-mail de acesso", example = "maria.silva@sisbolsa.com", requiredMode = Schema.RequiredMode.REQUIRED)
         String email,
 
