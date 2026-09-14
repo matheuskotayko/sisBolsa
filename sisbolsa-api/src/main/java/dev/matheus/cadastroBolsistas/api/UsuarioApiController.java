@@ -27,6 +27,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -43,7 +45,7 @@ import java.util.UUID;
 
 @Tag(name = "Bolsistas & Usuários", description = "Gestão de bolsistas, professores e administradores, incluindo vigência, modalidades e cargos.")
 @RestController
-@RequestMapping("/api/usuarios")
+@RequestMapping("/api/v1/usuarios")
 public class UsuarioApiController {
 
     private static final int TAMANHO_PADRAO = 10;
@@ -117,7 +119,7 @@ public class UsuarioApiController {
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public UsuarioResponse buscar(
+    public EntityModel<UsuarioResponse> buscar(
             @Parameter(description = "ID do usuário (UUID)", required = true) @PathVariable UUID id,
             @Parameter(description = "Tipo de perfil", example = "BOLSISTA") @RequestParam(defaultValue = "BOLSISTA") String tipo) {
         Usuario logado = usuarioLogado.obrigatorio();
@@ -128,7 +130,7 @@ public class UsuarioApiController {
             if (p == null) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Professor nao encontrado.");
             }
-            return UsuarioResponse.de(p);
+            return comLinks(UsuarioResponse.de(p));
         }
 
         Bolsista b = bolsistaService.buscarPorId(id);
@@ -137,7 +139,7 @@ public class UsuarioApiController {
         }
         usuarioLogado.exigir(Objects.equals(logado.getId(), id) || bolsistaService.podeGerenciar(logado, b),
                 "Sem permissao para ver este usuario.");
-        return UsuarioResponse.de(b);
+        return comLinks(UsuarioResponse.de(b));
     }
 
     @Operation(summary = "Listar cargos disponíveis", description = "Retorna todos os cargos cadastrados para bolsistas nos laboratórios.")
@@ -225,7 +227,7 @@ public class UsuarioApiController {
             @ApiResponse(responseCode = "403", description = "Sem permissão para cadastrar usuários", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PostMapping
-    public ResponseEntity<UsuarioResponse> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do usuário a ser cadastrado", required = true)
+    public ResponseEntity<EntityModel<UsuarioResponse>> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do usuário a ser cadastrado", required = true)
                                                  @Valid @RequestBody BolsistaRequest body,
                                                  UriComponentsBuilder uriBuilder) {
         Usuario logado = usuarioLogado.obrigatorio();
@@ -240,8 +242,8 @@ public class UsuarioApiController {
             p.setAtivo(true);
             professorService.inserir(p);
             auditoriaService.registrar(logado, "CRIAR_PROFESSOR", "USUARIO", "Professor '" + p.getNome() + "' (" + p.getEmail() + ") cadastrado.", null);
-            URI uri = uriBuilder.replacePath("/api/usuarios/{id}").buildAndExpand(p.getId()).toUri();
-            return ResponseEntity.created(uri).body(UsuarioResponse.de(p));
+            URI uri = uriBuilder.replacePath("/api/v1/usuarios/{id}").buildAndExpand(p.getId()).toUri();
+            return ResponseEntity.created(uri).body(comLinks(UsuarioResponse.de(p)));
         }
 
         if ("ADMIN".equalsIgnoreCase(body.tipoUsuario())) {
@@ -257,8 +259,8 @@ public class UsuarioApiController {
         b.setSenha(passwordEncoder.encode(body.senha()));
         bolsistaService.inserir(b);
         auditoriaService.registrar(logado, "CRIAR_USUARIO", "USUARIO", "Usuário '" + b.getNome() + "' (" + b.getTipoUsuario() + ") cadastrado.", null);
-        URI uri = uriBuilder.replacePath("/api/usuarios/{id}").buildAndExpand(b.getId()).toUri();
-        return ResponseEntity.created(uri).body(UsuarioResponse.de(b));
+        URI uri = uriBuilder.replacePath("/api/v1/usuarios/{id}").buildAndExpand(b.getId()).toUri();
+        return ResponseEntity.created(uri).body(comLinks(UsuarioResponse.de(b)));
     }
 
     @Operation(summary = "Atualizar bolsista ou professor", description = "Atualiza os dados de um usuário existente. Se o campo de senha for enviado em branco, a senha atual é preservada.")
@@ -269,7 +271,7 @@ public class UsuarioApiController {
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PatchMapping("/{id}")
-    public UsuarioResponse atualizar(@Parameter(description = "ID do usuário a atualizar", required = true) @PathVariable UUID id,
+    public EntityModel<UsuarioResponse> atualizar(@Parameter(description = "ID do usuário a atualizar", required = true) @PathVariable UUID id,
                                      @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do usuário", required = true)
                                      @Valid @RequestBody BolsistaRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
@@ -287,7 +289,7 @@ public class UsuarioApiController {
             }
             professorService.atualizar(p);
             auditoriaService.registrar(logado, "ATUALIZAR_PROFESSOR", "USUARIO", "Professor '" + p.getNome() + "' atualizado.", null);
-            return UsuarioResponse.de(p);
+            return comLinks(UsuarioResponse.de(p));
         }
 
         Bolsista b = bolsistaService.buscarPorId(id);
@@ -303,7 +305,7 @@ public class UsuarioApiController {
         b.setSenha(StringUtil.estaVazio(body.senha()) ? senhaAtual : passwordEncoder.encode(body.senha()));
         bolsistaService.atualizar(b);
         auditoriaService.registrar(logado, "ATUALIZAR_USUARIO", "USUARIO", "Usuário '" + b.getNome() + "' atualizado.", null);
-        return UsuarioResponse.de(b);
+        return comLinks(UsuarioResponse.de(b));
     }
 
     @Operation(summary = "Desativar usuário (Soft Delete)", description = "Desativa um usuário (bolsista ou professor), mantendo o histórico de frequência e projetos íntegros no banco de dados.")
@@ -394,5 +396,18 @@ public class UsuarioApiController {
 
     private PaginaResponse<UsuarioResponse> paginar(List<Usuario> lista, int pagina, Integer tamanhoPedido) {
         return PaginacaoUtil.paginar(lista, pagina, tamanhoPedido, TAMANHO_PADRAO, TAMANHO_MAXIMO, UsuarioResponse::de);
+    }
+
+    private EntityModel<UsuarioResponse> comLinks(UsuarioResponse resp) {
+        String tipoQuery = "PROFESSOR".equalsIgnoreCase(resp.tipoUsuario()) ? "?tipo=PROFESSOR" : "";
+        EntityModel<UsuarioResponse> modelo = EntityModel.of(resp,
+                Link.of("/api/v1/usuarios/" + resp.id() + tipoQuery).withSelfRel());
+        if (!"PROFESSOR".equalsIgnoreCase(resp.tipoUsuario())) {
+            modelo.add(Link.of("/api/v1/usuarios/" + resp.id() + "/projetos").withRel("projetos"));
+        }
+        if (resp.laboratorioId() != null) {
+            modelo.add(Link.of("/api/v1/laboratorios/" + resp.laboratorioId()).withRel("laboratorio"));
+        }
+        return modelo;
     }
 }

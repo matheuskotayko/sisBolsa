@@ -37,12 +37,12 @@ public class SecurityConfig {
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/api/auth/login",
-                    "/api/auth/cadastro-admin",
-                    "/api/auth/password-reset-requests",
-                    "/api/auth/password-resets"
+                    "/api/v1/auth/login",
+                    "/api/v1/auth/cadastro-admin",
+                    "/api/v1/auth/password-reset-requests",
+                    "/api/v1/auth/password-resets"
                 ).permitAll()
-                .requestMatchers("/api/relatorios/**").hasRole("ADMIN")
+                .requestMatchers("/api/v1/relatorios/**").hasRole("ADMIN")
                 .anyRequest().authenticated())
             .formLogin(form -> form.disable())
             .httpBasic(basic -> basic.disable())

@@ -22,6 +22,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +36,7 @@ import java.util.UUID;
 
 @Tag(name = "Laboratórios", description = "Gerenciamento de laboratórios de pesquisa, equipe alocada, capacidade e cálculo de ocupação.")
 @RestController
-@RequestMapping("/api/laboratorios")
+@RequestMapping("/api/v1/laboratorios")
 public class LaboratorioApiController {
 
     private static final int TAMANHO_PADRAO = 10;
@@ -94,9 +96,9 @@ public class LaboratorioApiController {
             @ApiResponse(responseCode = "404", description = "Laboratório não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public LaboratorioResponse buscar(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id) {
+    public EntityModel<LaboratorioResponse> buscar(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id) {
         usuarioLogado.obrigatorio();
-        return comOcupacao(exigirLab(id));
+        return comLinks(comOcupacao(exigirLab(id)));
     }
 
     @Operation(summary = "Listar bolsistas de um laboratório", description = "Retorna a lista completa de bolsistas e pesquisadores vinculados ao laboratório informado.")
@@ -132,7 +134,7 @@ public class LaboratorioApiController {
             @ApiResponse(responseCode = "403", description = "Sem permissão de administrador", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PostMapping
-    public ResponseEntity<LaboratorioResponse> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do laboratório", required = true)
+    public ResponseEntity<EntityModel<LaboratorioResponse>> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do laboratório", required = true)
                                                      @Valid @RequestBody LaboratorioRequest body,
                                                      UriComponentsBuilder uriBuilder) {
         Usuario logado = usuarioLogado.obrigatorio();
@@ -142,8 +144,8 @@ public class LaboratorioApiController {
         aplicar(lab, body);
         laboratorioService.cadastrar(lab);
         auditoriaService.registrar(logado, "CRIAR_LABORATORIO", "LABORATORIO", "Laboratório '" + lab.getNome() + "' criado com sucesso.", null);
-        URI uri = uriBuilder.replacePath("/api/laboratorios/{id}").buildAndExpand(lab.getId()).toUri();
-        return ResponseEntity.created(uri).body(comOcupacao(lab));
+        URI uri = uriBuilder.replacePath("/api/v1/laboratorios/{id}").buildAndExpand(lab.getId()).toUri();
+        return ResponseEntity.created(uri).body(comLinks(comOcupacao(lab)));
     }
 
     @Operation(summary = "Atualizar laboratório", description = "Atualiza os dados de capacidade, nome, área de pesquisa ou coordenador do laboratório.")
@@ -154,7 +156,7 @@ public class LaboratorioApiController {
             @ApiResponse(responseCode = "404", description = "Laboratório não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PutMapping("/{id}")
-    public LaboratorioResponse atualizar(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id,
+    public EntityModel<LaboratorioResponse> atualizar(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id,
                                          @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do laboratório", required = true)
                                          @Valid @RequestBody LaboratorioRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
@@ -165,7 +167,7 @@ public class LaboratorioApiController {
         lab.setAtivo(true);
         laboratorioService.atualizar(lab);
         auditoriaService.registrar(logado, "ATUALIZAR_LABORATORIO", "LABORATORIO", "Laboratório '" + lab.getNome() + "' atualizado.", null);
-        return comOcupacao(lab);
+        return comLinks(comOcupacao(lab));
     }
 
     @Operation(summary = "Desativar laboratório (Soft Delete)", description = "Desativa o laboratório no sistema.")
@@ -202,5 +204,16 @@ public class LaboratorioApiController {
 
     private LaboratorioResponse comOcupacao(Laboratorio lab) {
         return LaboratorioResponse.de(lab, laboratorioService.contarBolsistasNoLaboratorio(lab.getId()));
+    }
+
+    private EntityModel<LaboratorioResponse> comLinks(LaboratorioResponse resp) {
+        EntityModel<LaboratorioResponse> modelo = EntityModel.of(resp,
+                Link.of("/api/v1/laboratorios/" + resp.id()).withSelfRel(),
+                Link.of("/api/v1/laboratorios/" + resp.id() + "/bolsistas").withRel("bolsistas"),
+                Link.of("/api/v1/laboratorios/" + resp.id() + "/projetos").withRel("projetos"));
+        if (resp.coordenadorId() != null) {
+            modelo.add(Link.of("/api/v1/usuarios/" + resp.coordenadorId() + "?tipo=PROFESSOR").withRel("coordenador"));
+        }
+        return modelo;
     }
 }

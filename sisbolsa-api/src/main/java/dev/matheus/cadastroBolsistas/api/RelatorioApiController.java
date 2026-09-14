@@ -26,7 +26,7 @@ import java.util.Map;
  */
 @Tag(name = "Relatórios & Estatísticas", description = "Métricas consolidadas do sistema e indicadores de desempenho (exclusivo para perfil ADMIN).")
 @RestController
-@RequestMapping("/api/relatorios")
+@RequestMapping("/api/v1/relatorios")
 public class RelatorioApiController {
 
     private final RelatorioService relatorioService;

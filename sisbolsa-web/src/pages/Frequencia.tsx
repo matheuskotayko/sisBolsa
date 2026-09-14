@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { BASE_URL } from '../services/api';
 import { frequenciaService } from '../services/frequenciaService';
 import { usuarioService } from '../services/usuarioService';
 import type { Frequencia, FrequenciaRequest, FrequenciaResumo, Paginacao, Usuario } from '../types';
@@ -171,7 +172,7 @@ export const FrequenciaPage: React.FC = () => {
     if (dataInicio) params.append('dataInicio', dataInicio);
     if (dataFim) params.append('dataFim', dataFim);
     const qs = params.toString();
-    return `/api/frequencias/exportar${qs ? `?${qs}` : ''}`;
+    return `${BASE_URL}/frequencias/exportar${qs ? `?${qs}` : ''}`;
   };
 
   const getPdfUrl = () => {
