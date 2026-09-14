@@ -14,14 +14,6 @@ export const Laboratorios: React.FC = () => {
   const { canManage, isAdmin } = useAuth();
   const { showToast } = useToast();
 
-  /*
-   * a busca abaixo e client-side sobre a pagina inteira - o backend nao tem
-   * filtro por nome pra laboratorios. por isso pedimos uma pagina grande
-   * (tamanho maximo) em vez de paginar de fato: hoje o numero de laboratorios
-   * de um departamento fica bem abaixo disso, entao na pratica isso continua
-   * trazendo "tudo" como antes. o <Pagination> abaixo so aparece se um dia
-   * passar dos 200 registros.
-   */
   const [paginacao, setPaginacao] = useState<Paginacao<Laboratorio>>({
     itens: [],
     totalItens: 0,
@@ -49,7 +41,7 @@ export const Laboratorios: React.FC = () => {
     setLoading(true);
     try {
       const [labs, usersData] = await Promise.all([
-        laboratorioService.listar({ pagina: pag, tamanho: 200 }),
+        laboratorioService.listar({ pagina: pag, buscaNome: busca.trim() || undefined }),
         isAdmin ? usuarioService.listar({ tipo: 'PROFESSOR', tamanho: 100 }) : Promise.resolve({ itens: [] }),
       ]);
       setPaginacao(labs);
@@ -63,8 +55,9 @@ export const Laboratorios: React.FC = () => {
   };
 
   useEffect(() => {
-    carregarDados();
-  }, []);
+    setPagina(1);
+    carregarDados(1);
+  }, [busca]);
 
   const handleOpenCreate = () => {
     setEditingId(null);
@@ -128,13 +121,6 @@ export const Laboratorios: React.FC = () => {
     }
   };
 
-  const labsFiltrados = paginacao.itens.filter(
-    (l) =>
-      l.nome.toLowerCase().includes(busca.toLowerCase()) ||
-      l.areaPesquisa.toLowerCase().includes(busca.toLowerCase()) ||
-      (l.coordenador && l.coordenador.toLowerCase().includes(busca.toLowerCase()))
-  );
-
   return (
     <div>
       <div className="header-actions">
@@ -197,14 +183,14 @@ export const Laboratorios: React.FC = () => {
                     Carregando laboratórios...
                   </td>
                 </tr>
-              ) : labsFiltrados.length === 0 ? (
+              ) : paginacao.itens.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="empty-state-cell">
                     Nenhum laboratório encontrado.
                   </td>
                 </tr>
               ) : (
-                labsFiltrados.map((lab) => {
+                paginacao.itens.map((lab) => {
                   const percentual = Math.min(100, Math.round(((lab.totalBolsistas || 0) / (lab.capacidade || 1)) * 100));
                   return (
                     <tr key={lab.id}>

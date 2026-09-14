@@ -44,6 +44,11 @@ public class LaboratorioService {
         return new ArrayList<>(repository.findByAtivoTrueOrderByNome());
     }
 
+    public ArrayList<Laboratorio> buscarLaboratorios(String buscaNome) {
+        String nome = buscaNome != null ? buscaNome.trim() : "";
+        return new ArrayList<>(repository.buscarLaboratorios(nome));
+    }
+
     public ArrayList<Laboratorio> listarPorCoordenador(UUID professorId) {
         if (professorId == null) return new ArrayList<>();
         return new ArrayList<>(repository.buscarPorCoordenador(professorId));
