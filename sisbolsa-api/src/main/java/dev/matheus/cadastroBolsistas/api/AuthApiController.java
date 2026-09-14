@@ -33,7 +33,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.util.Map;
 
 @Tag(name = "Autenticação", description = "Endpoints para autenticação, controle de sessão via JWT HttpOnly, perfil e recuperação de senha.")
@@ -238,7 +240,8 @@ public class AuthApiController {
     })
     @PostMapping("/cadastro-admin")
     public ResponseEntity<UsuarioResponse> cadastrarAdmin(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados para cadastro de administrador", required = true)
-                                                         @Valid @RequestBody CadastroAdminRequest body) {
+                                                         @Valid @RequestBody CadastroAdminRequest body,
+                                                         UriComponentsBuilder uriBuilder) {
         String nome = StringUtil.limpar(body.nome());
         String email = StringUtil.limpar(body.email());
         String senha = StringUtil.limpar(body.senha());
@@ -263,7 +266,9 @@ public class AuthApiController {
         admin.setMatricula("ADM001");
         bolsistaService.inserir(admin);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(UsuarioResponse.de(admin));
+        /* admin cadastrado aqui vira um Bolsista com tipoUsuario=ADMIN, o recurso mora em /api/usuarios */
+        URI uri = uriBuilder.replacePath("/api/usuarios/{id}").buildAndExpand(admin.getId()).toUri();
+        return ResponseEntity.created(uri).body(UsuarioResponse.de(admin));
     }
 
     @Operation(summary = "Solicitar código de recuperação de senha", description = "Gera um código temporário de 6 dígitos válido por 15 minutos para o e-mail cadastrado.")

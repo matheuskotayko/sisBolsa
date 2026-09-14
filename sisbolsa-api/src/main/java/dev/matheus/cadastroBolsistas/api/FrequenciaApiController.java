@@ -29,7 +29,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -230,7 +232,8 @@ public class FrequenciaApiController {
     @PostMapping
     public ResponseEntity<FrequenciaResponse> registrar(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do apontamento de horas", required = true)
-            @Valid @RequestBody FrequenciaRequest body) {
+            @Valid @RequestBody FrequenciaRequest body,
+            UriComponentsBuilder uriBuilder) {
         Usuario logado = usuarioLogado.obrigatorio();
 
         UUID alvo = resolverBolsistaAlvo(logado, body.bolsistaId());
@@ -244,7 +247,8 @@ public class FrequenciaApiController {
         f.setLinkComprovante(StringUtil.limpar(body.linkComprovante()));
         frequenciaService.registrar(f);
         auditoriaService.registrar(logado, "REGISTRAR_FREQUENCIA", "FREQUENCIA", "Apontamento de " + f.getHorasTrabalhadas() + "h para o dia " + f.getData() + ".", null);
-        return ResponseEntity.status(HttpStatus.CREATED).body(FrequenciaResponse.de(f));
+        URI uri = uriBuilder.replacePath("/api/frequencias/{id}").buildAndExpand(f.getId()).toUri();
+        return ResponseEntity.created(uri).body(FrequenciaResponse.de(f));
     }
 
     @Operation(summary = "Atualizar apontamento de frequência", description = "Altera as horas, data, descrição ou link de entregável de um registro de frequência.")

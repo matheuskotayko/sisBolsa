@@ -31,7 +31,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -225,7 +227,8 @@ public class UsuarioApiController {
     })
     @PostMapping
     public ResponseEntity<UsuarioResponse> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do usuário a ser cadastrado", required = true)
-                                                 @Valid @RequestBody BolsistaRequest body) {
+                                                 @Valid @RequestBody BolsistaRequest body,
+                                                 UriComponentsBuilder uriBuilder) {
         Usuario logado = usuarioLogado.obrigatorio();
         usuarioLogado.exigir(!logado.isBolsista(), "Bolsista nao cadastra usuario.");
         validarSenha(body, true);
@@ -238,7 +241,8 @@ public class UsuarioApiController {
             p.setAtivo(true);
             professorService.inserir(p);
             auditoriaService.registrar(logado, "CRIAR_PROFESSOR", "USUARIO", "Professor '" + p.getNome() + "' (" + p.getEmail() + ") cadastrado.", null);
-            return ResponseEntity.status(HttpStatus.CREATED).body(UsuarioResponse.de(p));
+            URI uri = uriBuilder.replacePath("/api/usuarios/{id}").buildAndExpand(p.getId()).toUri();
+            return ResponseEntity.created(uri).body(UsuarioResponse.de(p));
         }
 
         if ("ADMIN".equalsIgnoreCase(body.tipoUsuario())) {
@@ -254,7 +258,8 @@ public class UsuarioApiController {
         b.setSenha(passwordEncoder.encode(body.senha()));
         bolsistaService.inserir(b);
         auditoriaService.registrar(logado, "CRIAR_USUARIO", "USUARIO", "Usuário '" + b.getNome() + "' (" + b.getTipoUsuario() + ") cadastrado.", null);
-        return ResponseEntity.status(HttpStatus.CREATED).body(UsuarioResponse.de(b));
+        URI uri = uriBuilder.replacePath("/api/usuarios/{id}").buildAndExpand(b.getId()).toUri();
+        return ResponseEntity.created(uri).body(UsuarioResponse.de(b));
     }
 
     @Operation(summary = "Atualizar bolsista ou professor", description = "Atualiza os dados de um usuário existente. Se o campo de senha for enviado em branco, a senha atual é preservada.")
