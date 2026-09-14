@@ -24,7 +24,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -108,7 +110,8 @@ public class LaboratorioApiController {
     })
     @PostMapping
     public ResponseEntity<LaboratorioResponse> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do laboratório", required = true)
-                                                     @Valid @RequestBody LaboratorioRequest body) {
+                                                     @Valid @RequestBody LaboratorioRequest body,
+                                                     UriComponentsBuilder uriBuilder) {
         Usuario logado = usuarioLogado.obrigatorio();
         usuarioLogado.exigirAdmin(logado);
 
@@ -116,7 +119,8 @@ public class LaboratorioApiController {
         aplicar(lab, body);
         laboratorioService.cadastrar(lab);
         auditoriaService.registrar(logado, "CRIAR_LABORATORIO", "LABORATORIO", "Laboratório '" + lab.getNome() + "' criado com sucesso.", null);
-        return ResponseEntity.status(HttpStatus.CREATED).body(comOcupacao(lab));
+        URI uri = uriBuilder.replacePath("/api/laboratorios/{id}").buildAndExpand(lab.getId()).toUri();
+        return ResponseEntity.created(uri).body(comOcupacao(lab));
     }
 
     @Operation(summary = "Atualizar laboratório", description = "Atualiza os dados de capacidade, nome, área de pesquisa ou coordenador do laboratório.")

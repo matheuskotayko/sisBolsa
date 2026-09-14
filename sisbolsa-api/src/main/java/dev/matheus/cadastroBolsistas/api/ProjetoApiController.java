@@ -23,7 +23,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -92,7 +94,8 @@ public class ProjetoApiController {
     })
     @PostMapping
     public ResponseEntity<ProjetoResponse> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do projeto", required = true)
-                                                 @Valid @RequestBody ProjetoRequest body) {
+                                                 @Valid @RequestBody ProjetoRequest body,
+                                                 UriComponentsBuilder uriBuilder) {
         Usuario logado = usuarioLogado.obrigatorio();
         usuarioLogado.exigir(laboratorioService.podeGerenciar(logado, body.laboratorioId()),
                 "Sem permissao para criar projeto neste laboratorio.");
@@ -101,7 +104,8 @@ public class ProjetoApiController {
         aplicar(p, body);
         projetoService.cadastrar(p);
         auditoriaService.registrar(logado, "CRIAR_PROJETO", "PROJETO", "Projeto '" + p.getNome() + "' criado com sucesso.", null);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ProjetoResponse.de(p));
+        URI uri = uriBuilder.replacePath("/api/projetos/{id}").buildAndExpand(p.getId()).toUri();
+        return ResponseEntity.created(uri).body(ProjetoResponse.de(p));
     }
 
     @Operation(summary = "Atualizar projeto", description = "Atualiza o título, descrição, links externos de entregáveis ou laboratório de lotação do projeto.")
