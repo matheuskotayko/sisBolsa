@@ -1205,6 +1205,16 @@
                             "format": "int32"
                         },
                         "example": 10
+                    },
+                    {
+                        "name": "buscaNome",
+                        "in": "query",
+                        "description": "Filtro de busca por nome, \u00e1rea de pesquisa ou coordenador",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "Intelig\u00eancia"
                     }
                 ],
                 "responses": {

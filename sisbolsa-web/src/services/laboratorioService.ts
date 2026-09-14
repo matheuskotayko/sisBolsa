@@ -7,7 +7,7 @@ import type { Laboratorio, LaboratorioRequest, Projeto, Usuario, Paginacao } fro
 const TAMANHO_TODOS = 200;
 
 export const laboratorioService = {
-  listar: (params?: { pagina?: number; tamanho?: number }) =>
+  listar: (params?: { pagina?: number; tamanho?: number; buscaNome?: string }) =>
     api.get<Paginacao<Laboratorio>>('/laboratorios', params),
 
   listarTodos: () =>

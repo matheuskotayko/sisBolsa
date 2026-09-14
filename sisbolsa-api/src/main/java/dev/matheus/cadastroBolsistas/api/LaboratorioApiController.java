@@ -64,12 +64,28 @@ public class LaboratorioApiController {
     @GetMapping
     public PaginaResponse<LaboratorioResponse> listar(
             @Parameter(description = "Número da página", example = "1") @RequestParam(defaultValue = "1") int pagina,
-            @Parameter(description = "Quantidade de itens por página", example = "10") @RequestParam(required = false) Integer tamanho) {
+            @Parameter(description = "Quantidade de itens por página", example = "10") @RequestParam(required = false) Integer tamanho,
+            @Parameter(description = "Filtro de busca por nome, área de pesquisa ou coordenador", example = "Inteligência") @RequestParam(required = false) String buscaNome) {
         Usuario logado = usuarioLogado.obrigatorio();
         List<Laboratorio> labs = logado.isProfessor()
-                ? laboratorioService.listarPorCoordenador(logado.getId())
-                : laboratorioService.listarTodos();
+                ? filtrarPorTermo(laboratorioService.listarPorCoordenador(logado.getId()), buscaNome)
+                : laboratorioService.buscarLaboratorios(buscaNome);
         return PaginacaoUtil.paginar(labs, pagina, tamanho, TAMANHO_PADRAO, TAMANHO_MAXIMO, this::comOcupacao);
+    }
+
+    /* professor coordena poucos laboratorios - filtra em memoria em vez de virar mais uma query no banco */
+    private List<Laboratorio> filtrarPorTermo(List<Laboratorio> labs, String buscaNome) {
+        if (StringUtil.estaVazio(buscaNome)) {
+            return labs;
+        }
+        String termo = buscaNome.trim().toLowerCase();
+        return labs.stream()
+                .filter(l -> contem(l.getNome(), termo) || contem(l.getAreaPesquisa(), termo) || contem(l.getCoordenador(), termo))
+                .toList();
+    }
+
+    private boolean contem(String valor, String termo) {
+        return valor != null && valor.toLowerCase().contains(termo);
     }
 
     @Operation(summary = "Buscar laboratório por ID", description = "Retorna os detalhes de um laboratório específico incluindo capacidade e percentual de ocupação.")

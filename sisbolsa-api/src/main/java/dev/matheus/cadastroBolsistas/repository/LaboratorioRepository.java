@@ -15,6 +15,13 @@ public interface LaboratorioRepository extends JpaRepository<Laboratorio, UUID> 
 
     List<Laboratorio> findByAtivoTrueOrderByNome();
 
+    @Query("SELECT l FROM Laboratorio l LEFT JOIN l.coordenadorProfessor c WHERE l.ativo = true "
+            + "AND (LOWER(l.nome) LIKE LOWER(CONCAT('%', :buscaNome, '%')) "
+            + "  OR LOWER(l.areaPesquisa) LIKE LOWER(CONCAT('%', :buscaNome, '%')) "
+            + "  OR LOWER(c.nome) LIKE LOWER(CONCAT('%', :buscaNome, '%'))) "
+            + "ORDER BY l.nome")
+    List<Laboratorio> buscarLaboratorios(@Param("buscaNome") String buscaNome);
+
     @Query("SELECT l FROM Laboratorio l WHERE l.coordenadorId = :professorId AND l.ativo = true ORDER BY l.nome")
     List<Laboratorio> buscarPorCoordenador(@Param("professorId") UUID professorId);
 
