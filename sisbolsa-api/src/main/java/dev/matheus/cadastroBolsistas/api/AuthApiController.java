@@ -277,7 +277,7 @@ public class AuthApiController {
             @ApiResponse(responseCode = "400", description = "E-mail inválido", content = @Content(schema = @Schema(implementation = ErroResponse.class))),
             @ApiResponse(responseCode = "404", description = "E-mail não encontrado no sistema", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
-    @PostMapping("/esqueci-senha")
+    @PostMapping("/password-reset-requests")
     public Map<String, String> esqueciSenha(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "E-mail do usuário", required = true)
                                            @Valid @RequestBody EsqueciSenhaRequest body,
                                            HttpServletRequest request) {
@@ -304,7 +304,7 @@ public class AuthApiController {
             @ApiResponse(responseCode = "400", description = "Código inválido, expirado ou senhas divergentes", content = @Content(schema = @Schema(implementation = ErroResponse.class))),
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
-    @PostMapping("/redefinir-senha")
+    @PostMapping("/password-resets")
     public Map<String, String> redefinirSenha(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados para redefinição de senha", required = true)
                                               @Valid @RequestBody RedefinirSenhaRequest body,
                                               HttpServletRequest request) {

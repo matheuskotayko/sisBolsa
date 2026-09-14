@@ -21,8 +21,8 @@ export const authService = {
   }) => api.put<UsuarioAuth>('/auth/perfil', dados),
 
   esqueciSenha: (email: string) =>
-    api.post<{ mensagem: string; codigoDev?: string }>('/auth/esqueci-senha', { email }),
+    api.post<{ mensagem: string; codigoDev?: string }>('/auth/password-reset-requests', { email }),
 
   redefinirSenha: (dados: { email: string; codigo: string; novaSenha: string; confirmaSenha: string }) =>
-    api.post<{ mensagem: string }>('/auth/redefinir-senha', dados),
+    api.post<{ mensagem: string }>('/auth/password-resets', dados),
 };
