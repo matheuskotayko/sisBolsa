@@ -1,7 +1,9 @@
 package dev.matheus.cadastroBolsistas.service;
 
+import dev.matheus.cadastroBolsistas.dto.ProjetoRequest;
 import dev.matheus.cadastroBolsistas.model.Projeto;
 import dev.matheus.cadastroBolsistas.repository.ProjetoRepository;
+import dev.matheus.cadastroBolsistas.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,6 +56,14 @@ public class ProjetoService {
     public boolean atualizar(Projeto p) {
         repository.save(p);
         return true;
+    }
+
+    public void aplicar(Projeto p, ProjetoRequest body) {
+        p.setNome(StringUtil.limpar(body.nome()));
+        p.setDescricao(body.descricao());
+        p.setLaboratorioId(body.laboratorioId());
+        p.setLinkRepositorio(StringUtil.limpar(body.linkRepositorio()));
+        p.setLinkDocumentacao(StringUtil.limpar(body.linkDocumentacao()));
     }
 
     /* soft delete */

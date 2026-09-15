@@ -12,7 +12,6 @@ import dev.matheus.cadastroBolsistas.service.BolsistaService;
 import dev.matheus.cadastroBolsistas.service.LaboratorioService;
 import dev.matheus.cadastroBolsistas.service.ProjetoService;
 import dev.matheus.cadastroBolsistas.util.PaginacaoUtil;
-import dev.matheus.cadastroBolsistas.util.StringUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -112,7 +111,7 @@ public class ProjetoApiController {
                 "Sem permissao para criar projeto neste laboratorio.");
 
         Projeto p = new Projeto();
-        aplicar(p, body);
+        projetoService.aplicar(p, body);
         projetoService.cadastrar(p);
         auditoriaService.registrar(logado, "CRIAR_PROJETO", "PROJETO", "Projeto '" + p.getNome() + "' criado com sucesso.", null);
         URI uri = uriBuilder.replacePath("/api/v1/projetos/{id}").buildAndExpand(p.getId()).toUri();
@@ -136,7 +135,7 @@ public class ProjetoApiController {
         usuarioLogado.exigir(laboratorioService.podeGerenciar(logado, body.laboratorioId()),
                 "Sem permissao para mover o projeto para este laboratorio.");
 
-        aplicar(p, body);
+        projetoService.aplicar(p, body);
         p.setAtivo(true);
         projetoService.atualizar(p);
         auditoriaService.registrar(logado, "ATUALIZAR_PROJETO", "PROJETO", "Projeto '" + p.getNome() + "' atualizado.", null);
@@ -209,14 +208,6 @@ public class ProjetoApiController {
     private void exigirPermissaoNoLab(Usuario logado, UUID labId) {
         usuarioLogado.exigir(laboratorioService.podeGerenciar(logado, labId),
                 "Sem permissao para gerenciar projetos deste laboratorio.");
-    }
-
-    private void aplicar(Projeto p, ProjetoRequest body) {
-        p.setNome(StringUtil.limpar(body.nome()));
-        p.setDescricao(body.descricao());
-        p.setLaboratorioId(body.laboratorioId());
-        p.setLinkRepositorio(StringUtil.limpar(body.linkRepositorio()));
-        p.setLinkDocumentacao(StringUtil.limpar(body.linkDocumentacao()));
     }
 
     private ProjetoResponse comMembros(Projeto p) {

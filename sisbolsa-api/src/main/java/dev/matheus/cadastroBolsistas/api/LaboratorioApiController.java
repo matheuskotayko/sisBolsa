@@ -13,7 +13,6 @@ import dev.matheus.cadastroBolsistas.service.BolsistaService;
 import dev.matheus.cadastroBolsistas.service.LaboratorioService;
 import dev.matheus.cadastroBolsistas.service.ProjetoService;
 import dev.matheus.cadastroBolsistas.util.PaginacaoUtil;
-import dev.matheus.cadastroBolsistas.util.StringUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -70,24 +69,9 @@ public class LaboratorioApiController {
             @Parameter(description = "Filtro de busca por nome, área de pesquisa ou coordenador", example = "Inteligência") @RequestParam(required = false) String buscaNome) {
         Usuario logado = usuarioLogado.obrigatorio();
         List<Laboratorio> labs = logado.isProfessor()
-                ? filtrarPorTermo(laboratorioService.listarPorCoordenador(logado.getId()), buscaNome)
+                ? laboratorioService.filtrarPorTermo(laboratorioService.listarPorCoordenador(logado.getId()), buscaNome)
                 : laboratorioService.buscarLaboratorios(buscaNome);
         return PaginacaoUtil.paginar(labs, pagina, tamanho, TAMANHO_PADRAO, TAMANHO_MAXIMO, this::comOcupacao);
-    }
-
-    /* professor coordena poucos laboratorios - filtra em memoria em vez de virar mais uma query no banco */
-    private List<Laboratorio> filtrarPorTermo(List<Laboratorio> labs, String buscaNome) {
-        if (StringUtil.estaVazio(buscaNome)) {
-            return labs;
-        }
-        String termo = buscaNome.trim().toLowerCase();
-        return labs.stream()
-                .filter(l -> contem(l.getNome(), termo) || contem(l.getAreaPesquisa(), termo) || contem(l.getCoordenador(), termo))
-                .toList();
-    }
-
-    private boolean contem(String valor, String termo) {
-        return valor != null && valor.toLowerCase().contains(termo);
     }
 
     @Operation(summary = "Buscar laboratório por ID", description = "Retorna os detalhes de um laboratório específico incluindo capacidade e percentual de ocupação.")
@@ -141,7 +125,7 @@ public class LaboratorioApiController {
         usuarioLogado.exigirAdmin(logado);
 
         Laboratorio lab = new Laboratorio();
-        aplicar(lab, body);
+        laboratorioService.aplicar(lab, body);
         laboratorioService.cadastrar(lab);
         auditoriaService.registrar(logado, "CRIAR_LABORATORIO", "LABORATORIO", "Laboratório '" + lab.getNome() + "' criado com sucesso.", null);
         URI uri = uriBuilder.replacePath("/api/v1/laboratorios/{id}").buildAndExpand(lab.getId()).toUri();
@@ -163,7 +147,7 @@ public class LaboratorioApiController {
         Laboratorio lab = exigirLab(id);
         usuarioLogado.exigir(laboratorioService.podeGerenciar(logado, id), "Sem permissao para editar este laboratorio.");
 
-        aplicar(lab, body);
+        laboratorioService.aplicar(lab, body);
         lab.setAtivo(true);
         laboratorioService.atualizar(lab);
         auditoriaService.registrar(logado, "ATUALIZAR_LABORATORIO", "LABORATORIO", "Laboratório '" + lab.getNome() + "' atualizado.", null);
@@ -192,14 +176,6 @@ public class LaboratorioApiController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Laboratorio nao encontrado.");
         }
         return lab;
-    }
-
-    private void aplicar(Laboratorio lab, LaboratorioRequest body) {
-        lab.setNome(StringUtil.limpar(body.nome()));
-        lab.setAreaPesquisa(body.areaPesquisa());
-        lab.setStatus(StringUtil.estaVazio(body.status()) ? "Ativo" : body.status());
-        lab.setCapacidade(body.capacidade());
-        lab.setCoordenadorId(body.coordenadorId());
     }
 
     private LaboratorioResponse comOcupacao(Laboratorio lab) {

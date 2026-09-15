@@ -16,6 +16,8 @@ import dev.matheus.cadastroBolsistas.service.FrequenciaService;
 import dev.matheus.cadastroBolsistas.service.LaboratorioService;
 import dev.matheus.cadastroBolsistas.service.ProfessorService;
 import dev.matheus.cadastroBolsistas.util.ArquivoDownloadUtil;
+import dev.matheus.cadastroBolsistas.util.CsvUtil;
+import dev.matheus.cadastroBolsistas.util.PaginacaoUtil;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -37,7 +39,6 @@ import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 
 @Tag(name = "Frequência & Horas", description = "Controle de apontamento de horas, relatórios de produtividade, exportação CSV e emissão de comprovantes em PDF.")
@@ -84,7 +85,7 @@ public class FrequenciaApiController {
         UUID filtro = logado.isBolsista() ? logado.getId() : bolsistaId;
 
         if (filtro != null) {
-            exigirPermissao(logado, filtro);
+            usuarioLogado.exigir(frequenciaService.podeAcessar(logado, filtro), "Sem permissao para acessar as frequencias deste usuario.");
         }
 
         int total;
@@ -92,17 +93,17 @@ public class FrequenciaApiController {
         int atual;
 
         if (filtro == null && logado.isProfessor()) {
-            List<UUID> ids = idsDosMeusBolsistas(logado);
+            List<UUID> ids = bolsistaService.idsDosBolsistasCoordenadosPor(logado.getId());
             total = frequenciaService.contarPorBolsistas(ids, dataInicio, dataFim);
-            atual = paginaValida(pagina, total);
+            atual = PaginacaoUtil.paginaValida(pagina, PaginacaoUtil.totalPaginas(total, TAMANHO_PAGINA));
             pagina1 = frequenciaService.buscarPorBolsistas(ids, dataInicio, dataFim, TAMANHO_PAGINA, (atual - 1) * TAMANHO_PAGINA);
         } else {
             total = frequenciaService.contarFrequencias(filtro, dataInicio, dataFim);
-            atual = paginaValida(pagina, total);
+            atual = PaginacaoUtil.paginaValida(pagina, PaginacaoUtil.totalPaginas(total, TAMANHO_PAGINA));
             pagina1 = frequenciaService.buscarFrequencias(filtro, dataInicio, dataFim, TAMANHO_PAGINA, (atual - 1) * TAMANHO_PAGINA);
         }
 
-        int totalPaginas = Math.max(1, (int) Math.ceil(total / (double) TAMANHO_PAGINA));
+        int totalPaginas = PaginacaoUtil.totalPaginas(total, TAMANHO_PAGINA);
         return new PaginaResponse<>(pagina1.stream().map(FrequenciaResponse::de).toList(), atual, totalPaginas, total);
     }
 
@@ -115,7 +116,7 @@ public class FrequenciaApiController {
         Usuario logado = usuarioLogado.obrigatorio();
         UUID alvo = logado.isBolsista() ? logado.getId()
                  : (bolsistaId != null ? bolsistaId : logado.getId());
-        exigirPermissao(logado, alvo);
+        usuarioLogado.exigir(frequenciaService.podeAcessar(logado, alvo), "Sem permissao para acessar as frequencias deste usuario.");
 
         List<Frequencia> todas = frequenciaService.listarPorBolsista(alvo);
         LocalDate hoje = LocalDate.now();
@@ -140,32 +141,25 @@ public class FrequenciaApiController {
         Usuario logado = usuarioLogado.obrigatorio();
         UUID filtro = logado.isBolsista() ? logado.getId() : bolsistaId;
         if (filtro != null) {
-            exigirPermissao(logado, filtro);
+            usuarioLogado.exigir(frequenciaService.podeAcessar(logado, filtro), "Sem permissao para acessar as frequencias deste usuario.");
         }
 
         List<Frequencia> lista = (filtro == null && logado.isProfessor())
-                ? frequenciaService.buscarPorBolsistas(idsDosMeusBolsistas(logado), dataInicio, dataFim, null, null)
+                ? frequenciaService.buscarPorBolsistas(bolsistaService.idsDosBolsistasCoordenadosPor(logado.getId()), dataInicio, dataFim, null, null)
                 : frequenciaService.buscarFrequencias(filtro, dataInicio, dataFim, null, null);
 
         StringBuilder sb = new StringBuilder("ID,Bolsista,Data,Horas Trabalhadas,Descricao,LinkComprovante\n");
         for (Frequencia f : lista) {
             sb.append(String.join(",",
                     String.valueOf(f.getId()),
-                    csv(f.getNomeBolsista()),
+                    CsvUtil.escapar(f.getNomeBolsista()),
                     f.getData() != null ? f.getData().toString() : "",
                     String.valueOf(f.getHorasTrabalhadas()),
-                    csv(f.getDescricao()),
-                    csv(f.getLinkComprovante()))).append("\n");
+                    CsvUtil.escapar(f.getDescricao()),
+                    CsvUtil.escapar(f.getLinkComprovante()))).append("\n");
         }
 
         return ArquivoDownloadUtil.csv("frequencias.csv", sb.toString());
-    }
-
-    private static String csv(String valor) {
-        if (valor == null) {
-            return "";
-        }
-        return "\"" + valor.replace("\"", "\"\"") + "\"";
     }
 
     @Operation(summary = "Emitir comprovante de frequência em PDF", description = "Gera documento PDF formatado com dados cadastrais do bolsista, laboratório, orientador, tabela zebrada de horas e campos para assinatura.")
@@ -179,8 +173,8 @@ public class FrequenciaApiController {
             @Parameter(description = "Data inicial de referência") @RequestParam(required = false) LocalDate dataInicio,
             @Parameter(description = "Data final de referência") @RequestParam(required = false) LocalDate dataFim) {
         Usuario logado = usuarioLogado.obrigatorio();
-        UUID alvo = resolverBolsistaAlvo(logado, bolsistaId);
-        exigirPermissao(logado, alvo);
+        UUID alvo = frequenciaService.resolverBolsistaAlvo(logado, bolsistaId);
+        usuarioLogado.exigir(frequenciaService.podeAcessar(logado, alvo), "Sem permissao para acessar as frequencias deste usuario.");
 
         Bolsista b = bolsistaService.buscarPorId(alvo);
         if (b == null) {
@@ -213,7 +207,7 @@ public class FrequenciaApiController {
     public EntityModel<FrequenciaResponse> buscar(@Parameter(description = "ID da frequência (UUID)", required = true) @PathVariable UUID id) {
         Usuario logado = usuarioLogado.obrigatorio();
         Frequencia f = exigirFrequencia(id);
-        exigirPermissao(logado, f.getBolsistaId());
+        usuarioLogado.exigir(frequenciaService.podeAcessar(logado, f.getBolsistaId()), "Sem permissao para acessar as frequencias deste usuario.");
         return comLinks(FrequenciaResponse.de(f));
     }
 
@@ -229,8 +223,8 @@ public class FrequenciaApiController {
             UriComponentsBuilder uriBuilder) {
         Usuario logado = usuarioLogado.obrigatorio();
 
-        UUID alvo = resolverBolsistaAlvo(logado, body.bolsistaId());
-        exigirPermissao(logado, alvo);
+        UUID alvo = frequenciaService.resolverBolsistaAlvo(logado, body.bolsistaId());
+        usuarioLogado.exigir(frequenciaService.podeAcessar(logado, alvo), "Sem permissao para acessar as frequencias deste usuario.");
 
         Frequencia f = new Frequencia();
         f.setBolsistaId(alvo);
@@ -257,7 +251,7 @@ public class FrequenciaApiController {
             @Valid @RequestBody FrequenciaRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
         Frequencia f = exigirFrequencia(id);
-        exigirPermissao(logado, f.getBolsistaId());
+        usuarioLogado.exigir(frequenciaService.podeAcessar(logado, f.getBolsistaId()), "Sem permissao para acessar as frequencias deste usuario.");
 
         f.setData(body.data());
         f.setHorasTrabalhadas(body.horasTrabalhadas());
@@ -277,49 +271,10 @@ public class FrequenciaApiController {
     public ResponseEntity<Void> excluir(@Parameter(description = "ID da frequência (UUID)", required = true) @PathVariable UUID id) {
         Usuario logado = usuarioLogado.obrigatorio();
         Frequencia f = exigirFrequencia(id);
-        exigirPermissao(logado, f.getBolsistaId());
+        usuarioLogado.exigir(frequenciaService.podeAcessar(logado, f.getBolsistaId()), "Sem permissao para acessar as frequencias deste usuario.");
         frequenciaService.excluir(id);
         auditoriaService.registrar(logado, "EXCLUIR_FREQUENCIA", "FREQUENCIA", "Registro de frequência de " + f.getHorasTrabalhadas() + "h do dia " + f.getData() + " desativado.", null);
         return ResponseEntity.noContent().build();
-    }
-
-    private int paginaValida(int pedida, int total) {
-        int totalPaginas = Math.max(1, (int) Math.ceil(total / (double) TAMANHO_PAGINA));
-        return Math.min(Math.max(pedida, 1), totalPaginas);
-    }
-
-    private List<UUID> idsDosMeusBolsistas(Usuario professor) {
-        return laboratorioService.listarPorCoordenador(professor.getId()).stream()
-                .flatMap(lab -> bolsistaService.buscarPorLaboratorio(lab.getId()).stream())
-                .map(Usuario::getId)
-                .toList();
-    }
-
-    private UUID resolverBolsistaAlvo(Usuario logado, UUID bolsistaId) {
-        if (logado.isBolsista()) {
-            return logado.getId();
-        }
-        if (bolsistaId == null) {
-            throw new IllegalArgumentException("Informe o bolsista para o qual o registro esta sendo feito.");
-        }
-        return bolsistaId;
-    }
-
-    private void exigirPermissao(Usuario logado, UUID bolsistaId) {
-        if (logado.isAdmin()) {
-            return;
-        }
-        if (Objects.equals(logado.getId(), bolsistaId)) {
-            return;
-        }
-        if (logado.isProfessor()) {
-            Bolsista b = bolsistaService.buscarPorId(bolsistaId);
-            if (b != null && b.getLaboratorioId() != null
-                    && laboratorioService.podeGerenciar(logado, b.getLaboratorioId())) {
-                return;
-            }
-        }
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Sem permissao para acessar as frequencias deste usuario.");
     }
 
     private Frequencia exigirFrequencia(UUID id) {

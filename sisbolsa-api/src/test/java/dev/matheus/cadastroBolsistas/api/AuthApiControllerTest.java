@@ -207,23 +207,24 @@ class AuthApiControllerTest {
     @Test
     void perfil_semTrocarSenha_atualizaOsDados() throws Exception {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
+        when(bolsistaService.calcularNovaSenha(eq(bolsistaLogado), isNull(), isNull(), isNull())).thenReturn(null);
         logarComo(bolsistaLogado);
 
         mockMvc.perform(patch("/api/v1/auth/perfil")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Thiago Editado", "email", "novo@teste.com")))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome").value("Thiago Editado"));
+                .andExpect(status().isOk());
 
-        ArgumentCaptor<Bolsista> captor = ArgumentCaptor.forClass(Bolsista.class);
-        verify(bolsistaService).atualizar(captor.capture());
-        /* senha em branco nao pode mexer no hash gravado */
-        assertTrue(passwordEncoder.matches(SENHA_ATUAL, captor.getValue().getSenha()));
+        /* mapeamento de campos e regra de senha agora sao testados isoladamente em BolsistaServiceTest */
+        verify(bolsistaService).aplicarDadosPerfil(eq(bolsistaLogado), any(), isNull());
+        verify(bolsistaService).atualizar(bolsistaLogado);
     }
 
     @Test
     void perfil_comSenhaAtualCorreta_gravaNovoHash() throws Exception {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
+        String hashEsperado = passwordEncoder.encode("novaSenha123");
+        when(bolsistaService.calcularNovaSenha(bolsistaLogado, SENHA_ATUAL, "novaSenha123", "novaSenha123")).thenReturn(hashEsperado);
         logarComo(bolsistaLogado);
 
         mockMvc.perform(patch("/api/v1/auth/perfil")
@@ -232,15 +233,15 @@ class AuthApiControllerTest {
                                 "senhaAtual", SENHA_ATUAL, "senha", "novaSenha123", "confirmaSenha", "novaSenha123")))
                 .andExpect(status().isOk());
 
-        ArgumentCaptor<Bolsista> captor = ArgumentCaptor.forClass(Bolsista.class);
-        verify(bolsistaService).atualizar(captor.capture());
-        assertTrue(passwordEncoder.matches("novaSenha123", captor.getValue().getSenha()));
-        assertNotEquals("novaSenha123", captor.getValue().getSenha());
+        verify(bolsistaService).aplicarDadosPerfil(eq(bolsistaLogado), any(), eq(hashEsperado));
+        verify(bolsistaService).atualizar(bolsistaLogado);
     }
 
     @Test
     void perfil_comSenhaAtualErrada_recusa() throws Exception {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
+        when(bolsistaService.calcularNovaSenha(bolsistaLogado, "chuteErrado", "hackeado123", "hackeado123"))
+                .thenThrow(new IllegalArgumentException("A senha atual informada esta incorreta."));
         logarComo(bolsistaLogado);
 
         mockMvc.perform(patch("/api/v1/auth/perfil")
@@ -256,6 +257,8 @@ class AuthApiControllerTest {
     @Test
     void perfil_comConfirmacaoDiferente_recusa() throws Exception {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
+        when(bolsistaService.calcularNovaSenha(bolsistaLogado, SENHA_ATUAL, "novaSenha123", "outraCoisa"))
+                .thenThrow(new IllegalArgumentException("A nova senha e a confirmacao nao coincidem."));
         logarComo(bolsistaLogado);
 
         mockMvc.perform(patch("/api/v1/auth/perfil")
@@ -270,6 +273,8 @@ class AuthApiControllerTest {
     @Test
     void perfil_comSenhaNovaCurta_recusa() throws Exception {
         when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
+        when(bolsistaService.calcularNovaSenha(bolsistaLogado, SENHA_ATUAL, "123", "123"))
+                .thenThrow(new IllegalArgumentException("A nova senha deve ter pelo menos 6 caracteres."));
         logarComo(bolsistaLogado);
 
         mockMvc.perform(patch("/api/v1/auth/perfil")
@@ -302,6 +307,7 @@ class AuthApiControllerTest {
         professor.setEmail("roberto@teste.com");
         professor.setSenha(passwordEncoder.encode(SENHA_ATUAL));
         when(professorService.buscarPorId(profId)).thenReturn(professor);
+        when(bolsistaService.calcularNovaSenha(eq(professor), isNull(), isNull(), isNull())).thenReturn(null);
         logarComo(professor);
 
         mockMvc.perform(patch("/api/v1/auth/perfil")
@@ -310,7 +316,9 @@ class AuthApiControllerTest {
                 .andExpect(status().isOk());
 
         verify(professorService).atualizar(any(Professor.class));
-        verifyNoInteractions(bolsistaService);
+        /* fluxo de professor nao deve tocar em persistencia de bolsista */
+        verify(bolsistaService, never()).buscarPorId(any());
+        verify(bolsistaService, never()).atualizar(any());
     }
 
     @Test
@@ -326,7 +334,13 @@ class AuthApiControllerTest {
 
     @Test
     void cadastroAdmin_dentroDoLimite_cria() throws Exception {
-        when(bolsistaService.contarAdmins()).thenReturn(1);
+        when(bolsistaService.podeCriarAdmin()).thenReturn(true);
+        Bolsista adminCriado = new Bolsista();
+        adminCriado.setId(UUID.randomUUID());
+        adminCriado.setNome("Novo Admin");
+        adminCriado.setEmail("novo@teste.com");
+        adminCriado.setTipoUsuario("ADMIN");
+        when(bolsistaService.criarAdmin(eq("Novo Admin"), eq("novo@teste.com"), any())).thenReturn(adminCriado);
 
         mockMvc.perform(post("/api/v1/auth/cadastro-admin")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -335,14 +349,14 @@ class AuthApiControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.tipoUsuario").value("ADMIN"));
 
-        ArgumentCaptor<Bolsista> captor = ArgumentCaptor.forClass(Bolsista.class);
-        verify(bolsistaService).inserir(captor.capture());
-        assertTrue(passwordEncoder.matches("123456", captor.getValue().getSenha()));
+        ArgumentCaptor<String> hashCaptor = ArgumentCaptor.forClass(String.class);
+        verify(bolsistaService).criarAdmin(eq("Novo Admin"), eq("novo@teste.com"), hashCaptor.capture());
+        assertTrue(passwordEncoder.matches("123456", hashCaptor.getValue()));
     }
 
     @Test
     void cadastroAdmin_noLimite_retorna409() throws Exception {
-        when(bolsistaService.contarAdmins()).thenReturn(3);
+        when(bolsistaService.podeCriarAdmin()).thenReturn(false);
 
         mockMvc.perform(post("/api/v1/auth/cadastro-admin")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -350,7 +364,7 @@ class AuthApiControllerTest {
                                 "senha", "123456", "confirmaSenha", "123456")))
                 .andExpect(status().isConflict());
 
-        verify(bolsistaService, never()).inserir(any());
+        verify(bolsistaService, never()).criarAdmin(any(), any(), any());
     }
 
     @Test
