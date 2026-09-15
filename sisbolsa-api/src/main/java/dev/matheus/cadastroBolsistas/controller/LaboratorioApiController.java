@@ -1,4 +1,4 @@
-package dev.matheus.cadastroBolsistas.api;
+package dev.matheus.cadastroBolsistas.controller;
 
 import dev.matheus.cadastroBolsistas.dto.ErroResponse;
 import dev.matheus.cadastroBolsistas.dto.LaboratorioRequest;
@@ -6,6 +6,7 @@ import dev.matheus.cadastroBolsistas.dto.LaboratorioResponse;
 import dev.matheus.cadastroBolsistas.dto.PaginaResponse;
 import dev.matheus.cadastroBolsistas.dto.ProjetoResponse;
 import dev.matheus.cadastroBolsistas.dto.UsuarioResponse;
+import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Laboratorio;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.service.AuditoriaService;
@@ -23,10 +24,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
@@ -173,7 +172,7 @@ public class LaboratorioApiController {
     private Laboratorio exigirLab(UUID id) {
         Laboratorio lab = laboratorioService.buscarPorId(id);
         if (lab == null || !lab.isAtivo()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Laboratorio nao encontrado.");
+            throw new RecursoNaoEncontradoException("Laboratorio nao encontrado.");
         }
         return lab;
     }

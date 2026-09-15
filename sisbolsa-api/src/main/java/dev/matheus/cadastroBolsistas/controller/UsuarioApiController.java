@@ -1,10 +1,12 @@
-package dev.matheus.cadastroBolsistas.api;
+package dev.matheus.cadastroBolsistas.controller;
 
 import dev.matheus.cadastroBolsistas.dto.BolsistaRequest;
 import dev.matheus.cadastroBolsistas.dto.ErroResponse;
 import dev.matheus.cadastroBolsistas.dto.PaginaResponse;
 import dev.matheus.cadastroBolsistas.dto.ProjetoResponse;
 import dev.matheus.cadastroBolsistas.dto.UsuarioResponse;
+import dev.matheus.cadastroBolsistas.exceptions.LimiteAdminsAtingidoException;
+import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Cargo;
 import dev.matheus.cadastroBolsistas.model.ModalidadeBolsa;
@@ -29,11 +31,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
@@ -124,14 +124,14 @@ public class UsuarioApiController {
             usuarioLogado.exigirAdmin(logado);
             Professor p = professorService.buscarPorId(id);
             if (p == null) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Professor nao encontrado.");
+                throw new RecursoNaoEncontradoException("Professor nao encontrado.");
             }
             return comLinks(UsuarioResponse.de(p));
         }
 
         Bolsista b = bolsistaService.buscarPorId(id);
         if (b == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario nao encontrado.");
+            throw new RecursoNaoEncontradoException("Usuario nao encontrado.");
         }
         usuarioLogado.exigir(Objects.equals(logado.getId(), id) || bolsistaService.podeGerenciar(logado, b),
                 "Sem permissao para ver este usuario.");
@@ -202,7 +202,7 @@ public class UsuarioApiController {
         Usuario logado = usuarioLogado.obrigatorio();
         Bolsista b = bolsistaService.buscarPorId(id);
         if (b == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario nao encontrado.");
+            throw new RecursoNaoEncontradoException("Usuario nao encontrado.");
         }
         usuarioLogado.exigir(Objects.equals(logado.getId(), id) || bolsistaService.podeGerenciar(logado, b),
                 "Sem permissao para ver os projetos deste usuario.");
@@ -238,7 +238,7 @@ public class UsuarioApiController {
         if ("ADMIN".equalsIgnoreCase(body.tipoUsuario())) {
             usuarioLogado.exigirAdmin(logado);
             if (!bolsistaService.podeCriarAdmin()) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Limite de administradores atingido.");
+                throw new LimiteAdminsAtingidoException("Limite de administradores atingido.");
             }
         }
 
@@ -270,7 +270,7 @@ public class UsuarioApiController {
             usuarioLogado.exigirAdmin(logado);
             Professor p = professorService.buscarPorId(id);
             if (p == null) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Professor nao encontrado.");
+                throw new RecursoNaoEncontradoException("Professor nao encontrado.");
             }
             bolsistaService.aplicarComuns(p, body);
             if (!StringUtil.estaVazio(body.senha())) {
@@ -283,7 +283,7 @@ public class UsuarioApiController {
 
         Bolsista b = bolsistaService.buscarPorId(id);
         if (b == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario nao encontrado.");
+            throw new RecursoNaoEncontradoException("Usuario nao encontrado.");
         }
         usuarioLogado.exigir(Objects.equals(logado.getId(), id) || bolsistaService.podeGerenciar(logado, b),
                 "Sem permissao para editar este usuario.");
@@ -312,7 +312,7 @@ public class UsuarioApiController {
             usuarioLogado.exigirAdmin(logado);
             Professor p = professorService.buscarPorId(id);
             if (p == null) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Professor nao encontrado.");
+                throw new RecursoNaoEncontradoException("Professor nao encontrado.");
             }
             professorService.excluir(id);
             auditoriaService.registrar(logado, "EXCLUIR_PROFESSOR", "USUARIO", "Professor '" + p.getNome() + "' desativado.", null);
@@ -321,7 +321,7 @@ public class UsuarioApiController {
 
         Bolsista b = bolsistaService.buscarPorId(id);
         if (b == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario nao encontrado.");
+            throw new RecursoNaoEncontradoException("Usuario nao encontrado.");
         }
         usuarioLogado.exigir(bolsistaService.podeGerenciar(logado, b), "Sem permissao para excluir este usuario.");
         bolsistaService.excluir(id);

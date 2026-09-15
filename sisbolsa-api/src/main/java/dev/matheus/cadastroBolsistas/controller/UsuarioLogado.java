@@ -1,5 +1,6 @@
-package dev.matheus.cadastroBolsistas.api;
+package dev.matheus.cadastroBolsistas.controller;
 
+import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,13 +25,13 @@ public class UsuarioLogado {
 
     public void exigirAdmin(Usuario usuario) {
         if (!usuario.isAdmin()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Requer perfil de administrador.");
+            throw new PermissaoNegadaException("Requer perfil de administrador.");
         }
     }
 
     public void exigir(boolean condicao, String mensagem) {
         if (!condicao) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, mensagem);
+            throw new PermissaoNegadaException(mensagem);
         }
     }
 }
