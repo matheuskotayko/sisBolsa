@@ -1,4 +1,4 @@
-package dev.matheus.cadastroBolsistas.api;
+package dev.matheus.cadastroBolsistas.exceptions;
 
 import dev.matheus.cadastroBolsistas.dto.ErroResponse;
 import dev.matheus.cadastroBolsistas.dto.ErroValidacaoCampo;
@@ -14,11 +14,41 @@ import java.util.List;
 
 /*
  * traduz excecao em json com uma unica forma: {"mensagem": "..."}.
- * limitado ao pacote api para nao mexer no tratamento de erro das jsp.
+ * limitado ao pacote controller para nao mexer no tratamento de erro das jsp.
  */
-@RestControllerAdvice(basePackages = "dev.matheus.cadastroBolsistas.api")
+@RestControllerAdvice(basePackages = "dev.matheus.cadastroBolsistas.controller")
 public class ApiExceptionHandler {
 
+    @ExceptionHandler(RecursoNaoEncontradoException.class)
+    public ResponseEntity<ErroResponse> naoEncontrado(RecursoNaoEncontradoException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErroResponse(e.getMessage()));
+    }
+
+    @ExceptionHandler(PermissaoNegadaException.class)
+    public ResponseEntity<ErroResponse> permissaoNegada(PermissaoNegadaException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponse(e.getMessage()));
+    }
+
+    @ExceptionHandler(LimiteAdminsAtingidoException.class)
+    public ResponseEntity<ErroResponse> limiteAdminsAtingido(LimiteAdminsAtingidoException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErroResponse(e.getMessage()));
+    }
+
+    @ExceptionHandler(CredenciaisInvalidasException.class)
+    public ResponseEntity<ErroResponse> credenciaisInvalidas(CredenciaisInvalidasException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErroResponse(e.getMessage()));
+    }
+
+    @ExceptionHandler(ContaBloqueadaException.class)
+    public ResponseEntity<ErroResponse> contaBloqueada(ContaBloqueadaException e) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(new ErroResponse(e.getMessage()));
+    }
+
+    /*
+     * ainda usado por casos que nao viraram excecao de dominio: 401 de
+     * "nao autenticado" (rede de seguranca, spring security ja barra antes)
+     * e 500 explicito de falha ao gerar pdf.
+     */
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ErroResponse> statusException(ResponseStatusException e) {
         String motivo = e.getReason() != null ? e.getReason() : "Erro na requisicao.";

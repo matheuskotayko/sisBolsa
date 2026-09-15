@@ -12,8 +12,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.server.ResponseStatusException;
 
 import dev.matheus.cadastroBolsistas.repository.BolsistaRepository;
 import dev.matheus.cadastroBolsistas.repository.LaboratorioRepository;
@@ -286,7 +286,7 @@ class BolsistaServiceTest {
         Bolsista b = new Bolsista();
         BolsistaRequest body = bolsistaRequest(labId);
 
-        assertThrows(ResponseStatusException.class, () -> bolsistaService.aplicarCamposDeBolsista(b, body, logado));
+        assertThrows(PermissaoNegadaException.class, () -> bolsistaService.aplicarCamposDeBolsista(b, body, logado));
     }
 
     @Test

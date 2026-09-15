@@ -1,4 +1,4 @@
-package dev.matheus.cadastroBolsistas.api;
+package dev.matheus.cadastroBolsistas.controller;
 
 import dev.matheus.cadastroBolsistas.dto.CadastroAdminRequest;
 import dev.matheus.cadastroBolsistas.dto.ErroResponse;
@@ -7,6 +7,10 @@ import dev.matheus.cadastroBolsistas.dto.LoginRequest;
 import dev.matheus.cadastroBolsistas.dto.PerfilRequest;
 import dev.matheus.cadastroBolsistas.dto.RedefinirSenhaRequest;
 import dev.matheus.cadastroBolsistas.dto.UsuarioResponse;
+import dev.matheus.cadastroBolsistas.exceptions.ContaBloqueadaException;
+import dev.matheus.cadastroBolsistas.exceptions.CredenciaisInvalidasException;
+import dev.matheus.cadastroBolsistas.exceptions.LimiteAdminsAtingidoException;
+import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Professor;
 import dev.matheus.cadastroBolsistas.model.Usuario;
@@ -28,11 +32,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
@@ -88,7 +90,7 @@ public class AuthApiController {
             long segundos = loginAttemptService.getSegundosRestantesBloqueio(email);
             long minutos = Math.max(1, (segundos + 59) / 60);
             auditoriaService.registrar(null, "Anônimo", "LOGIN_BLOQUEADO", "AUTH", "Tentativa de login com conta temporariamente bloqueada: " + email, ip);
-            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+            throw new ContaBloqueadaException(
                     "Muitas tentativas incorretas. Conta bloqueada temporariamente por " + minutos + " minuto(s).");
         }
 
@@ -102,12 +104,12 @@ public class AuthApiController {
             auditoriaService.registrar(null, "Anônimo", "LOGIN_FALHA", "AUTH", "Tentativa de login inválida com e-mail: " + email + " (" + restantes + " restantes)", ip);
 
             if (loginAttemptService.isBloqueado(email)) {
-                throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                throw new ContaBloqueadaException(
                         "Limite de 5 tentativas consecutivas excedido. Conta bloqueada temporariamente por 5 minutos.");
             }
 
             String aviso = (restantes <= 2 && restantes > 0) ? " Restam " + restantes + " tentativa(s) antes do bloqueio temporário." : "";
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "E-mail ou senha incorretos." + aviso);
+            throw new CredenciaisInvalidasException("E-mail ou senha incorretos." + aviso);
         }
 
         loginAttemptService.registrarSucesso(email);
@@ -164,7 +166,7 @@ public class AuthApiController {
         if (logado.isProfessor()) {
             Professor p = professorService.buscarPorId(logado.getId());
             if (p == null) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Perfil nao encontrado.");
+                throw new RecursoNaoEncontradoException("Perfil nao encontrado.");
             }
             bolsistaService.aplicarDadosPerfil(p, body, senhaNova);
             professorService.atualizar(p);
@@ -172,7 +174,7 @@ public class AuthApiController {
         } else {
             Bolsista b = bolsistaService.buscarPorId(logado.getId());
             if (b == null) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Perfil nao encontrado.");
+                throw new RecursoNaoEncontradoException("Perfil nao encontrado.");
             }
             bolsistaService.aplicarDadosPerfil(b, body, senhaNova);
             bolsistaService.atualizar(b);
@@ -207,8 +209,7 @@ public class AuthApiController {
             throw new IllegalArgumentException("As senhas nao coincidem.");
         }
         if (!bolsistaService.podeCriarAdmin()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "O sistema ja possui o numero maximo de administradores permitido.");
+            throw new LimiteAdminsAtingidoException("O sistema ja possui o numero maximo de administradores permitido.");
         }
 
         Bolsista admin = bolsistaService.criarAdmin(nome, email, passwordEncoder.encode(senha));
@@ -232,7 +233,7 @@ public class AuthApiController {
 
         Usuario u = loginService.buscarPorEmail(email);
         if (u == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Nenhum usuário cadastrado encontrado com este e-mail.");
+            throw new RecursoNaoEncontradoException("Nenhum usuário cadastrado encontrado com este e-mail.");
         }
 
         String codigo = passwordResetService.gerarCodigo(email);
@@ -270,7 +271,7 @@ public class AuthApiController {
 
         Usuario u = loginService.buscarPorEmail(email);
         if (u == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado.");
+            throw new RecursoNaoEncontradoException("Usuário não encontrado.");
         }
 
         String hash = passwordEncoder.encode(novaSenha);

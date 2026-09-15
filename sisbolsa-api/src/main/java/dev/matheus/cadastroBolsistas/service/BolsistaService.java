@@ -2,6 +2,7 @@ package dev.matheus.cadastroBolsistas.service;
 
 import dev.matheus.cadastroBolsistas.dto.BolsistaRequest;
 import dev.matheus.cadastroBolsistas.dto.PerfilRequest;
+import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Cargo;
 import dev.matheus.cadastroBolsistas.model.Laboratorio;
@@ -11,11 +12,9 @@ import dev.matheus.cadastroBolsistas.repository.BolsistaRepository;
 import dev.matheus.cadastroBolsistas.repository.LaboratorioRepository;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -190,7 +189,7 @@ public class BolsistaService {
 
         UUID labId = body.laboratorioId();
         if (labId != null && !laboratorioService.podeGerenciar(logado, labId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Sem permissao para vincular usuario a este laboratorio.");
+            throw new PermissaoNegadaException("Sem permissao para vincular usuario a este laboratorio.");
         }
         b.setLaboratorioId(labId);
     }

@@ -1,10 +1,11 @@
-package dev.matheus.cadastroBolsistas.api;
+package dev.matheus.cadastroBolsistas.controller;
 
 import dev.matheus.cadastroBolsistas.dto.ErroResponse;
 import dev.matheus.cadastroBolsistas.dto.PaginaResponse;
 import dev.matheus.cadastroBolsistas.dto.ProjetoRequest;
 import dev.matheus.cadastroBolsistas.dto.ProjetoResponse;
 import dev.matheus.cadastroBolsistas.dto.UsuarioResponse;
+import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Projeto;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.service.AuditoriaService;
@@ -22,10 +23,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
@@ -172,7 +171,7 @@ public class ProjetoApiController {
         Projeto p = exigirProjeto(id);
         exigirPermissaoNoLab(logado, p.getLaboratorioId());
         if (bolsistaService.buscarPorId(bolsistaId) == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Bolsista nao encontrado.");
+            throw new RecursoNaoEncontradoException("Bolsista nao encontrado.");
         }
         projetoService.vincularBolsista(bolsistaId, id);
         auditoriaService.registrar(logado, "VINCULAR_BOLSISTA", "PROJETO", "Bolsista " + bolsistaId + " vinculado ao projeto '" + p.getNome() + "'.", null);
@@ -200,7 +199,7 @@ public class ProjetoApiController {
     private Projeto exigirProjeto(UUID id) {
         Projeto p = projetoService.buscarPorId(id);
         if (p == null || !p.isAtivo()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Projeto nao encontrado.");
+            throw new RecursoNaoEncontradoException("Projeto nao encontrado.");
         }
         return p;
     }

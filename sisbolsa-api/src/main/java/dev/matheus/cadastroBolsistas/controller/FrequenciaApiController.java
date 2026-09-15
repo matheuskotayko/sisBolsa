@@ -1,9 +1,10 @@
-package dev.matheus.cadastroBolsistas.api;
+package dev.matheus.cadastroBolsistas.controller;
 
 import dev.matheus.cadastroBolsistas.dto.ErroResponse;
 import dev.matheus.cadastroBolsistas.dto.FrequenciaRequest;
 import dev.matheus.cadastroBolsistas.dto.FrequenciaResponse;
 import dev.matheus.cadastroBolsistas.dto.PaginaResponse;
+import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Frequencia;
 import dev.matheus.cadastroBolsistas.model.Laboratorio;
@@ -178,7 +179,7 @@ public class FrequenciaApiController {
 
         Bolsista b = bolsistaService.buscarPorId(alvo);
         if (b == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Bolsista nao encontrado.");
+            throw new RecursoNaoEncontradoException("Bolsista nao encontrado.");
         }
 
         Laboratorio lab = b.getLaboratorioId() != null ? laboratorioService.buscarPorId(b.getLaboratorioId()) : null;
@@ -280,7 +281,7 @@ public class FrequenciaApiController {
     private Frequencia exigirFrequencia(UUID id) {
         Frequencia f = frequenciaService.buscarPorId(id);
         if (f == null || !f.isAtivo()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Registro de frequencia nao encontrado.");
+            throw new RecursoNaoEncontradoException("Registro de frequencia nao encontrado.");
         }
         return f;
     }

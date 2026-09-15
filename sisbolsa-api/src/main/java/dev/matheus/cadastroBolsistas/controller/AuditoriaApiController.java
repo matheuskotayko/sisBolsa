@@ -1,4 +1,4 @@
-package dev.matheus.cadastroBolsistas.api;
+package dev.matheus.cadastroBolsistas.controller;
 
 import dev.matheus.cadastroBolsistas.dto.AuditoriaResponse;
 import dev.matheus.cadastroBolsistas.dto.ErroResponse;
