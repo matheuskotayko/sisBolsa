@@ -27,6 +27,7 @@ import type {
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { Pagination } from '../components/ui/Pagination';
+import { mascararCpf, mascararTelefone } from '../utils/mascaras';
 
 export const Usuarios: React.FC = () => {
   const { user, isAdmin, canManage } = useAuth();
@@ -745,8 +746,9 @@ export const Usuarios: React.FC = () => {
                       id="user-cpf"
                       type="text"
                       placeholder="000.000.000-00"
+                      maxLength={14}
                       value={formData.cpf || ''}
-                      onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, cpf: mascararCpf(e.target.value) })}
                     />
                   </div>
 
@@ -756,8 +758,9 @@ export const Usuarios: React.FC = () => {
                       id="user-tel"
                       type="tel"
                       placeholder="(00) 00000-0000"
+                      maxLength={15}
                       value={formData.telefone || ''}
-                      onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, telefone: mascararTelefone(e.target.value) })}
                     />
                   </div>
                 </div>
