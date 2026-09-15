@@ -1,6 +1,8 @@
 package dev.matheus.cadastroBolsistas.service;
 
+import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Frequencia;
+import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.repository.FrequenciaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -11,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -18,6 +21,12 @@ public class FrequenciaService {
 
     @Autowired
     private FrequenciaRepository repository;
+
+    @Autowired
+    private BolsistaService bolsistaService;
+
+    @Autowired
+    private LaboratorioService laboratorioService;
 
     public boolean registrar(Frequencia f) {
         f.setAtivo(true);
@@ -97,5 +106,31 @@ public class FrequenciaService {
     public boolean excluir(UUID id) {
         if (id == null) return false;
         return repository.desativar(id) > 0;
+    }
+
+    /* admin ve tudo; usuario ve o proprio; professor ve quem esta no laboratorio que coordena */
+    public boolean podeAcessar(Usuario logado, UUID bolsistaId) {
+        if (logado.isAdmin()) {
+            return true;
+        }
+        if (Objects.equals(logado.getId(), bolsistaId)) {
+            return true;
+        }
+        if (logado.isProfessor()) {
+            Bolsista b = bolsistaService.buscarPorId(bolsistaId);
+            return b != null && b.getLaboratorioId() != null
+                    && laboratorioService.podeGerenciar(logado, b.getLaboratorioId());
+        }
+        return false;
+    }
+
+    public UUID resolverBolsistaAlvo(Usuario logado, UUID bolsistaId) {
+        if (logado.isBolsista()) {
+            return logado.getId();
+        }
+        if (bolsistaId == null) {
+            throw new IllegalArgumentException("Informe o bolsista para o qual o registro esta sendo feito.");
+        }
+        return bolsistaId;
     }
 }

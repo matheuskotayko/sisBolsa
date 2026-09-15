@@ -1,14 +1,17 @@
 package dev.matheus.cadastroBolsistas.service;
 
+import dev.matheus.cadastroBolsistas.dto.LaboratorioRequest;
 import dev.matheus.cadastroBolsistas.model.Laboratorio;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.repository.LaboratorioRepository;
 import dev.matheus.cadastroBolsistas.repository.ProjetoRepository;
+import dev.matheus.cadastroBolsistas.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -85,5 +88,39 @@ public class LaboratorioService {
     public int contarBolsistasNoLaboratorio(UUID labId) {
         if (labId == null) return 0;
         return repository.contarBolsistasAtivos(labId);
+    }
+
+    public void aplicar(Laboratorio lab, LaboratorioRequest body) {
+        lab.setNome(StringUtil.limpar(body.nome()));
+        lab.setAreaPesquisa(body.areaPesquisa());
+        lab.setStatus(StringUtil.estaVazio(body.status()) ? "Ativo" : body.status());
+        lab.setCapacidade(body.capacidade());
+        lab.setCoordenadorId(body.coordenadorId());
+    }
+
+    /* professor coordena poucos laboratorios - filtra em memoria em vez de virar mais uma query no banco */
+    public List<Laboratorio> filtrarPorTermo(List<Laboratorio> labs, String buscaNome) {
+        if (StringUtil.estaVazio(buscaNome)) {
+            return labs;
+        }
+        String termo = buscaNome.trim().toLowerCase();
+        return labs.stream()
+                .filter(l -> contem(l.getNome(), termo) || contem(l.getAreaPesquisa(), termo) || contem(l.getCoordenador(), termo))
+                .toList();
+    }
+
+    private boolean contem(String valor, String termo) {
+        return valor != null && valor.toLowerCase().contains(termo);
+    }
+
+    public void preencherLabsDosProfessores(List<Usuario> lista) {
+        for (Usuario u : lista) {
+            if (u.isProfessor()) {
+                List<Laboratorio> labs = listarPorCoordenador(u.getId());
+                u.setNomeLaboratorio(labs.isEmpty()
+                        ? "Nenhum"
+                        : labs.stream().map(Laboratorio::getNome).reduce((a, b) -> a + ", " + b).orElse("Nenhum"));
+            }
+        }
     }
 }

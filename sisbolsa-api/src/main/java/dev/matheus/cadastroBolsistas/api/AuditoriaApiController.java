@@ -7,6 +7,8 @@ import dev.matheus.cadastroBolsistas.model.Auditoria;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.service.AuditoriaService;
 import dev.matheus.cadastroBolsistas.util.ArquivoDownloadUtil;
+import dev.matheus.cadastroBolsistas.util.CsvUtil;
+import dev.matheus.cadastroBolsistas.util.PaginacaoUtil;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -62,8 +64,8 @@ public class AuditoriaApiController {
         String ac = StringUtil.estaVazio(acao) ? null : acao.trim();
 
         int total = auditoriaService.contarLogs(ent, ac, inicio, fim);
-        int totalPaginas = Math.max(1, (int) Math.ceil(total / (double) TAMANHO_PAGINA));
-        int atual = Math.min(Math.max(pagina, 1), totalPaginas);
+        int totalPaginas = PaginacaoUtil.totalPaginas(total, TAMANHO_PAGINA);
+        int atual = PaginacaoUtil.paginaValida(pagina, totalPaginas);
 
         List<Auditoria> itens = auditoriaService.buscarLogs(ent, ac, inicio, fim, TAMANHO_PAGINA, (atual - 1) * TAMANHO_PAGINA);
         return new PaginaResponse<>(itens.stream().map(AuditoriaResponse::de).toList(), atual, totalPaginas, total);
@@ -94,18 +96,13 @@ public class AuditoriaApiController {
         for (Auditoria a : lista) {
             sb.append(String.join(",",
                     a.getDataHora() != null ? a.getDataHora().toString() : "",
-                    csv(a.getUsuarioNome()),
-                    csv(a.getAcao()),
-                    csv(a.getEntidade()),
-                    csv(a.getDetalhes()),
-                    csv(a.getIpOrigem()))).append("\n");
+                    CsvUtil.escapar(a.getUsuarioNome()),
+                    CsvUtil.escapar(a.getAcao()),
+                    CsvUtil.escapar(a.getEntidade()),
+                    CsvUtil.escapar(a.getDetalhes()),
+                    CsvUtil.escapar(a.getIpOrigem()))).append("\n");
         }
 
         return ArquivoDownloadUtil.csv("auditoria.csv", sb.toString());
-    }
-
-    private static String csv(String valor) {
-        if (valor == null) return "";
-        return "\"" + valor.replace("\"", "\"\"") + "\"";
     }
 }

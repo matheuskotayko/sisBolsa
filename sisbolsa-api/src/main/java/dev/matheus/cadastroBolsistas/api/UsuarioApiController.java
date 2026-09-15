@@ -7,7 +7,6 @@ import dev.matheus.cadastroBolsistas.dto.ProjetoResponse;
 import dev.matheus.cadastroBolsistas.dto.UsuarioResponse;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Cargo;
-import dev.matheus.cadastroBolsistas.model.Laboratorio;
 import dev.matheus.cadastroBolsistas.model.ModalidadeBolsa;
 import dev.matheus.cadastroBolsistas.model.Professor;
 import dev.matheus.cadastroBolsistas.model.Usuario;
@@ -17,6 +16,7 @@ import dev.matheus.cadastroBolsistas.service.LaboratorioService;
 import dev.matheus.cadastroBolsistas.service.ProfessorService;
 import dev.matheus.cadastroBolsistas.service.ProjetoService;
 import dev.matheus.cadastroBolsistas.util.ArquivoDownloadUtil;
+import dev.matheus.cadastroBolsistas.util.CsvUtil;
 import dev.matheus.cadastroBolsistas.util.PaginacaoUtil;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -101,12 +101,8 @@ public class UsuarioApiController {
             }
         }
 
-        if (!StringUtil.estaVazio(tipo)) {
-            String filtro = tipo.trim().toUpperCase();
-            lista.removeIf(u -> !filtro.equals(u.getTipoUsuario()));
-        }
-
-        preencherLabsDosProfessores(lista);
+        lista = bolsistaService.filtrarPorTipo(lista, tipo);
+        laboratorioService.preencherLabsDosProfessores(lista);
         lista = bolsistaService.filtrarPorEscopo(lista, logado);
 
         return paginar(lista, pagina, tamanho);
@@ -178,29 +174,22 @@ public class UsuarioApiController {
         if (logado.isAdmin()) {
             lista.addAll(professorService.listarTodos());
         }
-        preencherLabsDosProfessores(lista);
+        laboratorioService.preencherLabsDosProfessores(lista);
         lista = bolsistaService.filtrarPorEscopo(lista, logado);
 
         StringBuilder sb = new StringBuilder("ID,Nome,Email,Tipo,Curso,Matricula,Cargo,Modalidade,Valor,DataInicio,DataFim,Laboratorio\n");
         for (Usuario u : lista) {
             UsuarioResponse r = UsuarioResponse.de(u);
             sb.append(String.join(",",
-                    String.valueOf(r.id()), csv(r.nome()), csv(r.email()), csv(r.tipoUsuario()),
-                    csv(r.curso()), csv(r.matricula()), csv(r.cargo()),
-                    csv(r.modalidadeBolsaDescricao()), csv(r.valorBolsa() != null ? String.format("%.2f", r.valorBolsa()) : ""),
-                    csv(r.dataInicioBolsa() != null ? r.dataInicioBolsa().toString() : ""),
-                    csv(r.dataFimBolsa() != null ? r.dataFimBolsa().toString() : ""),
-                    csv(r.nomeLaboratorio()))).append("\n");
+                    String.valueOf(r.id()), CsvUtil.escapar(r.nome()), CsvUtil.escapar(r.email()), CsvUtil.escapar(r.tipoUsuario()),
+                    CsvUtil.escapar(r.curso()), CsvUtil.escapar(r.matricula()), CsvUtil.escapar(r.cargo()),
+                    CsvUtil.escapar(r.modalidadeBolsaDescricao()), CsvUtil.escapar(r.valorBolsa() != null ? String.format("%.2f", r.valorBolsa()) : ""),
+                    CsvUtil.escapar(r.dataInicioBolsa() != null ? r.dataInicioBolsa().toString() : ""),
+                    CsvUtil.escapar(r.dataFimBolsa() != null ? r.dataFimBolsa().toString() : ""),
+                    CsvUtil.escapar(r.nomeLaboratorio()))).append("\n");
         }
 
         return ArquivoDownloadUtil.csv("usuarios.csv", sb.toString());
-    }
-
-    private static String csv(String valor) {
-        if (valor == null) {
-            return "";
-        }
-        return "\"" + valor.replace("\"", "\"\"") + "\"";
     }
 
     @Operation(summary = "Listar projetos vinculados a um usuário", description = "Retorna todos os projetos de pesquisa dos quais o bolsista é membro ativo.")
@@ -232,12 +221,12 @@ public class UsuarioApiController {
                                                  UriComponentsBuilder uriBuilder) {
         Usuario logado = usuarioLogado.obrigatorio();
         usuarioLogado.exigir(!logado.isBolsista(), "Bolsista nao cadastra usuario.");
-        validarSenha(body, true);
+        bolsistaService.validarSenha(body.senha(), true);
 
         if ("PROFESSOR".equalsIgnoreCase(body.tipoUsuario())) {
             usuarioLogado.exigirAdmin(logado);
             Professor p = new Professor();
-            aplicarComuns(p, body);
+            bolsistaService.aplicarComuns(p, body);
             p.setSenha(passwordEncoder.encode(body.senha()));
             p.setAtivo(true);
             professorService.inserir(p);
@@ -248,14 +237,14 @@ public class UsuarioApiController {
 
         if ("ADMIN".equalsIgnoreCase(body.tipoUsuario())) {
             usuarioLogado.exigirAdmin(logado);
-            if (bolsistaService.contarAdmins() >= 3) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Limite de 3 administradores atingido.");
+            if (!bolsistaService.podeCriarAdmin()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Limite de administradores atingido.");
             }
         }
 
         Bolsista b = new Bolsista();
-        aplicarComuns(b, body);
-        aplicarCamposDeBolsista(b, body, logado);
+        bolsistaService.aplicarComuns(b, body);
+        bolsistaService.aplicarCamposDeBolsista(b, body, logado);
         b.setSenha(passwordEncoder.encode(body.senha()));
         bolsistaService.inserir(b);
         auditoriaService.registrar(logado, "CRIAR_USUARIO", "USUARIO", "Usuário '" + b.getNome() + "' (" + b.getTipoUsuario() + ") cadastrado.", null);
@@ -275,7 +264,7 @@ public class UsuarioApiController {
                                      @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do usuário", required = true)
                                      @Valid @RequestBody BolsistaRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
-        validarSenha(body, false);
+        bolsistaService.validarSenha(body.senha(), false);
 
         if ("PROFESSOR".equalsIgnoreCase(body.tipoUsuario())) {
             usuarioLogado.exigirAdmin(logado);
@@ -283,7 +272,7 @@ public class UsuarioApiController {
             if (p == null) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Professor nao encontrado.");
             }
-            aplicarComuns(p, body);
+            bolsistaService.aplicarComuns(p, body);
             if (!StringUtil.estaVazio(body.senha())) {
                 p.setSenha(passwordEncoder.encode(body.senha()));
             }
@@ -300,8 +289,8 @@ public class UsuarioApiController {
                 "Sem permissao para editar este usuario.");
 
         String senhaAtual = b.getSenha();
-        aplicarComuns(b, body);
-        aplicarCamposDeBolsista(b, body, logado);
+        bolsistaService.aplicarComuns(b, body);
+        bolsistaService.aplicarCamposDeBolsista(b, body, logado);
         b.setSenha(StringUtil.estaVazio(body.senha()) ? senhaAtual : passwordEncoder.encode(body.senha()));
         bolsistaService.atualizar(b);
         auditoriaService.registrar(logado, "ATUALIZAR_USUARIO", "USUARIO", "Usuário '" + b.getNome() + "' atualizado.", null);
@@ -338,60 +327,6 @@ public class UsuarioApiController {
         bolsistaService.excluir(id);
         auditoriaService.registrar(logado, "EXCLUIR_USUARIO", "USUARIO", "Usuário '" + b.getNome() + "' desativado.", null);
         return ResponseEntity.noContent().build();
-    }
-
-    /*
-     * nome e email ja sao cobertos por bean validation no BolsistaRequest.
-     * a senha fica de fora de la porque a regra depende do contexto: obrigatoria
-     * na criacao, opcional na edicao (vazio = mantem a senha atual).
-     */
-    private void validarSenha(BolsistaRequest body, boolean exigirSenha) {
-        if (exigirSenha && (StringUtil.estaVazio(body.senha()) || body.senha().length() < 6)) {
-            throw new IllegalArgumentException("Senha e obrigatoria e precisa ter ao menos 6 caracteres.");
-        }
-        if (!exigirSenha && !StringUtil.estaVazio(body.senha()) && body.senha().length() < 6) {
-            throw new IllegalArgumentException("A nova senha precisa ter ao menos 6 caracteres.");
-        }
-    }
-
-    private void aplicarComuns(Usuario u, BolsistaRequest body) {
-        u.setNome(StringUtil.limpar(body.nome()));
-        u.setEmail(StringUtil.limpar(body.email()));
-        u.setFotoUrl(body.fotoUrl());
-        u.setBio(body.bio());
-        u.setAtivo(true);
-    }
-
-    private void aplicarCamposDeBolsista(Bolsista b, BolsistaRequest body, Usuario logado) {
-        b.setDataNascimento(body.dataNascimento());
-        b.setCurso(body.curso());
-        b.setMatricula(body.matricula());
-        b.setCpf(body.cpf());
-        b.setTelefone(body.telefone());
-        b.setCargo(Cargo.deString(body.cargo()));
-        b.setModalidadeBolsa(ModalidadeBolsa.deString(body.modalidadeBolsa()));
-        b.setValorBolsa(body.valorBolsa());
-        b.setDataInicioBolsa(body.dataInicioBolsa());
-        b.setDataFimBolsa(body.dataFimBolsa());
-        b.setTipoUsuario("ADMIN".equalsIgnoreCase(body.tipoUsuario()) ? "ADMIN" : "BOLSISTA");
-
-        UUID labId = body.laboratorioId();
-        if (labId != null) {
-            usuarioLogado.exigir(laboratorioService.podeGerenciar(logado, labId),
-                    "Sem permissao para vincular usuario a este laboratorio.");
-        }
-        b.setLaboratorioId(labId);
-    }
-
-    private void preencherLabsDosProfessores(List<Usuario> lista) {
-        for (Usuario u : lista) {
-            if (u.isProfessor()) {
-                List<Laboratorio> labs = laboratorioService.listarPorCoordenador(u.getId());
-                u.setNomeLaboratorio(labs.isEmpty()
-                        ? "Nenhum"
-                        : labs.stream().map(Laboratorio::getNome).reduce((a, b) -> a + ", " + b).orElse("Nenhum"));
-            }
-        }
     }
 
     private PaginaResponse<UsuarioResponse> paginar(List<Usuario> lista, int pagina, Integer tamanhoPedido) {

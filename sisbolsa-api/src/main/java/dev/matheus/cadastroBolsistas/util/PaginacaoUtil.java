@@ -31,4 +31,13 @@ public class PaginacaoUtil {
                 : List.of();
         return new PaginaResponse<>(itens, atual, totalPaginas, total);
     }
+
+    /* usado pelos endpoints que paginam via LIMIT/OFFSET no banco (frequencias, auditoria) */
+    public static int totalPaginas(int total, int tamanhoPagina) {
+        return Math.max(1, (int) Math.ceil(total / (double) tamanhoPagina));
+    }
+
+    public static int paginaValida(int pagina, int totalPaginas) {
+        return Math.min(Math.max(pagina, 1), totalPaginas);
+    }
 }

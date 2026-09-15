@@ -43,8 +43,6 @@ import java.util.Map;
 @RequestMapping("/api/v1/auth")
 public class AuthApiController {
 
-    private static final int LIMITE_ADMINS = 3;
-
     private final LoginService loginService;
     private final JwtService jwtService;
     private final UsuarioLogado usuarioLogado;
@@ -160,30 +158,7 @@ public class AuthApiController {
     public UsuarioResponse atualizarPerfil(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados para atualização de perfil e senha", required = true)
                                            @Valid @RequestBody PerfilRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
-
-        String nome = StringUtil.limpar(body.nome());
-        String email = StringUtil.limpar(body.email());
-
-        String senhaNova = null;
-        boolean trocandoSenha = !StringUtil.estaVazio(body.senhaAtual())
-                || !StringUtil.estaVazio(body.senha())
-                || !StringUtil.estaVazio(body.confirmaSenha());
-        if (trocandoSenha) {
-            if (StringUtil.estaVazio(body.senhaAtual()) || StringUtil.estaVazio(body.senha())
-                    || StringUtil.estaVazio(body.confirmaSenha())) {
-                throw new IllegalArgumentException("Para alterar a senha, preencha a senha atual, a nova e a confirmacao.");
-            }
-            if (!passwordEncoder.matches(body.senhaAtual(), logado.getSenha())) {
-                throw new IllegalArgumentException("A senha atual informada esta incorreta.");
-            }
-            if (body.senha().length() < 6) {
-                throw new IllegalArgumentException("A nova senha deve ter pelo menos 6 caracteres.");
-            }
-            if (!body.senha().equals(body.confirmaSenha())) {
-                throw new IllegalArgumentException("A nova senha e a confirmacao nao coincidem.");
-            }
-            senhaNova = passwordEncoder.encode(body.senha());
-        }
+        String senhaNova = bolsistaService.calcularNovaSenha(logado, body.senhaAtual(), body.senha(), body.confirmaSenha());
 
         Usuario atualizado;
         if (logado.isProfessor()) {
@@ -191,7 +166,7 @@ public class AuthApiController {
             if (p == null) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Perfil nao encontrado.");
             }
-            aplicar(p, nome, email, body, senhaNova);
+            bolsistaService.aplicarDadosPerfil(p, body, senhaNova);
             professorService.atualizar(p);
             atualizado = p;
         } else {
@@ -199,7 +174,7 @@ public class AuthApiController {
             if (b == null) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Perfil nao encontrado.");
             }
-            aplicar(b, nome, email, body, senhaNova);
+            bolsistaService.aplicarDadosPerfil(b, body, senhaNova);
             bolsistaService.atualizar(b);
             atualizado = b;
         }
@@ -211,16 +186,6 @@ public class AuthApiController {
         }
 
         return UsuarioResponse.de(atualizado);
-    }
-
-    private void aplicar(Usuario u, String nome, String email, PerfilRequest body, String senhaNova) {
-        u.setNome(nome);
-        u.setEmail(email);
-        u.setFotoUrl(body.fotoUrl());
-        u.setBio(body.bio());
-        if (senhaNova != null) {
-            u.setSenha(senhaNova);
-        }
     }
 
     @Operation(summary = "Cadastro inicial de Administrador", description = "Permite a criação pública de uma conta de Administrador caso o limite de 3 vagas não tenha sido atingido.")
@@ -241,21 +206,12 @@ public class AuthApiController {
         if (!senha.equals(confirma)) {
             throw new IllegalArgumentException("As senhas nao coincidem.");
         }
-        if (bolsistaService.contarAdmins() >= LIMITE_ADMINS) {
+        if (!bolsistaService.podeCriarAdmin()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "O sistema ja possui o numero maximo de administradores (" + LIMITE_ADMINS + ").");
+                    "O sistema ja possui o numero maximo de administradores permitido.");
         }
 
-        Bolsista admin = new Bolsista();
-        admin.setNome(nome);
-        admin.setEmail(email);
-        admin.setSenha(passwordEncoder.encode(senha));
-        admin.setTipoUsuario("ADMIN");
-        admin.setAtivo(true);
-        admin.setDataNascimento(java.time.LocalDate.of(1990, 1, 1));
-        admin.setCurso("Gestao");
-        admin.setMatricula("ADM001");
-        bolsistaService.inserir(admin);
+        Bolsista admin = bolsistaService.criarAdmin(nome, email, passwordEncoder.encode(senha));
 
         /* admin cadastrado aqui vira um Bolsista com tipoUsuario=ADMIN, o recurso mora em /api/usuarios */
         URI uri = uriBuilder.replacePath("/api/v1/usuarios/{id}").buildAndExpand(admin.getId()).toUri();
