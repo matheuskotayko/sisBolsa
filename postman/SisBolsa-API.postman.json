@@ -50,6 +50,10 @@
             "description": "Rastreamento de acessos e trilha de auditoria de a\u00e7\u00f5es cr\u00edticas no sistema."
         },
         {
+            "name": "Cursos",
+            "description": "Lista de cursos dispon\u00edveis para v\u00ednculo de bolsistas."
+        },
+        {
             "name": "Laborat\u00f3rios",
             "description": "Gerenciamento de laborat\u00f3rios de pesquisa, equipe alocada, capacidade e c\u00e1lculo de ocupa\u00e7\u00e3o."
         },
@@ -1153,6 +1157,92 @@
                     },
                     "400": {
                         "description": "Dados inv\u00e1lidos",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/cursos": {
+            "get": {
+                "tags": [
+                    "Cursos"
+                ],
+                "summary": "Listar cursos dispon\u00edveis",
+                "description": "Retorna todos os cursos ativos cadastrados no sistema, usados no cadastro de bolsistas.",
+                "operationId": "listar_4",
+                "responses": {
+                    "200": {
+                        "description": "Lista de cursos",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CursoResponse"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "N\u00e3o autenticado",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Cursos"
+                ],
+                "summary": "Cadastrar novo curso",
+                "description": "Adiciona um novo curso \u00e0 lista dispon\u00edvel (restrito a Administradores).",
+                "operationId": "criar_3",
+                "requestBody": {
+                    "description": "Dados do curso",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CursoRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Curso cadastrado com sucesso",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CursoResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Curso j\u00e1 cadastrado ou nome inv\u00e1lido",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Sem permiss\u00e3o de administrador",
                         "content": {
                             "*/*": {
                                 "schema": {
@@ -2276,7 +2366,7 @@
                 ],
                 "summary": "Listar logs de auditoria paginados",
                 "description": "Retorna o hist\u00f3rico de atividades e logs de seguran\u00e7a filtrados por entidade, tipo de a\u00e7\u00e3o ou intervalo de datas (restrito a Administradores e Professores).",
-                "operationId": "listar_4",
+                "operationId": "listar_5",
                 "parameters": [
                     {
                         "name": "pagina",
@@ -2989,6 +3079,38 @@
                         "type": "boolean",
                         "description": "Indica se a vig\u00eancia da bolsa expira em menos de 30 dias",
                         "example": false
+                    }
+                }
+            },
+            "CursoRequest": {
+                "type": "object",
+                "description": "Dados para cadastro de um novo curso.",
+                "properties": {
+                    "nome": {
+                        "type": "string",
+                        "description": "Nome do curso",
+                        "example": "Engenharia de Software",
+                        "minLength": 1
+                    }
+                },
+                "required": [
+                    "nome"
+                ]
+            },
+            "CursoResponse": {
+                "type": "object",
+                "description": "Curso dispon\u00edvel para v\u00ednculo de bolsistas.",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Identificador \u00fanico do curso (UUID)",
+                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    },
+                    "nome": {
+                        "type": "string",
+                        "description": "Nome do curso",
+                        "example": "Ci\u00eancia da Computa\u00e7\u00e3o"
                     }
                 }
             },
