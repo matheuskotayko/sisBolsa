@@ -17,6 +17,7 @@ import { projetoService } from '../services/projetoService';
 import { laboratorioService } from '../services/laboratorioService';
 import type { Projeto, ProjetoRequest, Laboratorio, Paginacao } from '../types';
 import { Modal } from '../components/ui/Modal';
+import { FormSection } from '../components/ui/FormSection';
 import { Pagination } from '../components/ui/Pagination';
 
 export const Projetos: React.FC = () => {
@@ -362,6 +363,7 @@ export const Projetos: React.FC = () => {
       >
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
+            <FormSection title="Dados do Projeto">
             <div className="form-group" style={{ marginBottom: '14px' }}>
               <label htmlFor="proj-lab">
                 Laboratório Vinculado <span className="asterisco">*</span>
@@ -431,6 +433,7 @@ export const Projetos: React.FC = () => {
                 />
               </div>
             </div>
+            </FormSection>
           </div>
 
           <div className="modal-footer">

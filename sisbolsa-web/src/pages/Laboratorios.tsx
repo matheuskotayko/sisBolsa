@@ -8,6 +8,7 @@ import { usuarioService } from '../services/usuarioService';
 import type { Laboratorio, LaboratorioRequest, LaboratorioStatus, Usuario, Paginacao } from '../types';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
+import { FormSection } from '../components/ui/FormSection';
 import { Pagination } from '../components/ui/Pagination';
 
 export const Laboratorios: React.FC = () => {
@@ -270,6 +271,7 @@ export const Laboratorios: React.FC = () => {
       >
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
+            <FormSection title="Dados do Laboratório">
             <div className="form-group" style={{ marginBottom: '14px' }}>
               <label htmlFor="lab-nome">
                 Nome do Laboratório <span className="asterisco">*</span>
@@ -356,6 +358,7 @@ export const Laboratorios: React.FC = () => {
                 </select>
               </div>
             </div>
+            </FormSection>
           </div>
 
           <div className="modal-footer">

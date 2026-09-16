@@ -315,6 +315,22 @@ body {
   align-items: center;
 }
 
+.form-section {
+  margin-bottom: 20px;
+}
+
+.form-section-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin: 0 0 14px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-grid);
+}
+
 .section-title {
   font-family: 'Outfit', sans-serif;
   font-size: 1.25rem;

@@ -28,6 +28,7 @@ import type {
 } from '../types';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
+import { FormSection } from '../components/ui/FormSection';
 import { Pagination } from '../components/ui/Pagination';
 import { mascararCpf, mascararTelefone } from '../utils/mascaras';
 
@@ -561,37 +562,6 @@ export const Usuarios: React.FC = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
               <div className="form-group">
-                <label htmlFor="user-nome">
-                  Nome Completo <span className="asterisco">*</span>
-                </label>
-                <input
-                  id="user-nome"
-                  type="text"
-                  required
-                  minLength={3}
-                  placeholder="Ex: Ana Clara Silva"
-                  value={formData.nome}
-                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="user-email">
-                  E-mail <span className="asterisco">*</span>
-                </label>
-                <input
-                  id="user-email"
-                  type="email"
-                  required
-                  placeholder="Ex: ana.silva@sisbolsa.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-              <div className="form-group">
                 <label htmlFor="user-senha">
                   Senha {!editingId && <span className="asterisco">*</span>}
                 </label>
@@ -628,8 +598,124 @@ export const Usuarios: React.FC = () => {
               </div>
             </div>
 
+            <FormSection title="Dados Pessoais">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                <div className="form-group">
+                  <label htmlFor="user-nome">
+                    Nome Completo <span className="asterisco">*</span>
+                  </label>
+                  <input
+                    id="user-nome"
+                    type="text"
+                    required
+                    minLength={3}
+                    placeholder="Ex: Ana Clara Silva"
+                    value={formData.nome}
+                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="user-email">
+                    E-mail <span className="asterisco">*</span>
+                  </label>
+                  <input
+                    id="user-email"
+                    type="email"
+                    required
+                    placeholder="Ex: ana.silva@sisbolsa.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              {formData.tipoUsuario === 'BOLSISTA' && (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                    <div className="form-group">
+                      <label htmlFor="user-curso">Curso de Graduação</label>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <select
+                          id="user-curso"
+                          style={{ flex: 1 }}
+                          value={formData.curso || ''}
+                          onChange={(e) => setFormData({ ...formData, curso: e.target.value })}
+                        >
+                          <option value="">Selecione um curso...</option>
+                          {cursos.map((c) => (
+                            <option key={c.id} value={c.nome}>
+                              {c.nome}
+                            </option>
+                          ))}
+                        </select>
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={handleAdicionarCurso}
+                            title="Adicionar novo curso"
+                            aria-label="Adicionar novo curso"
+                          >
+                            <Plus size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="user-matricula">Matrícula Acadêmica</label>
+                      <input
+                        id="user-matricula"
+                        type="text"
+                        placeholder="Ex: 202410123"
+                        value={formData.matricula || ''}
+                        onChange={(e) => setFormData({ ...formData, matricula: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                    <div className="form-group">
+                      <label htmlFor="user-cpf">CPF</label>
+                      <input
+                        id="user-cpf"
+                        type="text"
+                        placeholder="000.000.000-00"
+                        maxLength={14}
+                        value={formData.cpf || ''}
+                        onChange={(e) => setFormData({ ...formData, cpf: mascararCpf(e.target.value) })}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="user-tel">Telefone / WhatsApp</label>
+                      <input
+                        id="user-tel"
+                        type="tel"
+                        placeholder="(00) 00000-0000"
+                        maxLength={15}
+                        value={formData.telefone || ''}
+                        onChange={(e) => setFormData({ ...formData, telefone: mascararTelefone(e.target.value) })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="user-nasc">Data de Nascimento</label>
+                    <input
+                      id="user-nasc"
+                      type="date"
+                      value={formData.dataNascimento || ''}
+                      onChange={(e) => setFormData({ ...formData, dataNascimento: e.target.value })}
+                    />
+                  </div>
+                </>
+              )}
+            </FormSection>
+
             {formData.tipoUsuario === 'BOLSISTA' && (
-              <div>
+              <FormSection title="Laboratório & Bolsa">
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
                   {isAdmin && (
                     <div className="form-group">
@@ -674,7 +760,6 @@ export const Usuarios: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Modalidade e Valor da Bolsa */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
                   <div className="form-group">
                     <label htmlFor="user-modalidade">Modalidade da Bolsa</label>
@@ -711,8 +796,7 @@ export const Usuarios: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Vigência: Início e Término */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div className="form-group">
                     <label htmlFor="user-inicio-bolsa">Data de Início da Bolsa</label>
                     <input
@@ -733,86 +817,7 @@ export const Usuarios: React.FC = () => {
                     />
                   </div>
                 </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-                  <div className="form-group">
-                    <label htmlFor="user-curso">Curso de Graduação</label>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <select
-                        id="user-curso"
-                        style={{ flex: 1 }}
-                        value={formData.curso || ''}
-                        onChange={(e) => setFormData({ ...formData, curso: e.target.value })}
-                      >
-                        <option value="">Selecione um curso...</option>
-                        {cursos.map((c) => (
-                          <option key={c.id} value={c.nome}>
-                            {c.nome}
-                          </option>
-                        ))}
-                      </select>
-                      {isAdmin && (
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          onClick={handleAdicionarCurso}
-                          title="Adicionar novo curso"
-                          aria-label="Adicionar novo curso"
-                        >
-                          <Plus size={16} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="user-matricula">Matrícula Acadêmica</label>
-                    <input
-                      id="user-matricula"
-                      type="text"
-                      placeholder="Ex: 202410123"
-                      value={formData.matricula || ''}
-                      onChange={(e) => setFormData({ ...formData, matricula: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-                  <div className="form-group">
-                    <label htmlFor="user-cpf">CPF</label>
-                    <input
-                      id="user-cpf"
-                      type="text"
-                      placeholder="000.000.000-00"
-                      maxLength={14}
-                      value={formData.cpf || ''}
-                      onChange={(e) => setFormData({ ...formData, cpf: mascararCpf(e.target.value) })}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="user-tel">Telefone / WhatsApp</label>
-                    <input
-                      id="user-tel"
-                      type="tel"
-                      placeholder="(00) 00000-0000"
-                      maxLength={15}
-                      value={formData.telefone || ''}
-                      onChange={(e) => setFormData({ ...formData, telefone: mascararTelefone(e.target.value) })}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="user-nasc">Data de Nascimento</label>
-                  <input
-                    id="user-nasc"
-                    type="date"
-                    value={formData.dataNascimento || ''}
-                    onChange={(e) => setFormData({ ...formData, dataNascimento: e.target.value })}
-                  />
-                </div>
-              </div>
+              </FormSection>
             )}
           </div>
 

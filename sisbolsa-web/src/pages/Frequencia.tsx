@@ -19,6 +19,7 @@ import { frequenciaService } from '../services/frequenciaService';
 import { usuarioService } from '../services/usuarioService';
 import type { Frequencia, FrequenciaRequest, FrequenciaResumo, Paginacao, Usuario } from '../types';
 import { Modal } from '../components/ui/Modal';
+import { FormSection } from '../components/ui/FormSection';
 import { Pagination } from '../components/ui/Pagination';
 
 export const FrequenciaPage: React.FC = () => {
@@ -437,6 +438,7 @@ export const FrequenciaPage: React.FC = () => {
       >
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
+            <FormSection title="Apontamento de Frequência">
             {canManage && bolsistas.length > 0 && (
               <div className="form-group" style={{ marginBottom: '14px' }}>
                 <label htmlFor="freq-bolsista">
@@ -522,6 +524,7 @@ export const FrequenciaPage: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, linkComprovante: e.target.value })}
               />
             </div>
+            </FormSection>
           </div>
 
           <div className="modal-footer">
