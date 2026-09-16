@@ -20,6 +20,11 @@ export interface ModalidadeOption {
   descricao: string;
 }
 
+export interface Curso {
+  id: string;
+  nome: string;
+}
+
 export interface UsuarioAuth {
   id: string;
   nome: string;

@@ -15,6 +15,7 @@ import { useToast } from '../contexts/ToastContext';
 import { BASE_URL } from '../services/api';
 import { usuarioService } from '../services/usuarioService';
 import { laboratorioService } from '../services/laboratorioService';
+import { cursoService } from '../services/cursoService';
 import type {
   Usuario,
   UsuarioRequest,
@@ -22,6 +23,7 @@ import type {
   Laboratorio,
   CargoOption,
   ModalidadeOption,
+  Curso,
   Paginacao,
 } from '../types';
 import { Badge } from '../components/ui/Badge';
@@ -50,6 +52,7 @@ export const Usuarios: React.FC = () => {
   const [laboratorios, setLaboratorios] = useState<Laboratorio[]>([]);
   const [cargos, setCargos] = useState<CargoOption[]>([]);
   const [modalidades, setModalidades] = useState<ModalidadeOption[]>([]);
+  const [cursos, setCursos] = useState<Curso[]>([]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -96,14 +99,16 @@ export const Usuarios: React.FC = () => {
   useEffect(() => {
     async function loadAux() {
       try {
-        const [labs, cargs, mods] = await Promise.all([
+        const [labs, cargs, mods, currs] = await Promise.all([
           laboratorioService.listarTodos().catch(() => []),
           usuarioService.listarCargos().catch(() => []),
           usuarioService.listarModalidades().catch(() => []),
+          cursoService.listar().catch(() => []),
         ]);
         setLaboratorios(labs);
         setCargos(cargs);
         setModalidades(mods);
+        setCursos(currs);
       } catch {
         // ignore
       }
@@ -236,6 +241,20 @@ export const Usuarios: React.FC = () => {
       showToast(msg, 'erro');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAdicionarCurso = async () => {
+    const nome = window.prompt('Nome do novo curso:')?.trim();
+    if (!nome) return;
+    try {
+      const curso = await cursoService.criar(nome);
+      setCursos((prev) => [...prev, curso].sort((a, b) => a.nome.localeCompare(b.nome)));
+      setFormData((prev) => ({ ...prev, curso: curso.nome }));
+      showToast('Curso cadastrado com sucesso!', 'sucesso');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro ao cadastrar curso';
+      showToast(msg, 'erro');
     }
   };
 
@@ -718,13 +737,32 @@ export const Usuarios: React.FC = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
                   <div className="form-group">
                     <label htmlFor="user-curso">Curso de Graduação</label>
-                    <input
-                      id="user-curso"
-                      type="text"
-                      placeholder="Ex: Engenharia de Software"
-                      value={formData.curso || ''}
-                      onChange={(e) => setFormData({ ...formData, curso: e.target.value })}
-                    />
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <select
+                        id="user-curso"
+                        style={{ flex: 1 }}
+                        value={formData.curso || ''}
+                        onChange={(e) => setFormData({ ...formData, curso: e.target.value })}
+                      >
+                        <option value="">Selecione um curso...</option>
+                        {cursos.map((c) => (
+                          <option key={c.id} value={c.nome}>
+                            {c.nome}
+                          </option>
+                        ))}
+                      </select>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={handleAdicionarCurso}
+                          title="Adicionar novo curso"
+                          aria-label="Adicionar novo curso"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div className="form-group">
