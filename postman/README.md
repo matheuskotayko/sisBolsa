@@ -39,3 +39,30 @@ Postman cria na importacao.
 ```bash
 curl -s http://localhost:8080/v3/api-docs | python3 -m json.tool > postman/SisBolsa-API.postman.json
 ```
+
+---
+
+## Casos Negativos
+
+`SisBolsa-Casos-Negativos.postman.json` e uma colecao de verdade, escrita a
+mao (nao regenerada) demonstrando os erros da API: cada excecao de dominio
+(`RecursoNaoEncontradoException`, `PermissaoNegadaException`,
+`LimiteAdminsAtingidoException`, `CredenciaisInvalidasException`,
+`ContaBloqueadaException`), a validacao via Bean Validation (JSR 380) e um
+`IllegalArgumentException` de regra de negocio simples - cada pasta com o
+status HTTP e a mensagem de erro reais que o `ApiExceptionHandler` devolve,
+mais um `pm.test` conferindo os dois.
+
+### Como rodar
+
+1. Suba a aplicacao com o seed de apresentacao intacto (nenhum dado extra
+   inserido manualmente).
+2. Importe `SisBolsa-Casos-Negativos.postman.json` no Postman.
+3. Rode a colecao inteira em ordem, via **Collection Runner** (ou uma
+   pasta de cada vez, na ordem numerada) - o cookie de sessao troca de
+   admin pra bolsista na pasta 5, entao a ordem importa.
+
+A pasta `4. 409` cria 2 administradores extras pra forcar o limite e os
+desativa (soft delete) ao final - roda mais de uma vez sem deixar residuo
+no banco. A pasta `7. 429` usa um e-mail que nao existe no sistema, entao
+nao bloqueia nenhuma conta real.
