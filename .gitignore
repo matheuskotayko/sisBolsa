@@ -37,11 +37,3 @@ build/
 
 ### Mac OS ###
 .DS_Store
-
-### Node & Frontend ###
-sisbolsa-web/node_modules/
-sisbolsa-web/dist/
-sisbolsa-web/.tmp/
-frontend/node_modules/
-frontend/dist/
-frontend/.tmp/

@@ -1,9 +1,11 @@
-# SisBolsa — Gestao de Bolsistas e Laboratorios
+# SisBolsa — API de Gestao de Bolsistas e Laboratorios
 ![Preview](./docs/images/preview.png)
 
-Sistema web para gestao integrada de bolsistas de pesquisa, professores orientadores, laboratorios, projetos academicos, controle de frequencia e trilha de auditoria.
+API RESTful para gestao integrada de bolsistas de pesquisa, professores orientadores, laboratorios, projetos academicos, controle de frequencia e trilha de auditoria.
 
-API RESTful construida em **Spring Boot 4 / Java 21** com frontend Single Page Application (SPA) em **React + Vite + TypeScript**.
+Construida em **Spring Boot 4 / Java 21**, com persistencia via **Spring Data JPA** e documentacao automatica via **Swagger/OpenAPI**.
+
+> Esta branch (`main`) contem somente o backend. O frontend React/Vite que consome esta API mora na branch `fullstack`.
 
 ---
 
@@ -11,7 +13,6 @@ API RESTful construida em **Spring Boot 4 / Java 21** com frontend Single Page A
 
 | Camada | Tecnologias |
 |---|---|
-| **Frontend** | React 18, Vite, TypeScript, Lucide React, Recharts (graficos interativos) |
 | **Backend** | Spring Boot 4.0.6, Java 21, Spring Data JPA, Hibernate |
 | **Seguranca** | Spring Security, JWT em Cookie `httpOnly`, BCrypt, Rate Limiting anti-bruteforce |
 | **Banco de Dados** | PostgreSQL 15, Flyway Migration |
@@ -53,8 +54,7 @@ API RESTful construida em **Spring Boot 4 / Java 21** com frontend Single Page A
    - Tres perfis bem definidos: `ADMIN`, `PROFESSOR` e `BOLSISTA`.
    - **Rate Limiting no Login:** Bloqueio temporario de 5 minutos apos 5 falhas consecutivas de autenticacao.
    - **Fluxo de "Esqueci a Senha":** Recuperacao segura de senha atraves de codigo de verificacao temporario.
-   - **Perfil & Seguranca:** Medidor dinamico de forca de senha, validacao em tempo real e alteracao segura exigindo senha atual.
-   - **Modo Escuro (Dark Mode):** Alternador de tema Claro / Escuro com persistencia no `localStorage`.
+   - **Alteracao de Perfil:** Endpoint dedicado para troca de dados cadastrais e senha exigindo validacao da senha atual.
 
 ---
 
@@ -90,7 +90,7 @@ Esquema relacional normalizado contendo as definicoes de tabelas, tipos de dados
 docker compose up -d --build
 ```
 
-Acesse a aplicacao em: **[http://localhost:8080](http://localhost:8080)**
+A API sobe em: **[http://localhost:8080](http://localhost:8080)**
 
 ### Desenvolvimento Local
 
@@ -98,11 +98,8 @@ Acesse a aplicacao em: **[http://localhost:8080](http://localhost:8080)**
 # 1. Subir apenas o banco de dados
 docker compose up -d db
 
-# 2. Rodar a aplicacao Spring Boot (Backend)
-cd sisbolsa-api && mvn spring-boot:run
-
-# (Opcional) Para rodar o frontend com hot-reload no Vite:
-cd sisbolsa-web && npm run dev
+# 2. Rodar a aplicacao Spring Boot
+mvn spring-boot:run
 ```
 
 ### Acesso Inicial
@@ -125,8 +122,8 @@ Com a aplicacao rodando, acesse a documentacao interativa:
 
 ## Testes Automatizados
 
-A suite conta com 83 testes automatizados (unitarios e de contexto com mockMvc) que nao dependem de banco de dados externo:
+A suite conta com 100 testes automatizados (unitarios e de contexto com mockMvc) que nao dependem de banco de dados externo:
 
 ```bash
-cd sisbolsa-api && mvn test
+mvn test
 ```

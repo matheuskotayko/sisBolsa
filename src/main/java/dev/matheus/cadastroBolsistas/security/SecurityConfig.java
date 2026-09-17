@@ -1,6 +1,5 @@
 package dev.matheus.cadastroBolsistas.security;
 
-import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -15,9 +14,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /*
- * duas cadeias, porque as duas frentes falham de jeitos diferentes:
- * - /api/** responde 401/403 em json, que e o que um cliente rest espera
- * - o resto redireciona para a tela de login, que e o que um browser espera
+ * duas cadeias: /api/** exige token JWT e responde 401/403 em json; o
+ * resto (swagger-ui, openapi docs) fica aberto sem autenticacao.
  */
 @Configuration
 public class SecurityConfig {
@@ -58,26 +56,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain webFilterChain(HttpSecurity http, JwtCookieFilter jwtCookieFilter) throws Exception {
         http
-            /*
-             * csrf desligado porque nenhum formulario jsp manda token. o que
-             * segura o csrf aqui e o SameSite=Strict do cookie do jwt.
-             * quando o front virar estatico (etapa 6) isso volta a ser avaliado.
-             */
             .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-                .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                /*
-                 * swagger aberto: e a documentacao do trabalho e precisa abrir
-                 * sem login. nao expoe dado nenhum, so a forma dos endpoints -
-                 * que continuam exigindo token.
-                 */
-                .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
-                /*
-                 * as paginas estaticas e o bundle do react sao a casca da aplicacao.
-                 * quem protege os dados e a api (/api/**).
-                 */
-                .requestMatchers("/", "/index.html", "/assets/**", "/favicon.svg", "/favicon.ico", "/*.html", "/css/**", "/js/**").permitAll()
-                .anyRequest().permitAll())
+            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
             .formLogin(form -> form.disable())
             .httpBasic(basic -> basic.disable())
             .logout(logout -> logout.disable())
