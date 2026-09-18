@@ -17,7 +17,7 @@ public record ProjetoRequest(
         String descricao,
 
         @NotNull(message = "Projeto precisa estar vinculado a um laboratorio.")
-        @Schema(description = "ID do laboratório ao qual o projeto pertence", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "ID do laboratório ao qual o projeto pertence", example = "c2222222-2222-2222-2222-222222222222", requiredMode = Schema.RequiredMode.REQUIRED)
         UUID laboratorioId,
 
         @Schema(description = "Link para o repositório externo (ex: GitHub, GitLab)", example = "https://github.com/lab-lsi/nlp-medico", requiredMode = Schema.RequiredMode.NOT_REQUIRED)

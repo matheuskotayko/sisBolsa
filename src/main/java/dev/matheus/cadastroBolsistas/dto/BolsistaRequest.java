@@ -20,7 +20,7 @@ public record BolsistaRequest(
 
         @NotBlank(message = "E-mail e obrigatorio.")
         @Email(message = "Informe um e-mail valido.")
-        @Schema(description = "E-mail de acesso institucional", example = "lucas.oliveira@aluno.sisbolsa.com", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "E-mail de acesso institucional", example = "ana.pereira@aluno.sisbolsa.com", requiredMode = Schema.RequiredMode.REQUIRED)
         String email,
 
         @Schema(description = "Senha de acesso (obrigatória na criação, opcional na edição)", example = "12345678", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
@@ -41,7 +41,7 @@ public record BolsistaRequest(
         @Schema(description = "Telefone de contato", example = "(48) 99999-1234", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
         String telefone,
 
-        @Schema(description = "ID do laboratório de lotação", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+        @Schema(description = "ID do laboratório de lotação", example = "c1111111-1111-1111-1111-111111111111", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
         UUID laboratorioId,
 
         @Schema(description = "Tipo de perfil de acesso", example = "BOLSISTA", allowableValues = {"ADMIN", "PROFESSOR", "BOLSISTA"}, requiredMode = Schema.RequiredMode.REQUIRED)

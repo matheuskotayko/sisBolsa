@@ -15,7 +15,7 @@ import java.util.UUID;
  */
 @Schema(description = "Dados para apontamento de horas de frequência e atividades realizadas.")
 public record FrequenciaRequest(
-        @Schema(description = "ID do bolsista (apenas para Admin e Professor; Bolsistas sempre registram para si mesmos)", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+        @Schema(description = "ID do bolsista (apenas para Admin e Professor; Bolsistas sempre registram para si mesmos)", example = "d1111111-1111-1111-1111-111111111111", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
         UUID bolsistaId,
 
         @NotNull(message = "Data da frequencia e obrigatoria.")

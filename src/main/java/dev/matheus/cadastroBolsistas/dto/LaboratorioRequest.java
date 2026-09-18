@@ -25,6 +25,6 @@ public record LaboratorioRequest(
         @Schema(description = "Capacidade máxima de bolsistas e pesquisadores simultâneos", example = "10", requiredMode = Schema.RequiredMode.REQUIRED)
         Integer capacidade,
 
-        @Schema(description = "ID do professor coordenador responsável", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+        @Schema(description = "ID do professor coordenador responsável", example = "b2222222-2222-2222-2222-222222222222", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
         UUID coordenadorId) {
 }
