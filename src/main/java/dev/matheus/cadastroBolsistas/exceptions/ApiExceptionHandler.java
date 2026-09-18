@@ -80,15 +80,20 @@ public class ApiExceptionHandler {
 
     /*
      * violacao de constraint do banco sem checagem previa no service: email
-     * duplicado (unica UNIQUE que sobra, curso.nome ja e validado antes do
-     * insert) ou id de fk que nao existe (ex: laboratorioId inventado).
+     * ou cpf duplicado (curso.nome ja e validado antes do insert) ou id de fk
+     * que nao existe (ex: laboratorioId inventado).
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErroResponse> violacaoDeIntegridade(DataIntegrityViolationException e) {
         String causa = e.getMostSpecificCause().getMessage();
-        String mensagem = causa.contains("foreign key constraint")
-                ? "Um dos IDs informados (ex: laboratorio) nao existe."
-                : "E-mail ja cadastrado.";
+        String mensagem;
+        if (causa.contains("foreign key constraint")) {
+            mensagem = "Um dos IDs informados (ex: laboratorio) nao existe.";
+        } else if (causa.contains("cpf")) {
+            mensagem = "Este CPF ja esta cadastrado.";
+        } else {
+            mensagem = "E-mail ja cadastrado.";
+        }
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErroResponse(mensagem));
     }
 

@@ -22,6 +22,15 @@ class ApiExceptionHandlerTest {
     }
 
     @Test
+    void cpfDuplicadoRetorna409ComMensagemDeCpf() {
+        ResponseEntity<ErroResponse> resposta =
+                handler.violacaoDeIntegridade(new DataIntegrityViolationException("duplicate key value violates unique constraint \"bolsista_cpf_key\""));
+
+        assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(resposta.getBody().mensagem()).isEqualTo("Este CPF ja esta cadastrado.");
+    }
+
+    @Test
     void fkInexistenteRetorna409ComMensagemDeId() {
         ResponseEntity<ErroResponse> resposta =
                 handler.violacaoDeIntegridade(new DataIntegrityViolationException(
