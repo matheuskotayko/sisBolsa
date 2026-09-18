@@ -18,7 +18,7 @@ public record CadastroAdminRequest(
 
         @NotBlank(message = "Informe um e-mail valido.")
         @Email(message = "Informe um e-mail valido.")
-        @Schema(description = "E-mail de acesso institucional", example = "admin@sisbolsa.com", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "E-mail de acesso institucional", example = "novo.admin@sisbolsa.com", requiredMode = Schema.RequiredMode.REQUIRED)
         String email,
 
         @NotBlank(message = "A senha deve ter pelo menos 6 caracteres.")

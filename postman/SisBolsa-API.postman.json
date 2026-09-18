@@ -2538,7 +2538,7 @@
                         "type": "string",
                         "format": "uuid",
                         "description": "ID do laborat\u00f3rio ao qual o projeto pertence",
-                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                        "example": "c2222222-2222-2222-2222-222222222222"
                     },
                     "linkRepositorio": {
                         "type": "string",
@@ -2658,7 +2658,7 @@
                         "type": "string",
                         "format": "uuid",
                         "description": "ID do professor coordenador respons\u00e1vel",
-                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                        "example": "b2222222-2222-2222-2222-222222222222"
                     }
                 },
                 "required": [
@@ -2737,7 +2737,7 @@
                         "type": "string",
                         "format": "uuid",
                         "description": "ID do bolsista (apenas para Admin e Professor; Bolsistas sempre registram para si mesmos)",
-                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                        "example": "d1111111-1111-1111-1111-111111111111"
                     },
                     "data": {
                         "type": "string",
@@ -2835,7 +2835,7 @@
                         "type": "string",
                         "format": "email",
                         "description": "E-mail de acesso institucional",
-                        "example": "lucas.oliveira@aluno.sisbolsa.com",
+                        "example": "ana.pereira@aluno.sisbolsa.com",
                         "minLength": 1
                     },
                     "senha": {
@@ -2873,7 +2873,7 @@
                         "type": "string",
                         "format": "uuid",
                         "description": "ID do laborat\u00f3rio de lota\u00e7\u00e3o",
-                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                        "example": "c1111111-1111-1111-1111-111111111111"
                     },
                     "tipoUsuario": {
                         "type": "string",
@@ -3202,7 +3202,7 @@
                         "type": "string",
                         "format": "email",
                         "description": "E-mail de acesso institucional",
-                        "example": "admin@sisbolsa.com",
+                        "example": "novo.admin@sisbolsa.com",
                         "minLength": 1
                     },
                     "senha": {
