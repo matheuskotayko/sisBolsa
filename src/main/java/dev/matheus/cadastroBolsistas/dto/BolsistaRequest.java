@@ -50,7 +50,7 @@ public record BolsistaRequest(
         @Schema(description = "URL pública da foto de perfil", example = "https://images.unsplash.com/photo-1534528741775-53994a69daeb", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
         String fotoUrl,
 
-        @Schema(description = "Cargo no laboratório", example = "DESENVOLVEDOR_JUNIOR", allowableValues = {"PESQUISADOR_CHEFE", "PESQUISADOR_SENIOR", "DESENVOLVEDOR_FULLSTACK", "DESENVOLVEDOR_JUNIOR", "CIENTISTA_DADOS", "DESIGNER_UX", "ASSISTENTE_PESQUISA"}, requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+        @Schema(description = "Cargo no laboratório", example = "DESENVOLVEDOR", allowableValues = {"DESENVOLVEDOR", "PESQUISADOR", "LIDER_TECNICO", "DESIGNER", "AUXILIAR"}, requiredMode = Schema.RequiredMode.NOT_REQUIRED)
         String cargo,
 
         @Schema(description = "Modalidade da bolsa", example = "PIBIC", allowableValues = {"PIBIC", "PIBITI", "EXTENSAO", "MONITORIA", "INSTITUCIONAL", "OUTRO"}, requiredMode = Schema.RequiredMode.NOT_REQUIRED)
