@@ -2,6 +2,7 @@ package dev.matheus.cadastroBolsistas.exceptions;
 
 import dev.matheus.cadastroBolsistas.dto.ErroResponse;
 import dev.matheus.cadastroBolsistas.dto.ErroValidacaoCampo;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -75,6 +76,15 @@ public class ApiExceptionHandler {
 
     private static String mensagemDe(FieldError erro) {
         return erro.getDefaultMessage() != null ? erro.getDefaultMessage() : "Valor invalido.";
+    }
+
+    /*
+     * unica constraint UNIQUE que sobra sem checagem previa no service e a de
+     * email do usuario (nome de curso ja e validado antes do insert).
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErroResponse> emailDuplicado(DataIntegrityViolationException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErroResponse("E-mail ja cadastrado."));
     }
 
     /*
