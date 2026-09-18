@@ -66,3 +66,11 @@ A pasta `4. 409` cria 2 administradores extras pra forcar o limite e os
 desativa (soft delete) ao final - roda mais de uma vez sem deixar residuo
 no banco. A pasta `7. 429` usa um e-mail que nao existe no sistema, entao
 nao bloqueia nenhuma conta real.
+
+O request `Bolsista tenta cadastrar usuario` (pasta `5. 403`) tem um
+pre-request script que reloga como bolsista sozinho antes de disparar -
+entao mesmo clicando soh nele, isolado, sem rodar `Login como Bolsista`
+antes, o teste continua valendo. Sem isso, clicar direto nele com uma
+sessao de admin ainda ativa (do Setup) faz o proprio admin criar o
+usuario com sucesso (201) em vez de barrar (403) - nao e falha de
+seguranca, e so o cookie jar do Postman mantendo a sessao antiga.
