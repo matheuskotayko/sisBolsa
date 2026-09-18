@@ -453,6 +453,21 @@
           },
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// garante sessao de bolsista mesmo se este request rodar isolado, sem depender de ter clicado em 'Login como Bolsista' antes",
+                  "pm.sendRequest({",
+                  "    url: pm.collectionVariables.get('baseUrl') + '/auth/login',",
+                  "    method: 'POST',",
+                  "    header: { 'Content-Type': 'application/json' },",
+                  "    body: { mode: 'raw', raw: JSON.stringify({ email: 'diego.almeida@aluno.sisbolsa.com', senha: '12345678' }) }",
+                  "}, function (err, res) {});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
