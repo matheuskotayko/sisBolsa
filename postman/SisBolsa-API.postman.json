@@ -2894,15 +2894,13 @@
                         "type": "string",
                         "description": "Cargo no laborat\u00f3rio",
                         "enum": [
-                            "PESQUISADOR_CHEFE",
-                            "PESQUISADOR_SENIOR",
-                            "DESENVOLVEDOR_FULLSTACK",
-                            "DESENVOLVEDOR_JUNIOR",
-                            "CIENTISTA_DADOS",
-                            "DESIGNER_UX",
-                            "ASSISTENTE_PESQUISA"
+                            "DESENVOLVEDOR",
+                            "PESQUISADOR",
+                            "LIDER_TECNICO",
+                            "DESIGNER",
+                            "AUXILIAR"
                         ],
-                        "example": "DESENVOLVEDOR_JUNIOR"
+                        "example": "DESENVOLVEDOR"
                     },
                     "modalidadeBolsa": {
                         "type": "string",
@@ -3032,7 +3030,7 @@
                     "cargo": {
                         "type": "string",
                         "description": "Cargo no laborat\u00f3rio",
-                        "example": "DESENVOLVEDOR_JUNIOR"
+                        "example": "DESENVOLVEDOR"
                     },
                     "modalidadeBolsa": {
                         "type": "string",

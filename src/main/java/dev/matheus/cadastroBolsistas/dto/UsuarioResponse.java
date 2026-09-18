@@ -54,7 +54,7 @@ public record UsuarioResponse(
         @Schema(description = "Nome do laboratório vinculado", example = "Laboratório de Sistemas Inteligentes (LSI)")
         String nomeLaboratorio,
 
-        @Schema(description = "Cargo no laboratório", example = "DESENVOLVEDOR_JUNIOR")
+        @Schema(description = "Cargo no laboratório", example = "DESENVOLVEDOR")
         String cargo,
 
         @Schema(description = "Modalidade da bolsa de pesquisa", example = "PIBIC", allowableValues = {"PIBIC", "PIBITI", "EXTENSAO", "MONITORIA", "INSTITUCIONAL", "OUTRO"})
