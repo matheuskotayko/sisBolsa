@@ -175,7 +175,7 @@ public class LaboratorioApiController {
                 Link.of("/api/v1/laboratorios/" + resp.id() + "/bolsistas").withRel("bolsistas"),
                 Link.of("/api/v1/laboratorios/" + resp.id() + "/projetos").withRel("projetos"));
         if (resp.coordenadorId() != null) {
-            modelo.add(Link.of("/api/v1/usuarios/" + resp.coordenadorId() + "?tipo=PROFESSOR").withRel("coordenador"));
+            modelo.add(Link.of("/api/v1/professores/" + resp.coordenadorId()).withRel("coordenador"));
         }
         return modelo;
     }

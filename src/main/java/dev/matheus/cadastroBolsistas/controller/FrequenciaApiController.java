@@ -273,6 +273,6 @@ public class FrequenciaApiController {
     private EntityModel<FrequenciaResponse> comLinks(FrequenciaResponse resp) {
         return EntityModel.of(resp,
                 Link.of("/api/v1/frequencias/" + resp.id()).withSelfRel(),
-                Link.of("/api/v1/usuarios/" + resp.bolsistaId()).withRel("bolsista"));
+                Link.of("/api/v1/bolsistas/" + resp.bolsistaId()).withRel("bolsista"));
     }
 }

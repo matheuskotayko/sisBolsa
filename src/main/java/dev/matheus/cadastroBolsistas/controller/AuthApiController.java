@@ -205,8 +205,8 @@ public class AuthApiController {
 
         Bolsista admin = bolsistaService.criarAdmin(nome, email, passwordEncoder.encode(senha));
 
-        /* admin cadastrado aqui vira um Bolsista com tipoUsuario=ADMIN, o recurso mora em /api/usuarios */
-        URI uri = uriBuilder.replacePath("/api/v1/usuarios/{id}").buildAndExpand(admin.getId()).toUri();
+        /* admin cadastrado aqui vira um Bolsista com tipoUsuario=ADMIN, o recurso mora em /api/v1/bolsistas */
+        URI uri = uriBuilder.replacePath("/api/v1/bolsistas/{id}").buildAndExpand(admin.getId()).toUri();
         return ResponseEntity.created(uri).body(UsuarioResponse.de(admin));
     }
 

@@ -1,10 +1,12 @@
 package dev.matheus.cadastroBolsistas.service;
 
+import dev.matheus.cadastroBolsistas.dto.ProfessorRequest;
 import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
 import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Professor;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.repository.ProfessorRepository;
+import dev.matheus.cadastroBolsistas.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +23,14 @@ public class ProfessorService {
     public boolean inserir(Professor p) {
         repository.save(p);
         return true;
+    }
+
+    public void aplicarComuns(Professor p, ProfessorRequest body) {
+        p.setNome(StringUtil.limpar(body.nome()));
+        p.setEmail(StringUtil.limpar(body.email()));
+        p.setFotoUrl(body.fotoUrl());
+        p.setBio(body.bio());
+        p.setAtivo(true);
     }
 
     public ArrayList<Professor> listarTodos() {

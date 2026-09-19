@@ -8,14 +8,13 @@ verdade — regenerar e so exportar de novo.
 
 ## Importar
 
-1. Suba a aplicacao (`docker compose up -d` ou `mvn spring-boot:run` dentro
-   de `sisbolsa-api`).
+1. Suba a aplicacao (`docker compose up -d` ou `mvn spring-boot:run`).
 2. No Postman: **Import** → arraste `SisBolsa-API.postman.json` (ou aponte
    direto para `http://localhost:8080/v3/api-docs` pela URL) → **Import**.
 3. O Postman converte sozinho para colecao, com uma pasta por tag
-   (Autenticacao, Bolsistas & Usuarios, Laboratorios, Projetos, Frequencia &
-   Horas, Relatorios & Estatisticas, Auditoria) e os corpos de requisicao ja
-   preenchidos com os exemplos dos DTOs.
+   (Autenticacao, Bolsistas, Professores, Cursos, Laboratorios, Projetos,
+   Frequencia & Horas, Relatorios & Estatisticas, Auditoria) e os corpos de
+   requisicao ja preenchidos com os exemplos dos DTOs.
 
 ## Autenticacao
 
