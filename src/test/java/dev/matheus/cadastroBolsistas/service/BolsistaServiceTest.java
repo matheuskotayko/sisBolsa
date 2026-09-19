@@ -13,6 +13,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
+import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import dev.matheus.cadastroBolsistas.repository.BolsistaRepository;
@@ -153,6 +154,48 @@ class BolsistaServiceTest {
 
         assertFalse(bolsistaService.podeGerenciar(professor, null));
         verifyNoInteractions(laboratorioRepository);
+    }
+
+    @Test
+    void buscarComPermissaoDeVisualizacao_naoEncontrado_lancaRecursoNaoEncontrado() {
+        UUID id = UUID.randomUUID();
+        when(repository.findById(id)).thenReturn(Optional.empty());
+
+        Professor admin = new Professor();
+        admin.setTipoUsuario("ADMIN");
+
+        assertThrows(RecursoNaoEncontradoException.class,
+                () -> bolsistaService.buscarComPermissaoDeVisualizacao(id, admin));
+    }
+
+    @Test
+    void buscarComPermissaoDeVisualizacao_donoDoProprioCadastro_dispensaPodeGerenciar() {
+        UUID id = UUID.randomUUID();
+        Bolsista alvo = new Bolsista();
+        alvo.setId(id);
+        when(repository.findById(id)).thenReturn(Optional.of(alvo));
+
+        Bolsista logado = new Bolsista();
+        logado.setId(id);
+        logado.setTipoUsuario("BOLSISTA");
+
+        assertSame(alvo, bolsistaService.buscarComPermissaoDeVisualizacao(id, logado));
+        verifyNoInteractions(laboratorioRepository);
+    }
+
+    @Test
+    void buscarComPermissaoDeVisualizacao_semPermissao_lancaPermissaoNegada() {
+        UUID id = UUID.randomUUID();
+        Bolsista alvo = new Bolsista();
+        alvo.setId(id);
+        when(repository.findById(id)).thenReturn(Optional.of(alvo));
+
+        Bolsista outroBolsista = new Bolsista();
+        outroBolsista.setId(UUID.randomUUID());
+        outroBolsista.setTipoUsuario("BOLSISTA");
+
+        assertThrows(PermissaoNegadaException.class,
+                () -> bolsistaService.buscarComPermissaoDeVisualizacao(id, outroBolsista));
     }
 
     @Test

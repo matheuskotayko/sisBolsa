@@ -3,6 +3,7 @@ package dev.matheus.cadastroBolsistas.service;
 import dev.matheus.cadastroBolsistas.dto.BolsistaRequest;
 import dev.matheus.cadastroBolsistas.dto.PerfilRequest;
 import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
+import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Cargo;
 import dev.matheus.cadastroBolsistas.model.Laboratorio;
@@ -67,6 +68,22 @@ public class BolsistaService {
     public Bolsista buscarPorId(UUID id) {
         if (id == null) return null;
         return repository.findById(id).orElse(null);
+    }
+
+    /*
+     * PoC de mover regra de acesso pro service: lookup + 404 + permissao de
+     * visualizacao (dono do proprio cadastro ou quem gerencia) num so lugar,
+     * pra controller so chamar e montar a resposta.
+     */
+    public Bolsista buscarComPermissaoDeVisualizacao(UUID id, Usuario logado) {
+        Bolsista b = buscarPorId(id);
+        if (b == null) {
+            throw new RecursoNaoEncontradoException("Usuario nao encontrado.");
+        }
+        if (!Objects.equals(logado.getId(), id) && !podeGerenciar(logado, b)) {
+            throw new PermissaoNegadaException("Sem permissao para ver este usuario.");
+        }
+        return b;
     }
 
     public ArrayList<Bolsista> buscarPorNome(String nome) {
