@@ -105,6 +105,6 @@ public class RelatorioApiController {
 
     private void exigirAdmin() {
         Usuario logado = usuarioLogado.obrigatorio();
-        usuarioLogado.exigirAdmin(logado);
+        relatorioService.exigirAdmin(logado);
     }
 }

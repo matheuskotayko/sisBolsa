@@ -5,8 +5,6 @@ import dev.matheus.cadastroBolsistas.dto.ErroResponse;
 import dev.matheus.cadastroBolsistas.dto.PaginaResponse;
 import dev.matheus.cadastroBolsistas.dto.ProjetoResponse;
 import dev.matheus.cadastroBolsistas.dto.UsuarioResponse;
-import dev.matheus.cadastroBolsistas.exceptions.LimiteAdminsAtingidoException;
-import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Cargo;
 import dev.matheus.cadastroBolsistas.model.ModalidadeBolsa;
@@ -40,7 +38,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 
 @Tag(name = "Bolsistas & Usuários", description = "Gestão de bolsistas, professores e administradores, incluindo vigência, modalidades e cargos.")
@@ -159,7 +156,7 @@ public class UsuarioApiController {
     @GetMapping("/exportar")
     public ResponseEntity<byte[]> exportar() {
         Usuario logado = usuarioLogado.obrigatorio();
-        usuarioLogado.exigir(!logado.isBolsista(), "Bolsista nao exporta a lista de usuarios.");
+        bolsistaService.exigirPodeExportarUsuarios(logado);
 
         ArrayList<Usuario> lista = new ArrayList<>(bolsistaService.listarTodos());
         if (logado.isAdmin()) {
@@ -191,12 +188,7 @@ public class UsuarioApiController {
     @GetMapping("/{id}/projetos")
     public List<ProjetoResponse> projetos(@Parameter(description = "ID do bolsista", required = true) @PathVariable UUID id) {
         Usuario logado = usuarioLogado.obrigatorio();
-        Bolsista b = bolsistaService.buscarPorId(id);
-        if (b == null) {
-            throw new RecursoNaoEncontradoException("Usuario nao encontrado.");
-        }
-        usuarioLogado.exigir(Objects.equals(logado.getId(), id) || bolsistaService.podeGerenciar(logado, b),
-                "Sem permissao para ver os projetos deste usuario.");
+        bolsistaService.buscarComPermissaoDeVisualizacao(id, logado);
         return projetoService.listarPorBolsista(id).stream().map(ProjetoResponse::de).toList();
     }
 
@@ -211,11 +203,11 @@ public class UsuarioApiController {
                                                  @Valid @RequestBody BolsistaRequest body,
                                                  UriComponentsBuilder uriBuilder) {
         Usuario logado = usuarioLogado.obrigatorio();
-        usuarioLogado.exigir(!logado.isBolsista(), "Bolsista nao cadastra usuario.");
+        bolsistaService.exigirPodeCadastrarUsuario(logado);
         bolsistaService.validarSenha(body.senha(), true);
 
         if ("PROFESSOR".equalsIgnoreCase(body.tipoUsuario())) {
-            usuarioLogado.exigirAdmin(logado);
+            professorService.exigirAdmin(logado);
             Professor p = new Professor();
             bolsistaService.aplicarComuns(p, body);
             p.setSenha(passwordEncoder.encode(body.senha()));
@@ -227,10 +219,7 @@ public class UsuarioApiController {
         }
 
         if ("ADMIN".equalsIgnoreCase(body.tipoUsuario())) {
-            usuarioLogado.exigirAdmin(logado);
-            if (!bolsistaService.podeCriarAdmin()) {
-                throw new LimiteAdminsAtingidoException("Limite de administradores atingido.");
-            }
+            bolsistaService.exigirPodeCriarAdmin(logado);
         }
 
         Bolsista b = new Bolsista();
@@ -258,11 +247,7 @@ public class UsuarioApiController {
         bolsistaService.validarSenha(body.senha(), false);
 
         if ("PROFESSOR".equalsIgnoreCase(body.tipoUsuario())) {
-            usuarioLogado.exigirAdmin(logado);
-            Professor p = professorService.buscarPorId(id);
-            if (p == null) {
-                throw new RecursoNaoEncontradoException("Professor nao encontrado.");
-            }
+            Professor p = professorService.buscarExigindoAdmin(id, logado);
             bolsistaService.aplicarComuns(p, body);
             if (!StringUtil.estaVazio(body.senha())) {
                 p.setSenha(passwordEncoder.encode(body.senha()));
@@ -272,12 +257,7 @@ public class UsuarioApiController {
             return comLinks(UsuarioResponse.de(p));
         }
 
-        Bolsista b = bolsistaService.buscarPorId(id);
-        if (b == null) {
-            throw new RecursoNaoEncontradoException("Usuario nao encontrado.");
-        }
-        usuarioLogado.exigir(Objects.equals(logado.getId(), id) || bolsistaService.podeGerenciar(logado, b),
-                "Sem permissao para editar este usuario.");
+        Bolsista b = bolsistaService.buscarComPermissaoDeEdicao(id, logado);
 
         String senhaAtual = b.getSenha();
         bolsistaService.aplicarComuns(b, body);
@@ -300,21 +280,13 @@ public class UsuarioApiController {
         Usuario logado = usuarioLogado.obrigatorio();
 
         if ("PROFESSOR".equalsIgnoreCase(tipo)) {
-            usuarioLogado.exigirAdmin(logado);
-            Professor p = professorService.buscarPorId(id);
-            if (p == null) {
-                throw new RecursoNaoEncontradoException("Professor nao encontrado.");
-            }
+            Professor p = professorService.buscarExigindoAdmin(id, logado);
             professorService.excluir(id);
             auditoriaService.registrar(logado, "EXCLUIR_PROFESSOR", "USUARIO", "Professor '" + p.getNome() + "' desativado.", null);
             return ResponseEntity.noContent().build();
         }
 
-        Bolsista b = bolsistaService.buscarPorId(id);
-        if (b == null) {
-            throw new RecursoNaoEncontradoException("Usuario nao encontrado.");
-        }
-        usuarioLogado.exigir(bolsistaService.podeGerenciar(logado, b), "Sem permissao para excluir este usuario.");
+        Bolsista b = bolsistaService.buscarComPermissaoDeExclusao(id, logado);
         bolsistaService.excluir(id);
         auditoriaService.registrar(logado, "EXCLUIR_USUARIO", "USUARIO", "Usuário '" + b.getNome() + "' desativado.", null);
         return ResponseEntity.noContent().build();

@@ -1,6 +1,8 @@
 package dev.matheus.cadastroBolsistas.service;
 
 import dev.matheus.cadastroBolsistas.dto.LaboratorioRequest;
+import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
+import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Laboratorio;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.repository.LaboratorioRepository;
@@ -37,10 +39,31 @@ public class LaboratorioService {
         return false;
     }
 
-    public boolean cadastrar(Laboratorio lab) {
+    public boolean cadastrar(Laboratorio lab, Usuario logado) {
+        if (!logado.isAdmin()) {
+            throw new PermissaoNegadaException("Requer perfil de administrador.");
+        }
         lab.setAtivo(true);
         repository.save(lab);
         return true;
+    }
+
+    /* lookup + 404 (incluindo desativado) num so lugar, pra nenhum controller precisar checar null na mao. */
+    public Laboratorio buscarOuFalhar(UUID id) {
+        Laboratorio lab = buscarPorId(id);
+        if (lab == null || !lab.isAtivo()) {
+            throw new RecursoNaoEncontradoException("Laboratorio nao encontrado.");
+        }
+        return lab;
+    }
+
+    /* so quem gerencia (admin ou o professor coordenador) pode editar/excluir. */
+    public Laboratorio buscarExigindoGerencia(UUID id, Usuario logado) {
+        Laboratorio lab = buscarOuFalhar(id);
+        if (!podeGerenciar(logado, id)) {
+            throw new PermissaoNegadaException("Sem permissao para gerenciar este laboratorio.");
+        }
+        return lab;
     }
 
     public ArrayList<Laboratorio> listarTodos() {

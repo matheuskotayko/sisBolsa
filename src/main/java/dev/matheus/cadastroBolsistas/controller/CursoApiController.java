@@ -63,14 +63,8 @@ public class CursoApiController {
                                                 @Valid @RequestBody CursoRequest body,
                                                 UriComponentsBuilder uriBuilder) {
         Usuario logado = usuarioLogado.obrigatorio();
-        usuarioLogado.exigirAdmin(logado);
-
         String nome = StringUtil.limpar(body.nome());
-        if (cursoService.existePorNome(nome)) {
-            throw new IllegalArgumentException("Este curso ja esta cadastrado.");
-        }
-
-        Curso curso = cursoService.cadastrar(nome);
+        Curso curso = cursoService.cadastrar(nome, logado);
         auditoriaService.registrar(logado, "CRIAR_CURSO", "CURSO", "Curso '" + curso.getNome() + "' cadastrado.", null);
         URI uri = uriBuilder.replacePath("/api/v1/cursos").build().toUri();
         return ResponseEntity.created(uri).body(CursoResponse.de(curso));

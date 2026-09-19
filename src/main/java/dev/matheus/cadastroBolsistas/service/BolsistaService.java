@@ -2,6 +2,7 @@ package dev.matheus.cadastroBolsistas.service;
 
 import dev.matheus.cadastroBolsistas.dto.BolsistaRequest;
 import dev.matheus.cadastroBolsistas.dto.PerfilRequest;
+import dev.matheus.cadastroBolsistas.exceptions.LimiteAdminsAtingidoException;
 import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
 import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
@@ -55,6 +56,18 @@ public class BolsistaService {
         return false;
     }
 
+    public void exigirPodeCadastrarUsuario(Usuario logado) {
+        if (logado.isBolsista()) {
+            throw new PermissaoNegadaException("Bolsista nao cadastra usuario.");
+        }
+    }
+
+    public void exigirPodeExportarUsuarios(Usuario logado) {
+        if (logado.isBolsista()) {
+            throw new PermissaoNegadaException("Bolsista nao exporta a lista de usuarios.");
+        }
+    }
+
     public boolean inserir(Bolsista b) {
         b.setAtivo(true);
         repository.save(b);
@@ -70,18 +83,38 @@ public class BolsistaService {
         return repository.findById(id).orElse(null);
     }
 
-    /*
-     * PoC de mover regra de acesso pro service: lookup + 404 + permissao de
-     * visualizacao (dono do proprio cadastro ou quem gerencia) num so lugar,
-     * pra controller so chamar e montar a resposta.
-     */
-    public Bolsista buscarComPermissaoDeVisualizacao(UUID id, Usuario logado) {
+    /* lookup + 404 num so lugar, pra nenhum controller precisar checar null na mao. */
+    public Bolsista buscarOuFalhar(UUID id) {
         Bolsista b = buscarPorId(id);
         if (b == null) {
             throw new RecursoNaoEncontradoException("Usuario nao encontrado.");
         }
+        return b;
+    }
+
+    /* dono do proprio cadastro ou quem gerencia pode ver. */
+    public Bolsista buscarComPermissaoDeVisualizacao(UUID id, Usuario logado) {
+        Bolsista b = buscarOuFalhar(id);
         if (!Objects.equals(logado.getId(), id) && !podeGerenciar(logado, b)) {
             throw new PermissaoNegadaException("Sem permissao para ver este usuario.");
+        }
+        return b;
+    }
+
+    /* dono do proprio cadastro ou quem gerencia pode editar. */
+    public Bolsista buscarComPermissaoDeEdicao(UUID id, Usuario logado) {
+        Bolsista b = buscarOuFalhar(id);
+        if (!Objects.equals(logado.getId(), id) && !podeGerenciar(logado, b)) {
+            throw new PermissaoNegadaException("Sem permissao para editar este usuario.");
+        }
+        return b;
+    }
+
+    /* so quem gerencia pode excluir - ao contrario de ver/editar, nao ha excecao de "ver o proprio". */
+    public Bolsista buscarComPermissaoDeExclusao(UUID id, Usuario logado) {
+        Bolsista b = buscarOuFalhar(id);
+        if (!podeGerenciar(logado, b)) {
+            throw new PermissaoNegadaException("Sem permissao para excluir este usuario.");
         }
         return b;
     }
@@ -152,6 +185,23 @@ public class BolsistaService {
 
     public boolean podeCriarAdmin() {
         return contarAdmins() < LIMITE_ADMINS;
+    }
+
+    /* usado quando um admin ja autenticado cria outro admin. */
+    public void exigirPodeCriarAdmin(Usuario logado) {
+        if (!logado.isAdmin()) {
+            throw new PermissaoNegadaException("Requer perfil de administrador.");
+        }
+        if (!podeCriarAdmin()) {
+            throw new LimiteAdminsAtingidoException("Limite de administradores atingido.");
+        }
+    }
+
+    /* usado no autocadastro publico de admin (sem usuario logado ainda). */
+    public void exigirVagaParaNovoAdmin() {
+        if (!podeCriarAdmin()) {
+            throw new LimiteAdminsAtingidoException("O sistema ja possui o numero maximo de administradores permitido.");
+        }
     }
 
     /* admin de autocadastro publico (AuthApiController) - dados cadastrais minimos sao fixos */

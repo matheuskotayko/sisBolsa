@@ -6,7 +6,6 @@ import dev.matheus.cadastroBolsistas.dto.LaboratorioResponse;
 import dev.matheus.cadastroBolsistas.dto.PaginaResponse;
 import dev.matheus.cadastroBolsistas.dto.ProjetoResponse;
 import dev.matheus.cadastroBolsistas.dto.UsuarioResponse;
-import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Laboratorio;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.service.AuditoriaService;
@@ -81,7 +80,7 @@ public class LaboratorioApiController {
     @GetMapping("/{id}")
     public EntityModel<LaboratorioResponse> buscar(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id) {
         usuarioLogado.obrigatorio();
-        return comLinks(comOcupacao(exigirLab(id)));
+        return comLinks(comOcupacao(laboratorioService.buscarOuFalhar(id)));
     }
 
     @Operation(summary = "Listar bolsistas de um laboratório", description = "Retorna a lista completa de bolsistas e pesquisadores vinculados ao laboratório informado.")
@@ -92,7 +91,7 @@ public class LaboratorioApiController {
     @GetMapping("/{id}/bolsistas")
     public List<UsuarioResponse> bolsistas(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id) {
         usuarioLogado.obrigatorio();
-        exigirLab(id);
+        laboratorioService.buscarOuFalhar(id);
         return bolsistaService.buscarPorLaboratorio(id).stream().map(UsuarioResponse::de).toList();
     }
 
@@ -104,7 +103,7 @@ public class LaboratorioApiController {
     @GetMapping("/{id}/projetos")
     public List<ProjetoResponse> projetos(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id) {
         usuarioLogado.obrigatorio();
-        exigirLab(id);
+        laboratorioService.buscarOuFalhar(id);
         return projetoService.listarPorLaboratorio(id).stream()
                 .map(p -> ProjetoResponse.de(p, projetoService.contarMembros(p.getId())))
                 .toList();
@@ -121,11 +120,10 @@ public class LaboratorioApiController {
                                                      @Valid @RequestBody LaboratorioRequest body,
                                                      UriComponentsBuilder uriBuilder) {
         Usuario logado = usuarioLogado.obrigatorio();
-        usuarioLogado.exigirAdmin(logado);
 
         Laboratorio lab = new Laboratorio();
         laboratorioService.aplicar(lab, body);
-        laboratorioService.cadastrar(lab);
+        laboratorioService.cadastrar(lab, logado);
         auditoriaService.registrar(logado, "CRIAR_LABORATORIO", "LABORATORIO", "Laboratório '" + lab.getNome() + "' criado com sucesso.", null);
         URI uri = uriBuilder.replacePath("/api/v1/laboratorios/{id}").buildAndExpand(lab.getId()).toUri();
         return ResponseEntity.created(uri).body(comLinks(comOcupacao(lab)));
@@ -143,8 +141,7 @@ public class LaboratorioApiController {
                                          @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do laboratório", required = true)
                                          @Valid @RequestBody LaboratorioRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
-        Laboratorio lab = exigirLab(id);
-        usuarioLogado.exigir(laboratorioService.podeGerenciar(logado, id), "Sem permissao para editar este laboratorio.");
+        Laboratorio lab = laboratorioService.buscarExigindoGerencia(id, logado);
 
         laboratorioService.aplicar(lab, body);
         lab.setAtivo(true);
@@ -162,19 +159,10 @@ public class LaboratorioApiController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id) {
         Usuario logado = usuarioLogado.obrigatorio();
-        Laboratorio lab = exigirLab(id);
-        usuarioLogado.exigir(laboratorioService.podeGerenciar(logado, id), "Sem permissao para excluir este laboratorio.");
+        Laboratorio lab = laboratorioService.buscarExigindoGerencia(id, logado);
         laboratorioService.excluir(id);
         auditoriaService.registrar(logado, "EXCLUIR_LABORATORIO", "LABORATORIO", "Laboratório '" + lab.getNome() + "' desativado.", null);
         return ResponseEntity.noContent().build();
-    }
-
-    private Laboratorio exigirLab(UUID id) {
-        Laboratorio lab = laboratorioService.buscarPorId(id);
-        if (lab == null || !lab.isAtivo()) {
-            throw new RecursoNaoEncontradoException("Laboratorio nao encontrado.");
-        }
-        return lab;
     }
 
     private LaboratorioResponse comOcupacao(Laboratorio lab) {

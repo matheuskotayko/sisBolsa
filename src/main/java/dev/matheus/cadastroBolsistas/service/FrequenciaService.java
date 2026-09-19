@@ -1,5 +1,7 @@
 package dev.matheus.cadastroBolsistas.service;
 
+import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
+import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Frequencia;
 import dev.matheus.cadastroBolsistas.model.Usuario;
@@ -37,6 +39,27 @@ public class FrequenciaService {
     public Frequencia buscarPorId(UUID id) {
         if (id == null) return null;
         return repository.findByIdAndAtivoTrue(id).orElse(null);
+    }
+
+    /* lookup + 404 num so lugar, pra nenhum controller precisar checar null na mao. */
+    public Frequencia buscarOuFalhar(UUID id) {
+        Frequencia f = buscarPorId(id);
+        if (f == null) {
+            throw new RecursoNaoEncontradoException("Registro de frequencia nao encontrado.");
+        }
+        return f;
+    }
+
+    public void exigirAcesso(Usuario logado, UUID bolsistaId) {
+        if (!podeAcessar(logado, bolsistaId)) {
+            throw new PermissaoNegadaException("Sem permissao para acessar as frequencias deste usuario.");
+        }
+    }
+
+    public Frequencia buscarComPermissao(UUID id, Usuario logado) {
+        Frequencia f = buscarOuFalhar(id);
+        exigirAcesso(logado, f.getBolsistaId());
+        return f;
     }
 
     public boolean atualizar(Frequencia f) {

@@ -56,7 +56,7 @@ public class AuditoriaApiController {
             @Parameter(description = "Data de início", example = "2026-08-01") @RequestParam(required = false) LocalDate dataInicio,
             @Parameter(description = "Data de término", example = "2026-08-31") @RequestParam(required = false) LocalDate dataFim) {
         Usuario logado = usuarioLogado.obrigatorio();
-        usuarioLogado.exigir(logado.isAdmin() || logado.isProfessor(), "Acesso restrito a administradores e professores.");
+        auditoriaService.exigirAcesso(logado);
 
         LocalDateTime inicio = dataInicio != null ? dataInicio.atStartOfDay() : null;
         LocalDateTime fim = dataFim != null ? dataFim.atTime(LocalTime.MAX) : null;
@@ -83,7 +83,7 @@ public class AuditoriaApiController {
             @Parameter(description = "Data inicial") @RequestParam(required = false) LocalDate dataInicio,
             @Parameter(description = "Data final") @RequestParam(required = false) LocalDate dataFim) {
         Usuario logado = usuarioLogado.obrigatorio();
-        usuarioLogado.exigir(logado.isAdmin() || logado.isProfessor(), "Acesso restrito a administradores e professores.");
+        auditoriaService.exigirAcesso(logado);
 
         LocalDateTime inicio = dataInicio != null ? dataInicio.atStartOfDay() : null;
         LocalDateTime fim = dataFim != null ? dataFim.atTime(LocalTime.MAX) : null;

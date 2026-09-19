@@ -1,7 +1,10 @@
 package dev.matheus.cadastroBolsistas.service;
 
 import dev.matheus.cadastroBolsistas.dto.ProjetoRequest;
+import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
+import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Projeto;
+import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.repository.ProjetoRepository;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,10 +26,40 @@ public class ProjetoService {
     @Autowired
     private ProjetoRepository repository;
 
-    public boolean cadastrar(Projeto p) {
+    @Autowired
+    private LaboratorioService laboratorioService;
+
+    public boolean cadastrar(Projeto p, Usuario logado) {
+        if (!laboratorioService.podeGerenciar(logado, p.getLaboratorioId())) {
+            throw new PermissaoNegadaException("Sem permissao para criar projeto neste laboratorio.");
+        }
         p.setAtivo(true);
         repository.save(p);
         return true;
+    }
+
+    /* lookup + 404 (incluindo desativado) num so lugar, pra nenhum controller precisar checar null na mao. */
+    public Projeto buscarOuFalhar(UUID id) {
+        Projeto p = buscarPorId(id);
+        if (p == null || !p.isAtivo()) {
+            throw new RecursoNaoEncontradoException("Projeto nao encontrado.");
+        }
+        return p;
+    }
+
+    /* so quem gerencia o laboratorio do projeto pode editar/excluir/(des)vincular membros. */
+    public Projeto buscarExigindoGerencia(UUID id, Usuario logado) {
+        Projeto p = buscarOuFalhar(id);
+        if (!laboratorioService.podeGerenciar(logado, p.getLaboratorioId())) {
+            throw new PermissaoNegadaException("Sem permissao para gerenciar projetos deste laboratorio.");
+        }
+        return p;
+    }
+
+    public void exigirPodeMoverPara(Usuario logado, UUID novoLaboratorioId) {
+        if (!laboratorioService.podeGerenciar(logado, novoLaboratorioId)) {
+            throw new PermissaoNegadaException("Sem permissao para mover o projeto para este laboratorio.");
+        }
     }
 
     public ArrayList<Projeto> listarTodos() {
