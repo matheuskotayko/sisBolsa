@@ -1,5 +1,8 @@
 package dev.matheus.cadastroBolsistas.service;
 
+import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
+import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
+import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Professor;
 import dev.matheus.cadastroBolsistas.repository.ProfessorRepository;
 import org.junit.jupiter.api.Test;
@@ -124,5 +127,40 @@ class ProfessorServiceTest {
                 .thenReturn(List.of());
 
         assertTrue(professorService.buscarPorNome("Inexistente").isEmpty());
+    }
+
+    @Test
+    void buscarExigindoAdmin_naoAdmin_lancaPermissaoNegadaSemConsultarRepositorio() {
+        Bolsista bolsista = new Bolsista();
+        bolsista.setTipoUsuario("BOLSISTA");
+
+        assertThrows(PermissaoNegadaException.class,
+                () -> professorService.buscarExigindoAdmin(UUID.randomUUID(), bolsista));
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void buscarExigindoAdmin_adminMasProfessorInexistente_lancaRecursoNaoEncontrado() {
+        UUID id = UUID.randomUUID();
+        when(repository.findById(id)).thenReturn(Optional.empty());
+
+        Bolsista admin = new Bolsista();
+        admin.setTipoUsuario("ADMIN");
+
+        assertThrows(RecursoNaoEncontradoException.class,
+                () -> professorService.buscarExigindoAdmin(id, admin));
+    }
+
+    @Test
+    void buscarExigindoAdmin_adminEProfessorExistente_retornaProfessor() {
+        UUID id = UUID.randomUUID();
+        Professor p = new Professor();
+        p.setId(id);
+        when(repository.findById(id)).thenReturn(Optional.of(p));
+
+        Bolsista admin = new Bolsista();
+        admin.setTipoUsuario("ADMIN");
+
+        assertSame(p, professorService.buscarExigindoAdmin(id, admin));
     }
 }

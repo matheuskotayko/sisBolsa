@@ -121,20 +121,11 @@ public class UsuarioApiController {
         Usuario logado = usuarioLogado.obrigatorio();
 
         if ("PROFESSOR".equalsIgnoreCase(tipo)) {
-            usuarioLogado.exigirAdmin(logado);
-            Professor p = professorService.buscarPorId(id);
-            if (p == null) {
-                throw new RecursoNaoEncontradoException("Professor nao encontrado.");
-            }
+            Professor p = professorService.buscarExigindoAdmin(id, logado);
             return comLinks(UsuarioResponse.de(p));
         }
 
-        Bolsista b = bolsistaService.buscarPorId(id);
-        if (b == null) {
-            throw new RecursoNaoEncontradoException("Usuario nao encontrado.");
-        }
-        usuarioLogado.exigir(Objects.equals(logado.getId(), id) || bolsistaService.podeGerenciar(logado, b),
-                "Sem permissao para ver este usuario.");
+        Bolsista b = bolsistaService.buscarComPermissaoDeVisualizacao(id, logado);
         return comLinks(UsuarioResponse.de(b));
     }
 
