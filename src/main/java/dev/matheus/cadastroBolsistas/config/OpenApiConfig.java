@@ -47,7 +47,9 @@ public class OpenApiConfig {
                                 .url("https://opensource.org/licenses/MIT")))
                 .tags(List.of(
                         new Tag().name("Autenticação").description("Login, logout, verificação de sessão (/me), perfil e fluxo de recuperação de senha."),
-                        new Tag().name("Bolsistas & Usuários").description("Cadastro, consulta paginada, edição de vigência/bolsas e soft-delete de bolsistas e professores."),
+                        new Tag().name("Bolsistas").description("Cadastro, consulta paginada, edição de vigência/bolsas e soft-delete de bolsistas e administradores."),
+                        new Tag().name("Professores").description("Cadastro, consulta e soft-delete de professores coordenadores (restrito a Administradores)."),
+                        new Tag().name("Cursos").description("Lista de cursos disponíveis para vínculo de bolsistas, com cadastro restrito a Administradores."),
                         new Tag().name("Laboratórios").description("Gestão de laboratórios de pesquisa, vinculação de coordenadores e controle de ocupação."),
                         new Tag().name("Projetos").description("Gestão de projetos de pesquisa, vinculação de membros e anexação de entregáveis/repositórios."),
                         new Tag().name("Frequência & Horas").description("Apontamento de horas trabalhadas, resumo mensal, exportação em CSV e emissão de comprovantes em PDF."),
