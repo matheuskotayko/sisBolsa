@@ -5,12 +5,10 @@ import dev.matheus.cadastroBolsistas.dto.PaginaResponse;
 import dev.matheus.cadastroBolsistas.dto.ProjetoRequest;
 import dev.matheus.cadastroBolsistas.dto.ProjetoResponse;
 import dev.matheus.cadastroBolsistas.dto.UsuarioResponse;
-import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Projeto;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.service.AuditoriaService;
 import dev.matheus.cadastroBolsistas.service.BolsistaService;
-import dev.matheus.cadastroBolsistas.service.LaboratorioService;
 import dev.matheus.cadastroBolsistas.service.ProjetoService;
 import dev.matheus.cadastroBolsistas.util.PaginacaoUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,16 +38,13 @@ public class ProjetoApiController {
     private static final int TAMANHO_MAXIMO = 200;
 
     private final ProjetoService projetoService;
-    private final LaboratorioService laboratorioService;
     private final BolsistaService bolsistaService;
     private final UsuarioLogado usuarioLogado;
     private final AuditoriaService auditoriaService;
 
-    public ProjetoApiController(ProjetoService projetoService, LaboratorioService laboratorioService,
-                                BolsistaService bolsistaService, UsuarioLogado usuarioLogado,
-                                AuditoriaService auditoriaService) {
+    public ProjetoApiController(ProjetoService projetoService, BolsistaService bolsistaService,
+                                UsuarioLogado usuarioLogado, AuditoriaService auditoriaService) {
         this.projetoService = projetoService;
-        this.laboratorioService = laboratorioService;
         this.bolsistaService = bolsistaService;
         this.usuarioLogado = usuarioLogado;
         this.auditoriaService = auditoriaService;
@@ -79,7 +74,7 @@ public class ProjetoApiController {
     @GetMapping("/{id}")
     public EntityModel<ProjetoResponse> buscar(@Parameter(description = "ID do projeto (UUID)", required = true) @PathVariable UUID id) {
         usuarioLogado.obrigatorio();
-        Projeto p = exigirProjeto(id);
+        Projeto p = projetoService.buscarOuFalhar(id);
         return comLinks(comMembros(p), p.getLaboratorioId());
     }
 
@@ -91,7 +86,7 @@ public class ProjetoApiController {
     @GetMapping("/{id}/membros")
     public List<UsuarioResponse> membros(@Parameter(description = "ID do projeto (UUID)", required = true) @PathVariable UUID id) {
         usuarioLogado.obrigatorio();
-        exigirProjeto(id);
+        projetoService.buscarOuFalhar(id);
         return bolsistaService.buscarPorProjeto(id).stream().map(UsuarioResponse::de).toList();
     }
 
@@ -106,12 +101,10 @@ public class ProjetoApiController {
                                                  @Valid @RequestBody ProjetoRequest body,
                                                  UriComponentsBuilder uriBuilder) {
         Usuario logado = usuarioLogado.obrigatorio();
-        usuarioLogado.exigir(laboratorioService.podeGerenciar(logado, body.laboratorioId()),
-                "Sem permissao para criar projeto neste laboratorio.");
 
         Projeto p = new Projeto();
         projetoService.aplicar(p, body);
-        projetoService.cadastrar(p);
+        projetoService.cadastrar(p, logado);
         auditoriaService.registrar(logado, "CRIAR_PROJETO", "PROJETO", "Projeto '" + p.getNome() + "' criado com sucesso.", null);
         URI uri = uriBuilder.replacePath("/api/v1/projetos/{id}").buildAndExpand(p.getId()).toUri();
         return ResponseEntity.created(uri).body(comLinks(ProjetoResponse.de(p), p.getLaboratorioId()));
@@ -129,10 +122,8 @@ public class ProjetoApiController {
                                      @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do projeto", required = true)
                                      @Valid @RequestBody ProjetoRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
-        Projeto p = exigirProjeto(id);
-        exigirPermissaoNoLab(logado, p.getLaboratorioId());
-        usuarioLogado.exigir(laboratorioService.podeGerenciar(logado, body.laboratorioId()),
-                "Sem permissao para mover o projeto para este laboratorio.");
+        Projeto p = projetoService.buscarExigindoGerencia(id, logado);
+        projetoService.exigirPodeMoverPara(logado, body.laboratorioId());
 
         projetoService.aplicar(p, body);
         p.setAtivo(true);
@@ -150,8 +141,7 @@ public class ProjetoApiController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@Parameter(description = "ID do projeto (UUID)", required = true) @PathVariable UUID id) {
         Usuario logado = usuarioLogado.obrigatorio();
-        Projeto p = exigirProjeto(id);
-        exigirPermissaoNoLab(logado, p.getLaboratorioId());
+        Projeto p = projetoService.buscarExigindoGerencia(id, logado);
         projetoService.excluir(id);
         auditoriaService.registrar(logado, "EXCLUIR_PROJETO", "PROJETO", "Projeto '" + p.getNome() + "' desativado.", null);
         return ResponseEntity.noContent().build();
@@ -168,11 +158,8 @@ public class ProjetoApiController {
             @Parameter(description = "ID do projeto (UUID)", required = true) @PathVariable UUID id,
             @Parameter(description = "ID do bolsista a vincular (UUID)", required = true) @PathVariable UUID bolsistaId) {
         Usuario logado = usuarioLogado.obrigatorio();
-        Projeto p = exigirProjeto(id);
-        exigirPermissaoNoLab(logado, p.getLaboratorioId());
-        if (bolsistaService.buscarPorId(bolsistaId) == null) {
-            throw new RecursoNaoEncontradoException("Bolsista nao encontrado.");
-        }
+        Projeto p = projetoService.buscarExigindoGerencia(id, logado);
+        bolsistaService.buscarOuFalhar(bolsistaId);
         projetoService.vincularBolsista(bolsistaId, id);
         auditoriaService.registrar(logado, "VINCULAR_BOLSISTA", "PROJETO", "Bolsista " + bolsistaId + " vinculado ao projeto '" + p.getNome() + "'.", null);
         return ResponseEntity.noContent().build();
@@ -189,24 +176,10 @@ public class ProjetoApiController {
             @Parameter(description = "ID do projeto (UUID)", required = true) @PathVariable UUID id,
             @Parameter(description = "ID do bolsista a desvincular (UUID)", required = true) @PathVariable UUID bolsistaId) {
         Usuario logado = usuarioLogado.obrigatorio();
-        Projeto p = exigirProjeto(id);
-        exigirPermissaoNoLab(logado, p.getLaboratorioId());
+        Projeto p = projetoService.buscarExigindoGerencia(id, logado);
         projetoService.desvincularBolsista(bolsistaId, id);
         auditoriaService.registrar(logado, "DESVINCULAR_BOLSISTA", "PROJETO", "Bolsista " + bolsistaId + " desvinculado do projeto '" + p.getNome() + "'.", null);
         return ResponseEntity.noContent().build();
-    }
-
-    private Projeto exigirProjeto(UUID id) {
-        Projeto p = projetoService.buscarPorId(id);
-        if (p == null || !p.isAtivo()) {
-            throw new RecursoNaoEncontradoException("Projeto nao encontrado.");
-        }
-        return p;
-    }
-
-    private void exigirPermissaoNoLab(Usuario logado, UUID labId) {
-        usuarioLogado.exigir(laboratorioService.podeGerenciar(logado, labId),
-                "Sem permissao para gerenciar projetos deste laboratorio.");
     }
 
     private ProjetoResponse comMembros(Projeto p) {

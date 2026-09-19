@@ -9,7 +9,6 @@ import dev.matheus.cadastroBolsistas.dto.RedefinirSenhaRequest;
 import dev.matheus.cadastroBolsistas.dto.UsuarioResponse;
 import dev.matheus.cadastroBolsistas.exceptions.ContaBloqueadaException;
 import dev.matheus.cadastroBolsistas.exceptions.CredenciaisInvalidasException;
-import dev.matheus.cadastroBolsistas.exceptions.LimiteAdminsAtingidoException;
 import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Professor;
@@ -164,18 +163,12 @@ public class AuthApiController {
 
         Usuario atualizado;
         if (logado.isProfessor()) {
-            Professor p = professorService.buscarPorId(logado.getId());
-            if (p == null) {
-                throw new RecursoNaoEncontradoException("Perfil nao encontrado.");
-            }
+            Professor p = professorService.buscarOuFalhar(logado.getId());
             bolsistaService.aplicarDadosPerfil(p, body, senhaNova);
             professorService.atualizar(p);
             atualizado = p;
         } else {
-            Bolsista b = bolsistaService.buscarPorId(logado.getId());
-            if (b == null) {
-                throw new RecursoNaoEncontradoException("Perfil nao encontrado.");
-            }
+            Bolsista b = bolsistaService.buscarOuFalhar(logado.getId());
             bolsistaService.aplicarDadosPerfil(b, body, senhaNova);
             bolsistaService.atualizar(b);
             atualizado = b;
@@ -208,9 +201,7 @@ public class AuthApiController {
         if (!senha.equals(confirma)) {
             throw new IllegalArgumentException("As senhas nao coincidem.");
         }
-        if (!bolsistaService.podeCriarAdmin()) {
-            throw new LimiteAdminsAtingidoException("O sistema ja possui o numero maximo de administradores permitido.");
-        }
+        bolsistaService.exigirVagaParaNovoAdmin();
 
         Bolsista admin = bolsistaService.criarAdmin(nome, email, passwordEncoder.encode(senha));
 

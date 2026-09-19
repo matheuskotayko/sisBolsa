@@ -1,5 +1,7 @@
 package dev.matheus.cadastroBolsistas.service;
 
+import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
+import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Laboratorio;
 import dev.matheus.cadastroBolsistas.model.Professor;
@@ -13,6 +15,7 @@ import dev.matheus.cadastroBolsistas.repository.LaboratorioRepository;
 import dev.matheus.cadastroBolsistas.repository.ProjetoRepository;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -148,5 +151,77 @@ class LaboratorioServiceTest {
         assertFalse(laboratorioService.temVaga(labId));
         verify(repository).findById(labId);
         verify(repository, never()).contarBolsistasAtivos(any(UUID.class));
+    }
+
+    @Test
+    void cadastrar_admin_salvaEAtivaOLaboratorio() {
+        Professor admin = new Professor();
+        admin.setTipoUsuario("ADMIN");
+        Laboratorio lab = new Laboratorio();
+
+        assertTrue(laboratorioService.cadastrar(lab, admin));
+        assertTrue(lab.isAtivo());
+        verify(repository).save(lab);
+    }
+
+    @Test
+    void cadastrar_naoAdmin_lancaPermissaoNegadaSemSalvar() {
+        Professor professor = new Professor();
+        professor.setTipoUsuario("PROFESSOR");
+
+        assertThrows(PermissaoNegadaException.class, () -> laboratorioService.cadastrar(new Laboratorio(), professor));
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void buscarOuFalhar_labInexistente_lancaRecursoNaoEncontrado() {
+        UUID id = UUID.randomUUID();
+        when(repository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(RecursoNaoEncontradoException.class, () -> laboratorioService.buscarOuFalhar(id));
+    }
+
+    @Test
+    void buscarOuFalhar_labDesativado_lancaRecursoNaoEncontrado() {
+        UUID id = UUID.randomUUID();
+        Laboratorio lab = new Laboratorio();
+        lab.setId(id);
+        lab.setAtivo(false);
+        when(repository.findById(id)).thenReturn(Optional.of(lab));
+        when(projetoRepository.buscarPorLaboratorio(id)).thenReturn(List.of());
+
+        assertThrows(RecursoNaoEncontradoException.class, () -> laboratorioService.buscarOuFalhar(id));
+    }
+
+    @Test
+    void buscarExigindoGerencia_semPermissao_lancaPermissaoNegada() {
+        UUID id = UUID.randomUUID();
+        Laboratorio lab = new Laboratorio();
+        lab.setId(id);
+        lab.setAtivo(true);
+        lab.setCoordenadorId(UUID.randomUUID());
+        when(repository.findById(id)).thenReturn(Optional.of(lab));
+        when(projetoRepository.buscarPorLaboratorio(id)).thenReturn(List.of());
+
+        Professor outroProfessor = new Professor();
+        outroProfessor.setId(UUID.randomUUID());
+        outroProfessor.setTipoUsuario("PROFESSOR");
+
+        assertThrows(PermissaoNegadaException.class, () -> laboratorioService.buscarExigindoGerencia(id, outroProfessor));
+    }
+
+    @Test
+    void buscarExigindoGerencia_admin_retornaOLaboratorio() {
+        UUID id = UUID.randomUUID();
+        Laboratorio lab = new Laboratorio();
+        lab.setId(id);
+        lab.setAtivo(true);
+        when(repository.findById(id)).thenReturn(Optional.of(lab));
+        when(projetoRepository.buscarPorLaboratorio(id)).thenReturn(List.of());
+
+        Professor admin = new Professor();
+        admin.setTipoUsuario("ADMIN");
+
+        assertSame(lab, laboratorioService.buscarExigindoGerencia(id, admin));
     }
 }

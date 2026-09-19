@@ -12,6 +12,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import dev.matheus.cadastroBolsistas.exceptions.LimiteAdminsAtingidoException;
 import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
 import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -196,6 +197,128 @@ class BolsistaServiceTest {
 
         assertThrows(PermissaoNegadaException.class,
                 () -> bolsistaService.buscarComPermissaoDeVisualizacao(id, outroBolsista));
+    }
+
+    @Test
+    void buscarComPermissaoDeEdicao_donoDoProprioCadastro_dispensaPodeGerenciar() {
+        UUID id = UUID.randomUUID();
+        Bolsista alvo = new Bolsista();
+        alvo.setId(id);
+        when(repository.findById(id)).thenReturn(Optional.of(alvo));
+
+        Bolsista logado = new Bolsista();
+        logado.setId(id);
+        logado.setTipoUsuario("BOLSISTA");
+
+        assertSame(alvo, bolsistaService.buscarComPermissaoDeEdicao(id, logado));
+    }
+
+    @Test
+    void buscarComPermissaoDeEdicao_semPermissao_lancaPermissaoNegada() {
+        UUID id = UUID.randomUUID();
+        Bolsista alvo = new Bolsista();
+        alvo.setId(id);
+        when(repository.findById(id)).thenReturn(Optional.of(alvo));
+
+        Bolsista outroBolsista = new Bolsista();
+        outroBolsista.setId(UUID.randomUUID());
+        outroBolsista.setTipoUsuario("BOLSISTA");
+
+        assertThrows(PermissaoNegadaException.class,
+                () -> bolsistaService.buscarComPermissaoDeEdicao(id, outroBolsista));
+    }
+
+    @Test
+    void buscarComPermissaoDeExclusao_donoDoProprioCadastro_naoBastaSerDono() {
+        UUID id = UUID.randomUUID();
+        Bolsista alvo = new Bolsista();
+        alvo.setId(id);
+        when(repository.findById(id)).thenReturn(Optional.of(alvo));
+
+        Bolsista logado = new Bolsista();
+        logado.setId(id);
+        logado.setTipoUsuario("BOLSISTA");
+
+        assertThrows(PermissaoNegadaException.class,
+                () -> bolsistaService.buscarComPermissaoDeExclusao(id, logado));
+    }
+
+    @Test
+    void buscarComPermissaoDeExclusao_quemGerencia_retornaOAlvo() {
+        UUID id = UUID.randomUUID();
+        Bolsista alvo = new Bolsista();
+        alvo.setId(id);
+        when(repository.findById(id)).thenReturn(Optional.of(alvo));
+
+        Professor admin = new Professor();
+        admin.setTipoUsuario("ADMIN");
+
+        assertSame(alvo, bolsistaService.buscarComPermissaoDeExclusao(id, admin));
+    }
+
+    @Test
+    void exigirPodeCadastrarUsuario_bolsista_lancaPermissaoNegada() {
+        Bolsista bolsista = new Bolsista();
+        bolsista.setTipoUsuario("BOLSISTA");
+
+        assertThrows(PermissaoNegadaException.class, () -> bolsistaService.exigirPodeCadastrarUsuario(bolsista));
+    }
+
+    @Test
+    void exigirPodeCadastrarUsuario_professor_naoLancaNada() {
+        Professor professor = new Professor();
+        professor.setTipoUsuario("PROFESSOR");
+
+        assertDoesNotThrow(() -> bolsistaService.exigirPodeCadastrarUsuario(professor));
+    }
+
+    @Test
+    void exigirPodeExportarUsuarios_bolsista_lancaPermissaoNegada() {
+        Bolsista bolsista = new Bolsista();
+        bolsista.setTipoUsuario("BOLSISTA");
+
+        assertThrows(PermissaoNegadaException.class, () -> bolsistaService.exigirPodeExportarUsuarios(bolsista));
+    }
+
+    @Test
+    void exigirPodeCriarAdmin_naoAdmin_lancaPermissaoNegada() {
+        Professor professor = new Professor();
+        professor.setTipoUsuario("PROFESSOR");
+
+        assertThrows(PermissaoNegadaException.class, () -> bolsistaService.exigirPodeCriarAdmin(professor));
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void exigirPodeCriarAdmin_adminMasLimiteAtingido_lancaLimiteAdmins() {
+        when(repository.countByTipoUsuarioAndAtivoTrue("ADMIN")).thenReturn(3);
+        Professor admin = new Professor();
+        admin.setTipoUsuario("ADMIN");
+
+        assertThrows(LimiteAdminsAtingidoException.class, () -> bolsistaService.exigirPodeCriarAdmin(admin));
+    }
+
+    @Test
+    void exigirPodeCriarAdmin_adminComVaga_naoLancaNada() {
+        when(repository.countByTipoUsuarioAndAtivoTrue("ADMIN")).thenReturn(1);
+        Professor admin = new Professor();
+        admin.setTipoUsuario("ADMIN");
+
+        assertDoesNotThrow(() -> bolsistaService.exigirPodeCriarAdmin(admin));
+    }
+
+    @Test
+    void exigirVagaParaNovoAdmin_semVaga_lancaLimiteAdmins() {
+        when(repository.countByTipoUsuarioAndAtivoTrue("ADMIN")).thenReturn(3);
+
+        assertThrows(LimiteAdminsAtingidoException.class, () -> bolsistaService.exigirVagaParaNovoAdmin());
+    }
+
+    @Test
+    void exigirVagaParaNovoAdmin_comVaga_naoLancaNada() {
+        when(repository.countByTipoUsuarioAndAtivoTrue("ADMIN")).thenReturn(0);
+
+        assertDoesNotThrow(() -> bolsistaService.exigirVagaParaNovoAdmin());
     }
 
     @Test

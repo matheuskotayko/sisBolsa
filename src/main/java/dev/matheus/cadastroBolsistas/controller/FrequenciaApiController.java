@@ -4,7 +4,6 @@ import dev.matheus.cadastroBolsistas.dto.ErroResponse;
 import dev.matheus.cadastroBolsistas.dto.FrequenciaRequest;
 import dev.matheus.cadastroBolsistas.dto.FrequenciaResponse;
 import dev.matheus.cadastroBolsistas.dto.PaginaResponse;
-import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Frequencia;
 import dev.matheus.cadastroBolsistas.model.Laboratorio;
@@ -86,7 +85,7 @@ public class FrequenciaApiController {
         UUID filtro = logado.isBolsista() ? logado.getId() : bolsistaId;
 
         if (filtro != null) {
-            usuarioLogado.exigir(frequenciaService.podeAcessar(logado, filtro), "Sem permissao para acessar as frequencias deste usuario.");
+            frequenciaService.exigirAcesso(logado, filtro);
         }
 
         int total;
@@ -117,7 +116,7 @@ public class FrequenciaApiController {
         Usuario logado = usuarioLogado.obrigatorio();
         UUID alvo = logado.isBolsista() ? logado.getId()
                  : (bolsistaId != null ? bolsistaId : logado.getId());
-        usuarioLogado.exigir(frequenciaService.podeAcessar(logado, alvo), "Sem permissao para acessar as frequencias deste usuario.");
+        frequenciaService.exigirAcesso(logado, alvo);
 
         List<Frequencia> todas = frequenciaService.listarPorBolsista(alvo);
         LocalDate hoje = LocalDate.now();
@@ -142,7 +141,7 @@ public class FrequenciaApiController {
         Usuario logado = usuarioLogado.obrigatorio();
         UUID filtro = logado.isBolsista() ? logado.getId() : bolsistaId;
         if (filtro != null) {
-            usuarioLogado.exigir(frequenciaService.podeAcessar(logado, filtro), "Sem permissao para acessar as frequencias deste usuario.");
+            frequenciaService.exigirAcesso(logado, filtro);
         }
 
         List<Frequencia> lista = (filtro == null && logado.isProfessor())
@@ -175,12 +174,8 @@ public class FrequenciaApiController {
             @Parameter(description = "Data final de referência") @RequestParam(required = false) LocalDate dataFim) {
         Usuario logado = usuarioLogado.obrigatorio();
         UUID alvo = frequenciaService.resolverBolsistaAlvo(logado, bolsistaId);
-        usuarioLogado.exigir(frequenciaService.podeAcessar(logado, alvo), "Sem permissao para acessar as frequencias deste usuario.");
-
-        Bolsista b = bolsistaService.buscarPorId(alvo);
-        if (b == null) {
-            throw new RecursoNaoEncontradoException("Bolsista nao encontrado.");
-        }
+        frequenciaService.exigirAcesso(logado, alvo);
+        Bolsista b = bolsistaService.buscarOuFalhar(alvo);
 
         Laboratorio lab = b.getLaboratorioId() != null ? laboratorioService.buscarPorId(b.getLaboratorioId()) : null;
         Professor coord = (lab != null && lab.getCoordenadorId() != null) ? professorService.buscarPorId(lab.getCoordenadorId()) : null;
@@ -207,8 +202,7 @@ public class FrequenciaApiController {
     @GetMapping("/{id}")
     public EntityModel<FrequenciaResponse> buscar(@Parameter(description = "ID da frequência (UUID)", required = true) @PathVariable UUID id) {
         Usuario logado = usuarioLogado.obrigatorio();
-        Frequencia f = exigirFrequencia(id);
-        usuarioLogado.exigir(frequenciaService.podeAcessar(logado, f.getBolsistaId()), "Sem permissao para acessar as frequencias deste usuario.");
+        Frequencia f = frequenciaService.buscarComPermissao(id, logado);
         return comLinks(FrequenciaResponse.de(f));
     }
 
@@ -225,7 +219,7 @@ public class FrequenciaApiController {
         Usuario logado = usuarioLogado.obrigatorio();
 
         UUID alvo = frequenciaService.resolverBolsistaAlvo(logado, body.bolsistaId());
-        usuarioLogado.exigir(frequenciaService.podeAcessar(logado, alvo), "Sem permissao para acessar as frequencias deste usuario.");
+        frequenciaService.exigirAcesso(logado, alvo);
 
         Frequencia f = new Frequencia();
         f.setBolsistaId(alvo);
@@ -251,8 +245,7 @@ public class FrequenciaApiController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados da frequência", required = true)
             @Valid @RequestBody FrequenciaRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
-        Frequencia f = exigirFrequencia(id);
-        usuarioLogado.exigir(frequenciaService.podeAcessar(logado, f.getBolsistaId()), "Sem permissao para acessar as frequencias deste usuario.");
+        Frequencia f = frequenciaService.buscarComPermissao(id, logado);
 
         f.setData(body.data());
         f.setHorasTrabalhadas(body.horasTrabalhadas());
@@ -271,19 +264,10 @@ public class FrequenciaApiController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@Parameter(description = "ID da frequência (UUID)", required = true) @PathVariable UUID id) {
         Usuario logado = usuarioLogado.obrigatorio();
-        Frequencia f = exigirFrequencia(id);
-        usuarioLogado.exigir(frequenciaService.podeAcessar(logado, f.getBolsistaId()), "Sem permissao para acessar as frequencias deste usuario.");
+        Frequencia f = frequenciaService.buscarComPermissao(id, logado);
         frequenciaService.excluir(id);
         auditoriaService.registrar(logado, "EXCLUIR_FREQUENCIA", "FREQUENCIA", "Registro de frequência de " + f.getHorasTrabalhadas() + "h do dia " + f.getData() + " desativado.", null);
         return ResponseEntity.noContent().build();
-    }
-
-    private Frequencia exigirFrequencia(UUID id) {
-        Frequencia f = frequenciaService.buscarPorId(id);
-        if (f == null || !f.isAtivo()) {
-            throw new RecursoNaoEncontradoException("Registro de frequencia nao encontrado.");
-        }
-        return f;
     }
 
     private EntityModel<FrequenciaResponse> comLinks(FrequenciaResponse resp) {

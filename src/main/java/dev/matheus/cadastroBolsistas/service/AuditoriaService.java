@@ -1,5 +1,6 @@
 package dev.matheus.cadastroBolsistas.service;
 
+import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
 import dev.matheus.cadastroBolsistas.model.Auditoria;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.repository.AuditoriaRepository;
@@ -49,5 +50,11 @@ public class AuditoriaService {
 
     public int contarLogs(String entidade, String acao, LocalDateTime dataInicio, LocalDateTime dataFim) {
         return repository.contarLogs(entidade, acao, dataInicio, dataFim);
+    }
+
+    public void exigirAcesso(Usuario logado) {
+        if (!logado.isAdmin() && !logado.isProfessor()) {
+            throw new PermissaoNegadaException("Acesso restrito a administradores e professores.");
+        }
     }
 }

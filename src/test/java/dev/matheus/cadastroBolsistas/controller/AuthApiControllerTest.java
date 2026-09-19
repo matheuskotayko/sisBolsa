@@ -1,5 +1,7 @@
 package dev.matheus.cadastroBolsistas.controller;
 
+import dev.matheus.cadastroBolsistas.exceptions.LimiteAdminsAtingidoException;
+import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Professor;
 import dev.matheus.cadastroBolsistas.model.Usuario;
@@ -206,7 +208,7 @@ class AuthApiControllerTest {
 
     @Test
     void perfil_semTrocarSenha_atualizaOsDados() throws Exception {
-        when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
+        when(bolsistaService.buscarOuFalhar(USUARIO_ID)).thenReturn(bolsistaLogado);
         when(bolsistaService.calcularNovaSenha(eq(bolsistaLogado), isNull(), isNull(), isNull())).thenReturn(null);
         logarComo(bolsistaLogado);
 
@@ -222,7 +224,7 @@ class AuthApiControllerTest {
 
     @Test
     void perfil_comSenhaAtualCorreta_gravaNovoHash() throws Exception {
-        when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
+        when(bolsistaService.buscarOuFalhar(USUARIO_ID)).thenReturn(bolsistaLogado);
         String hashEsperado = passwordEncoder.encode("novaSenha123");
         when(bolsistaService.calcularNovaSenha(bolsistaLogado, SENHA_ATUAL, "novaSenha123", "novaSenha123")).thenReturn(hashEsperado);
         logarComo(bolsistaLogado);
@@ -239,7 +241,7 @@ class AuthApiControllerTest {
 
     @Test
     void perfil_comSenhaAtualErrada_recusa() throws Exception {
-        when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
+        when(bolsistaService.buscarOuFalhar(USUARIO_ID)).thenReturn(bolsistaLogado);
         when(bolsistaService.calcularNovaSenha(bolsistaLogado, "chuteErrado", "hackeado123", "hackeado123"))
                 .thenThrow(new IllegalArgumentException("A senha atual informada esta incorreta."));
         logarComo(bolsistaLogado);
@@ -256,7 +258,7 @@ class AuthApiControllerTest {
 
     @Test
     void perfil_comConfirmacaoDiferente_recusa() throws Exception {
-        when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
+        when(bolsistaService.buscarOuFalhar(USUARIO_ID)).thenReturn(bolsistaLogado);
         when(bolsistaService.calcularNovaSenha(bolsistaLogado, SENHA_ATUAL, "novaSenha123", "outraCoisa"))
                 .thenThrow(new IllegalArgumentException("A nova senha e a confirmacao nao coincidem."));
         logarComo(bolsistaLogado);
@@ -272,7 +274,7 @@ class AuthApiControllerTest {
 
     @Test
     void perfil_comSenhaNovaCurta_recusa() throws Exception {
-        when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(bolsistaLogado);
+        when(bolsistaService.buscarOuFalhar(USUARIO_ID)).thenReturn(bolsistaLogado);
         when(bolsistaService.calcularNovaSenha(bolsistaLogado, SENHA_ATUAL, "123", "123"))
                 .thenThrow(new IllegalArgumentException("A nova senha deve ter pelo menos 6 caracteres."));
         logarComo(bolsistaLogado);
@@ -306,7 +308,7 @@ class AuthApiControllerTest {
         professor.setNome("Dr. Roberto");
         professor.setEmail("roberto@teste.com");
         professor.setSenha(passwordEncoder.encode(SENHA_ATUAL));
-        when(professorService.buscarPorId(profId)).thenReturn(professor);
+        when(professorService.buscarOuFalhar(profId)).thenReturn(professor);
         when(bolsistaService.calcularNovaSenha(eq(professor), isNull(), isNull(), isNull())).thenReturn(null);
         logarComo(professor);
 
@@ -317,13 +319,13 @@ class AuthApiControllerTest {
 
         verify(professorService).atualizar(any(Professor.class));
         /* fluxo de professor nao deve tocar em persistencia de bolsista */
-        verify(bolsistaService, never()).buscarPorId(any());
+        verify(bolsistaService, never()).buscarOuFalhar(any());
         verify(bolsistaService, never()).atualizar(any());
     }
 
     @Test
     void perfil_quandoOUsuarioSumiuDoBanco_retorna404() throws Exception {
-        when(bolsistaService.buscarPorId(USUARIO_ID)).thenReturn(null);
+        when(bolsistaService.buscarOuFalhar(USUARIO_ID)).thenThrow(new RecursoNaoEncontradoException("Usuario nao encontrado."));
         logarComo(bolsistaLogado);
 
         mockMvc.perform(patch("/api/v1/auth/perfil")
@@ -334,7 +336,6 @@ class AuthApiControllerTest {
 
     @Test
     void cadastroAdmin_dentroDoLimite_cria() throws Exception {
-        when(bolsistaService.podeCriarAdmin()).thenReturn(true);
         Bolsista adminCriado = new Bolsista();
         adminCriado.setId(UUID.randomUUID());
         adminCriado.setNome("Novo Admin");
@@ -356,7 +357,8 @@ class AuthApiControllerTest {
 
     @Test
     void cadastroAdmin_noLimite_retorna409() throws Exception {
-        when(bolsistaService.podeCriarAdmin()).thenReturn(false);
+        doThrow(new LimiteAdminsAtingidoException("O sistema ja possui o numero maximo de administradores permitido."))
+                .when(bolsistaService).exigirVagaParaNovoAdmin();
 
         mockMvc.perform(post("/api/v1/auth/cadastro-admin")
                         .contentType(MediaType.APPLICATION_JSON)

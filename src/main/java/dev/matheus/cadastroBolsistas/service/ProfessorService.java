@@ -36,16 +36,25 @@ public class ProfessorService {
         return repository.findById(id).orElse(null);
     }
 
-    /* PoC de mover regra de acesso pro service: so admin ve professor, 404 se nao existir. */
-    public Professor buscarExigindoAdmin(UUID id, Usuario logado) {
-        if (!logado.isAdmin()) {
-            throw new PermissaoNegadaException("Requer perfil de administrador.");
-        }
+    /* lookup + 404 num so lugar, pra nenhum controller precisar checar null na mao. */
+    public Professor buscarOuFalhar(UUID id) {
         Professor p = buscarPorId(id);
         if (p == null) {
             throw new RecursoNaoEncontradoException("Professor nao encontrado.");
         }
         return p;
+    }
+
+    /* so admin mexe em cadastro de professor. */
+    public void exigirAdmin(Usuario logado) {
+        if (!logado.isAdmin()) {
+            throw new PermissaoNegadaException("Requer perfil de administrador.");
+        }
+    }
+
+    public Professor buscarExigindoAdmin(UUID id, Usuario logado) {
+        exigirAdmin(logado);
+        return buscarOuFalhar(id);
     }
 
     public boolean atualizar(Professor p) {

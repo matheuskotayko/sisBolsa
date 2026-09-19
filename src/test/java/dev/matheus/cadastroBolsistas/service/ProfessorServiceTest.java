@@ -130,6 +130,14 @@ class ProfessorServiceTest {
     }
 
     @Test
+    void exigirAdmin_naoAdmin_lancaPermissaoNegada() {
+        Bolsista bolsista = new Bolsista();
+        bolsista.setTipoUsuario("BOLSISTA");
+
+        assertThrows(PermissaoNegadaException.class, () -> professorService.exigirAdmin(bolsista));
+    }
+
+    @Test
     void buscarExigindoAdmin_naoAdmin_lancaPermissaoNegadaSemConsultarRepositorio() {
         Bolsista bolsista = new Bolsista();
         bolsista.setTipoUsuario("BOLSISTA");
