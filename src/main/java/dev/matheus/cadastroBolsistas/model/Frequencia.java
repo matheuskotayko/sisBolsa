@@ -63,6 +63,9 @@ public class Frequencia {
         return bolsista != null ? bolsista.getNome() : null;
     }
 
+    /* so preenche o objeto em memoria: quem grava a coluna e o bolsistaId (a associacao e insertable = false). */
+    public void setBolsista(Bolsista bolsista) { this.bolsista = bolsista; }
+
     public LocalDate getData() { return data; }
     public void setData(LocalDate data) { this.data = data; }
 

@@ -34,6 +34,22 @@ class FrequenciaServiceTest {
     private FrequenciaService frequenciaService;
 
     @Test
+    void registrar_preencheOBolsistaParaAResposta() {
+        UUID bolsistaId = UUID.randomUUID();
+        Bolsista b = new Bolsista();
+        b.setId(bolsistaId);
+        b.setNome("Lucas Oliveira");
+        when(bolsistaService.buscarPorId(bolsistaId)).thenReturn(b);
+        Frequencia f = new Frequencia();
+        f.setBolsistaId(bolsistaId);
+
+        frequenciaService.registrar(f);
+
+        assertTrue(f.isAtivo());
+        assertEquals("Lucas Oliveira", f.getNomeBolsista());
+    }
+
+    @Test
     void buscarOuFalhar_inexistente_lancaRecursoNaoEncontrado() {
         UUID id = UUID.randomUUID();
         when(repository.findByIdAndAtivoTrue(id)).thenReturn(Optional.empty());

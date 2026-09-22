@@ -38,6 +38,12 @@ public class FrequenciaService {
     public boolean registrar(Frequencia f) {
         f.setAtivo(true);
         repository.save(f);
+        /*
+         * a associacao com o bolsista e so leitura: o save grava pelo bolsistaId e
+         * deixa o objeto nulo ate a entidade ser relida - sem isso a resposta do
+         * POST sai com nomeBolsista null.
+         */
+        f.setBolsista(bolsistaService.buscarPorId(f.getBolsistaId()));
         return true;
     }
 
