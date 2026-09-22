@@ -219,7 +219,7 @@ def slide_contexto(prs, n):
            entrelinha=1.25)
     _texto(s, 1.05, 4.95, 17.91, 2.6,
            [[("a) Superfície da API", True), (": 9 controllers REST e 53 endpoints sob /api/v1, um controller por recurso", False)],
-            [("b) Qualidade verificável", True), (": 150 testes automatizados, sem dependência de banco externo", False)],
+            [("b) Qualidade verificável", True), (": 151 testes automatizados, sem dependência de banco externo", False)],
             [("c) Documentação viva", True), (": OpenAPI 3 / Swagger UI gerados a partir das próprias anotações do código", False)],
             [("d) Implantação reproduzível", True), (": Docker Compose sobe banco e API com migrations e massa de demonstração", False)]],
            entrelinha=1.25, espaco_entre=12)
@@ -436,7 +436,7 @@ def slide_endpoints(prs, n):
     dados = [
         ("Recurso", "Base da URL", "Principais operações"),
         ("Bolsistas", "/api/v1/bolsistas",
-         "Listagem paginada e busca por nome ou curso, cadastro, atualização parcial (PATCH), desativação, "
+         "Listagem paginada e busca por nome ou curso, cadastro, atualização (PUT), desativação, "
          "exportação CSV, cargos e modalidades — cobre também os administradores"),
         ("Professores", "/api/v1/professores",
          "CRUD completo dos coordenadores — restrito a administradores"),
@@ -467,8 +467,8 @@ def slide_controller(prs, n):
     return _slide_figura_direita(
         prs, n, "7  A API REST", "7.2 BOAS PRÁTICAS NO CONTROLLER",
         ["a) um controller por recurso, mapeado em /api/v1/<recurso>, com os verbos correspondendo às operações;",
-         "b) PATCH para atualização parcial e PUT para substituição total; POST devolve 201 Created com o "
-         "header Location do recurso criado;",
+         "b) PUT para edição, substituindo o recurso inteiro, e PATCH só no perfil, onde a alteração é "
+         "pontual; POST devolve 201 Created com o header Location do recurso criado;",
          "c) DELETE devolve 204 No Content e faz exclusão lógica, preservando o histórico;",
          "d) a permissão não é decidida aqui: o controller chama o service, que devolve a entidade ou lança "
          "a exceção;",
@@ -526,7 +526,7 @@ def slide_repositorio(prs, n):
          "c) filtros opcionais (período, termo de busca, laboratório) usam Specification, a Criteria API do "
          "próprio JPA: cada predicado só entra no WHERE se o parâmetro tiver sido informado;",
          "d) @Query ficou restrito ao repositório de relatórios, onde há agregação com GROUP BY;",
-         "e) a exclusão é um soft delete e o schema é versionado em 10 migrations do Flyway."],
+         "e) a exclusão é um soft delete e o schema é versionado em 12 migrations do Flyway."],
         "cod_repositorio.png", "Figura 12 – Trecho de código: repositório Spring Data JPA",
         img_y=3.15, sz=18)
 
@@ -576,20 +576,20 @@ def slide_testes(prs, n):
     legenda(s, 1.05, 2.98, 11.0, "Quadro 4 – Testes automatizados por área", sz=FONTE_SZ, align=PP_ALIGN.LEFT)
     dados = [
         ("Área", "Testes"),
-        ("Regras de negócio e permissões (services)", "99"),
+        ("Regras de negócio e permissões (services)", "100"),
         ("Controller de autenticação (MockMvc)", "18"),
         ("Utilitários de domínio", "11"),
         ("Modelo e enums do domínio", "10"),
         ("Segurança: rate limiting e reset de senha", "8"),
         ("Tratamento de exceções da API", "3"),
         ("Contexto da aplicação", "1"),
-        ("Total", "150"),
+        ("Total", "151"),
     ]
     quadro(s, 1.05, 3.38, 11.0, dados, [8.6, 2.4], sz=17, altura_linha=0.44)
     fonte(s, 1.05, 3.38 + 0.44 * len(dados) + 0.14, 11.0, align=PP_ALIGN.LEFT)
     subtitulo(s, 12.9, 3.42, 6.1, "COMO A SUÍTE É ORGANIZADA")
     _texto(s, 12.9, 4.12, 6.1, 5.5,
-           ["a) 150 testes em 17 arquivos, executados sem banco de dados externo;",
+           ["a) 151 testes em 17 arquivos, executados sem banco de dados externo;",
             "b) o peso está na camada de service, onde vivem as regras — cada permissão tem teste de "
             "concessão e de negação;",
             "c) o controller é testado com MockMvc, verificando status e corpo da resposta;",
@@ -608,7 +608,7 @@ def slide_criterios(prs, n):
             [("d) Documentação gerada do código", True), (": OpenAPI 3 e Swagger UI a partir das anotações, mais coleções Postman de fluxo e de casos negativos", False)],
             [("e) Segurança concreta", True), (": sessão stateless com JWT em cookie httpOnly, BCrypt, rate limiting e três perfis com permissões efetivamente distintas", False)],
             [("f) Erros com significado", True), (": exceções de domínio traduzidas para 400, 401, 403, 404, 409 e 429, com corpo de erro padronizado", False)],
-            [("g) Qualidade verificável", True), (": 150 testes automatizados cobrindo a matriz de autorização e as regras de domínio", False)]],
+            [("g) Qualidade verificável", True), (": 151 testes automatizados cobrindo a matriz de autorização e as regras de domínio", False)]],
            sz=19, entrelinha=1.2, espaco_entre=13)
 
 

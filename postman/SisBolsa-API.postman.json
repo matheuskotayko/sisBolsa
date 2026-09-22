@@ -261,6 +261,178 @@
                 }
             }
         },
+        "/api/v1/professores/{id}": {
+            "get": {
+                "tags": [
+                    "Professores"
+                ],
+                "summary": "Buscar professor por ID",
+                "description": "Recupera as informa\u00e7\u00f5es detalhadas de um professor coordenador (restrito a Administradores).",
+                "operationId": "buscar_1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do professor (UUID)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Dados do professor",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UsuarioResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso restrito a administradores",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Professor n\u00e3o encontrado",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Professores"
+                ],
+                "summary": "Atualizar professor",
+                "description": "Substitui os dados do professor pelos enviados: campo omitido fica vazio (restrito a Administradores). Se a senha vier em branco, a atual \u00e9 preservada.",
+                "operationId": "atualizar_1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do professor a atualizar",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Novos dados do professor",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ProfessorRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Professor atualizado com sucesso",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UsuarioResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Dados inv\u00e1lidos",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso restrito a administradores",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Professor n\u00e3o encontrado",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Professores"
+                ],
+                "summary": "Desativar professor (Soft Delete)",
+                "description": "Desativa um professor coordenador (restrito a Administradores).",
+                "operationId": "excluir_1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do professor a desativar",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Professor desativado com sucesso"
+                    },
+                    "403": {
+                        "description": "Acesso restrito a administradores",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Professor n\u00e3o encontrado",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/laboratorios/{id}": {
             "get": {
                 "tags": [
@@ -268,7 +440,7 @@
                 ],
                 "summary": "Buscar laborat\u00f3rio por ID",
                 "description": "Retorna os detalhes de um laborat\u00f3rio espec\u00edfico incluindo capacidade e percentual de ocupa\u00e7\u00e3o.",
-                "operationId": "buscar_1",
+                "operationId": "buscar_2",
                 "parameters": [
                     {
                         "name": "id",
@@ -310,7 +482,7 @@
                 ],
                 "summary": "Atualizar laborat\u00f3rio",
                 "description": "Atualiza os dados de capacidade, nome, \u00e1rea de pesquisa ou coordenador do laborat\u00f3rio.",
-                "operationId": "atualizar_1",
+                "operationId": "atualizar_2",
                 "parameters": [
                     {
                         "name": "id",
@@ -383,7 +555,7 @@
                 ],
                 "summary": "Desativar laborat\u00f3rio (Soft Delete)",
                 "description": "Desativa o laborat\u00f3rio no sistema.",
-                "operationId": "excluir_1",
+                "operationId": "excluir_2",
                 "parameters": [
                     {
                         "name": "id",
@@ -430,7 +602,7 @@
                 ],
                 "summary": "Buscar frequ\u00eancia por ID",
                 "description": "Retorna um apontamento de frequ\u00eancia individual pelo identificador UUID.",
-                "operationId": "buscar_2",
+                "operationId": "buscar_3",
                 "parameters": [
                     {
                         "name": "id",
@@ -472,7 +644,7 @@
                 ],
                 "summary": "Atualizar apontamento de frequ\u00eancia",
                 "description": "Altera as horas, data, descri\u00e7\u00e3o ou link de entreg\u00e1vel de um registro de frequ\u00eancia.",
-                "operationId": "atualizar_2",
+                "operationId": "atualizar_3",
                 "parameters": [
                     {
                         "name": "id",
@@ -535,7 +707,7 @@
                 ],
                 "summary": "Desativar frequ\u00eancia (Soft Delete)",
                 "description": "Desativa um registro de apontamento de horas.",
-                "operationId": "excluir_2",
+                "operationId": "excluir_3",
                 "parameters": [
                     {
                         "name": "id",
@@ -554,6 +726,178 @@
                     },
                     "404": {
                         "description": "Frequ\u00eancia n\u00e3o encontrada",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/bolsistas/{id}": {
+            "get": {
+                "tags": [
+                    "Bolsistas"
+                ],
+                "summary": "Buscar bolsista por ID",
+                "description": "Recupera as informa\u00e7\u00f5es detalhadas de um bolsista ou administrador pelo seu identificador UUID.",
+                "operationId": "buscar_4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do bolsista (UUID)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Dados do bolsista",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UsuarioResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Sem permiss\u00e3o para ver este bolsista",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Bolsista n\u00e3o encontrado",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Bolsistas"
+                ],
+                "summary": "Atualizar bolsista ou administrador",
+                "description": "Substitui os dados do bolsista pelos enviados: campo omitido fica vazio. Se a senha vier em branco, a atual \u00e9 preservada.",
+                "operationId": "atualizar_4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do bolsista a atualizar",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Novos dados do bolsista",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BolsistaRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Bolsista atualizado com sucesso",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UsuarioResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Dados inv\u00e1lidos",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Sem permiss\u00e3o para editar este bolsista",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Bolsista n\u00e3o encontrado",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Bolsistas"
+                ],
+                "summary": "Desativar bolsista (Soft Delete)",
+                "description": "Desativa um bolsista ou administrador, mantendo o hist\u00f3rico de frequ\u00eancia e projetos \u00edntegros no banco de dados.",
+                "operationId": "excluir_4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do bolsista a desativar",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Bolsista desativado com sucesso"
+                    },
+                    "403": {
+                        "description": "Sem permiss\u00e3o para desativar este bolsista",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErroResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Bolsista n\u00e3o encontrado",
                         "content": {
                             "*/*": {
                                 "schema": {
@@ -710,7 +1054,8 @@
                         "schema": {
                             "type": "string",
                             "format": "uuid"
-                        }
+                        },
+                        "example": "e1111111-1111-1111-1111-111111111111"
                     },
                     {
                         "name": "bolsistaId",
@@ -720,7 +1065,8 @@
                         "schema": {
                             "type": "string",
                             "format": "uuid"
-                        }
+                        },
+                        "example": "d3333333-3333-3333-3333-333333333333"
                     }
                 ],
                 "responses": {
@@ -1606,350 +1952,6 @@
                     },
                     "409": {
                         "description": "Limite de administradores atingido",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/professores/{id}": {
-            "get": {
-                "tags": [
-                    "Professores"
-                ],
-                "summary": "Buscar professor por ID",
-                "description": "Recupera as informa\u00e7\u00f5es detalhadas de um professor coordenador (restrito a Administradores).",
-                "operationId": "buscar_3",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "ID do professor (UUID)",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Dados do professor",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/UsuarioResponse"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Acesso restrito a administradores",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Professor n\u00e3o encontrado",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "Professores"
-                ],
-                "summary": "Desativar professor (Soft Delete)",
-                "description": "Desativa um professor coordenador (restrito a Administradores).",
-                "operationId": "excluir_3",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "ID do professor a desativar",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Professor desativado com sucesso"
-                    },
-                    "403": {
-                        "description": "Acesso restrito a administradores",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Professor n\u00e3o encontrado",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "patch": {
-                "tags": [
-                    "Professores"
-                ],
-                "summary": "Atualizar professor",
-                "description": "Atualiza os dados de um professor existente (restrito a Administradores). Se a senha for enviada em branco, a atual \u00e9 preservada.",
-                "operationId": "atualizar_3",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "ID do professor a atualizar",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "Novos dados do professor",
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/ProfessorRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "200": {
-                        "description": "Professor atualizado com sucesso",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/UsuarioResponse"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Dados inv\u00e1lidos",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Acesso restrito a administradores",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Professor n\u00e3o encontrado",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/bolsistas/{id}": {
-            "get": {
-                "tags": [
-                    "Bolsistas"
-                ],
-                "summary": "Buscar bolsista por ID",
-                "description": "Recupera as informa\u00e7\u00f5es detalhadas de um bolsista ou administrador pelo seu identificador UUID.",
-                "operationId": "buscar_4",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "ID do bolsista (UUID)",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Dados do bolsista",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/UsuarioResponse"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Sem permiss\u00e3o para ver este bolsista",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Bolsista n\u00e3o encontrado",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "tags": [
-                    "Bolsistas"
-                ],
-                "summary": "Desativar bolsista (Soft Delete)",
-                "description": "Desativa um bolsista ou administrador, mantendo o hist\u00f3rico de frequ\u00eancia e projetos \u00edntegros no banco de dados.",
-                "operationId": "excluir_4",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "ID do bolsista a desativar",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Bolsista desativado com sucesso"
-                    },
-                    "403": {
-                        "description": "Sem permiss\u00e3o para desativar este bolsista",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Bolsista n\u00e3o encontrado",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "patch": {
-                "tags": [
-                    "Bolsistas"
-                ],
-                "summary": "Atualizar bolsista ou administrador",
-                "description": "Atualiza os dados de um bolsista existente. Se o campo de senha for enviado em branco, a senha atual \u00e9 preservada.",
-                "operationId": "atualizar_4",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "ID do bolsista a atualizar",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "Novos dados do bolsista",
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/BolsistaRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "responses": {
-                    "200": {
-                        "description": "Bolsista atualizado com sucesso",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/UsuarioResponse"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Dados inv\u00e1lidos",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Sem permiss\u00e3o para editar este bolsista",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ErroResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Bolsista n\u00e3o encontrado",
                         "content": {
                             "*/*": {
                                 "schema": {
@@ -2902,6 +2904,179 @@
                     }
                 }
             },
+            "ProfessorRequest": {
+                "type": "object",
+                "description": "Dados para cadastro ou atualiza\u00e7\u00e3o de professor coordenador.",
+                "properties": {
+                    "nome": {
+                        "type": "string",
+                        "description": "Nome completo",
+                        "example": "Dra. Juliana Ferreira",
+                        "minLength": 1
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "description": "E-mail de acesso institucional",
+                        "example": "juliana.ferreira@sisbolsa.com",
+                        "minLength": 1
+                    },
+                    "senha": {
+                        "type": "string",
+                        "description": "Senha de acesso (obrigat\u00f3ria na cria\u00e7\u00e3o, opcional na edi\u00e7\u00e3o)",
+                        "example": "12345678"
+                    },
+                    "fotoUrl": {
+                        "type": "string",
+                        "description": "URL p\u00fablica da foto de perfil",
+                        "example": "https://i.pravatar.cc/150?img=32"
+                    },
+                    "bio": {
+                        "type": "string",
+                        "description": "Biografia / Apresenta\u00e7\u00e3o acad\u00eamica",
+                        "example": "Pesquisadora em sistemas embarcados e Internet das Coisas."
+                    }
+                },
+                "required": [
+                    "email",
+                    "nome"
+                ]
+            },
+            "UsuarioResponse": {
+                "type": "object",
+                "description": "Dados detalhados do usu\u00e1rio (Bolsista, Professor ou Administrador).",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Identificador \u00fanico (UUID)",
+                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    },
+                    "nome": {
+                        "type": "string",
+                        "description": "Nome completo do usu\u00e1rio",
+                        "example": "Lucas Oliveira"
+                    },
+                    "email": {
+                        "type": "string",
+                        "description": "E-mail de acesso institucional",
+                        "example": "lucas.oliveira@aluno.sisbolsa.com"
+                    },
+                    "tipoUsuario": {
+                        "type": "string",
+                        "description": "Tipo de perfil de acesso",
+                        "enum": [
+                            "ADMIN",
+                            "PROFESSOR",
+                            "BOLSISTA"
+                        ],
+                        "example": "BOLSISTA"
+                    },
+                    "fotoUrl": {
+                        "type": "string",
+                        "description": "URL p\u00fablica da foto de perfil",
+                        "example": "https://images.unsplash.com/photo-1534528741775-53994a69daeb"
+                    },
+                    "bio": {
+                        "type": "string",
+                        "description": "Biografia ou apresenta\u00e7\u00e3o acad\u00eamica",
+                        "example": "Estudante de Engenharia de Software e bolsista de IC."
+                    },
+                    "ativo": {
+                        "type": "boolean",
+                        "description": "Indica se o cadastro est\u00e1 ativo no sistema",
+                        "example": true
+                    },
+                    "curso": {
+                        "type": "string",
+                        "description": "Curso de gradua\u00e7\u00e3o do bolsista",
+                        "example": "Engenharia de Software"
+                    },
+                    "matricula": {
+                        "type": "string",
+                        "description": "Matr\u00edcula acad\u00eamica do bolsista",
+                        "example": "20240101"
+                    },
+                    "cpf": {
+                        "type": "string",
+                        "description": "CPF formatado do bolsista",
+                        "example": "123.456.789-00"
+                    },
+                    "telefone": {
+                        "type": "string",
+                        "description": "Telefone de contato",
+                        "example": "(48) 99999-1234"
+                    },
+                    "dataNascimento": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Data de nascimento",
+                        "example": "2002-05-15"
+                    },
+                    "laboratorioId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "ID do laborat\u00f3rio vinculado",
+                        "example": "4fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    },
+                    "nomeLaboratorio": {
+                        "type": "string",
+                        "description": "Nome do laborat\u00f3rio vinculado",
+                        "example": "Laborat\u00f3rio de Sistemas Inteligentes (LSI)"
+                    },
+                    "cargo": {
+                        "type": "string",
+                        "description": "Cargo no laborat\u00f3rio",
+                        "example": "DESENVOLVEDOR"
+                    },
+                    "modalidadeBolsa": {
+                        "type": "string",
+                        "description": "Modalidade da bolsa de pesquisa",
+                        "enum": [
+                            "PIBIC",
+                            "PIBITI",
+                            "EXTENSAO",
+                            "MONITORIA",
+                            "INSTITUCIONAL",
+                            "OUTRO"
+                        ],
+                        "example": "PIBIC"
+                    },
+                    "modalidadeBolsaDescricao": {
+                        "type": "string",
+                        "description": "Descri\u00e7\u00e3o formatada da modalidade de bolsa",
+                        "example": "PIBIC - Inicia\u00e7\u00e3o Cient\u00edfica"
+                    },
+                    "valorBolsa": {
+                        "type": "number",
+                        "format": "double",
+                        "description": "Valor mensal da bolsa em Reais (R$)",
+                        "example": 700.0
+                    },
+                    "dataInicioBolsa": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Data de in\u00edcio da vig\u00eancia da bolsa",
+                        "example": "2026-03-01"
+                    },
+                    "dataFimBolsa": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Data de t\u00e9rmino da vig\u00eancia da bolsa",
+                        "example": "2026-12-31"
+                    },
+                    "bolsaVencida": {
+                        "type": "boolean",
+                        "description": "Indica se a vig\u00eancia da bolsa j\u00e1 expirou",
+                        "example": false
+                    },
+                    "bolsaPrestesAVencer": {
+                        "type": "boolean",
+                        "description": "Indica se a vig\u00eancia da bolsa expira em menos de 30 dias",
+                        "example": false
+                    }
+                }
+            },
             "LaboratorioRequest": {
                 "type": "object",
                 "description": "Dados para cria\u00e7\u00e3o ou atualiza\u00e7\u00e3o de um laborat\u00f3rio de pesquisa.",
@@ -3101,211 +3276,6 @@
                     }
                 }
             },
-            "ProfessorRequest": {
-                "type": "object",
-                "description": "Dados para cadastro ou atualiza\u00e7\u00e3o de professor coordenador.",
-                "properties": {
-                    "nome": {
-                        "type": "string",
-                        "description": "Nome completo",
-                        "example": "Dr. Roberto Mendes",
-                        "minLength": 1
-                    },
-                    "email": {
-                        "type": "string",
-                        "format": "email",
-                        "description": "E-mail de acesso institucional",
-                        "example": "roberto.mendes@sisbolsa.com",
-                        "minLength": 1
-                    },
-                    "senha": {
-                        "type": "string",
-                        "description": "Senha de acesso (obrigat\u00f3ria na cria\u00e7\u00e3o, opcional na edi\u00e7\u00e3o)",
-                        "example": "12345678"
-                    },
-                    "fotoUrl": {
-                        "type": "string",
-                        "description": "URL p\u00fablica da foto de perfil",
-                        "example": "https://i.pravatar.cc/150?img=11"
-                    },
-                    "bio": {
-                        "type": "string",
-                        "description": "Biografia / Apresenta\u00e7\u00e3o acad\u00eamica",
-                        "example": "Coordenador do laborat\u00f3rio de desenvolvimento de software."
-                    }
-                },
-                "required": [
-                    "email",
-                    "nome"
-                ]
-            },
-            "UsuarioResponse": {
-                "type": "object",
-                "description": "Dados detalhados do usu\u00e1rio (Bolsista, Professor ou Administrador).",
-                "properties": {
-                    "id": {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "Identificador \u00fanico (UUID)",
-                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                    },
-                    "nome": {
-                        "type": "string",
-                        "description": "Nome completo do usu\u00e1rio",
-                        "example": "Lucas Oliveira"
-                    },
-                    "email": {
-                        "type": "string",
-                        "description": "E-mail de acesso institucional",
-                        "example": "lucas.oliveira@aluno.sisbolsa.com"
-                    },
-                    "tipoUsuario": {
-                        "type": "string",
-                        "description": "Tipo de perfil de acesso",
-                        "enum": [
-                            "ADMIN",
-                            "PROFESSOR",
-                            "BOLSISTA"
-                        ],
-                        "example": "BOLSISTA"
-                    },
-                    "fotoUrl": {
-                        "type": "string",
-                        "description": "URL p\u00fablica da foto de perfil",
-                        "example": "https://images.unsplash.com/photo-1534528741775-53994a69daeb"
-                    },
-                    "bio": {
-                        "type": "string",
-                        "description": "Biografia ou apresenta\u00e7\u00e3o acad\u00eamica",
-                        "example": "Estudante de Engenharia de Software e bolsista de IC."
-                    },
-                    "ativo": {
-                        "type": "boolean",
-                        "description": "Indica se o cadastro est\u00e1 ativo no sistema",
-                        "example": true
-                    },
-                    "curso": {
-                        "type": "string",
-                        "description": "Curso de gradua\u00e7\u00e3o do bolsista",
-                        "example": "Engenharia de Software"
-                    },
-                    "matricula": {
-                        "type": "string",
-                        "description": "Matr\u00edcula acad\u00eamica do bolsista",
-                        "example": "20240101"
-                    },
-                    "cpf": {
-                        "type": "string",
-                        "description": "CPF formatado do bolsista",
-                        "example": "123.456.789-00"
-                    },
-                    "telefone": {
-                        "type": "string",
-                        "description": "Telefone de contato",
-                        "example": "(48) 99999-1234"
-                    },
-                    "dataNascimento": {
-                        "type": "string",
-                        "format": "date",
-                        "description": "Data de nascimento",
-                        "example": "2002-05-15"
-                    },
-                    "laboratorioId": {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "ID do laborat\u00f3rio vinculado",
-                        "example": "4fa85f64-5717-4562-b3fc-2c963f66afa6"
-                    },
-                    "nomeLaboratorio": {
-                        "type": "string",
-                        "description": "Nome do laborat\u00f3rio vinculado",
-                        "example": "Laborat\u00f3rio de Sistemas Inteligentes (LSI)"
-                    },
-                    "cargo": {
-                        "type": "string",
-                        "description": "Cargo no laborat\u00f3rio",
-                        "example": "DESENVOLVEDOR"
-                    },
-                    "modalidadeBolsa": {
-                        "type": "string",
-                        "description": "Modalidade da bolsa de pesquisa",
-                        "enum": [
-                            "PIBIC",
-                            "PIBITI",
-                            "EXTENSAO",
-                            "MONITORIA",
-                            "INSTITUCIONAL",
-                            "OUTRO"
-                        ],
-                        "example": "PIBIC"
-                    },
-                    "modalidadeBolsaDescricao": {
-                        "type": "string",
-                        "description": "Descri\u00e7\u00e3o formatada da modalidade de bolsa",
-                        "example": "PIBIC - Inicia\u00e7\u00e3o Cient\u00edfica"
-                    },
-                    "valorBolsa": {
-                        "type": "number",
-                        "format": "double",
-                        "description": "Valor mensal da bolsa em Reais (R$)",
-                        "example": 700.0
-                    },
-                    "dataInicioBolsa": {
-                        "type": "string",
-                        "format": "date",
-                        "description": "Data de in\u00edcio da vig\u00eancia da bolsa",
-                        "example": "2026-03-01"
-                    },
-                    "dataFimBolsa": {
-                        "type": "string",
-                        "format": "date",
-                        "description": "Data de t\u00e9rmino da vig\u00eancia da bolsa",
-                        "example": "2026-12-31"
-                    },
-                    "bolsaVencida": {
-                        "type": "boolean",
-                        "description": "Indica se a vig\u00eancia da bolsa j\u00e1 expirou",
-                        "example": false
-                    },
-                    "bolsaPrestesAVencer": {
-                        "type": "boolean",
-                        "description": "Indica se a vig\u00eancia da bolsa expira em menos de 30 dias",
-                        "example": false
-                    }
-                }
-            },
-            "CursoRequest": {
-                "type": "object",
-                "description": "Dados para cadastro de um novo curso.",
-                "properties": {
-                    "nome": {
-                        "type": "string",
-                        "description": "Nome do curso",
-                        "example": "Engenharia de Software",
-                        "minLength": 1
-                    }
-                },
-                "required": [
-                    "nome"
-                ]
-            },
-            "CursoResponse": {
-                "type": "object",
-                "description": "Curso dispon\u00edvel para v\u00ednculo de bolsistas.",
-                "properties": {
-                    "id": {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "Identificador \u00fanico do curso (UUID)",
-                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                    },
-                    "nome": {
-                        "type": "string",
-                        "description": "Nome do curso",
-                        "example": "Ci\u00eancia da Computa\u00e7\u00e3o"
-                    }
-                }
-            },
             "BolsistaRequest": {
                 "type": "object",
                 "description": "Dados para cadastro ou atualiza\u00e7\u00e3o de bolsista / administrador.",
@@ -3313,7 +3283,7 @@
                     "nome": {
                         "type": "string",
                         "description": "Nome completo",
-                        "example": "Lucas Oliveira",
+                        "example": "Ana Pereira",
                         "minLength": 1
                     },
                     "email": {
@@ -3337,7 +3307,7 @@
                     "curso": {
                         "type": "string",
                         "description": "Curso de gradua\u00e7\u00e3o do bolsista",
-                        "example": "Engenharia de Software"
+                        "example": "Sistemas para Internet"
                     },
                     "matricula": {
                         "type": "string",
@@ -3428,6 +3398,38 @@
                     "nome",
                     "tipoUsuario"
                 ]
+            },
+            "CursoRequest": {
+                "type": "object",
+                "description": "Dados para cadastro de um novo curso.",
+                "properties": {
+                    "nome": {
+                        "type": "string",
+                        "description": "Nome do curso",
+                        "example": "Engenharia de Computa\u00e7\u00e3o",
+                        "minLength": 1
+                    }
+                },
+                "required": [
+                    "nome"
+                ]
+            },
+            "CursoResponse": {
+                "type": "object",
+                "description": "Curso dispon\u00edvel para v\u00ednculo de bolsistas.",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Identificador \u00fanico do curso (UUID)",
+                        "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    },
+                    "nome": {
+                        "type": "string",
+                        "description": "Nome do curso",
+                        "example": "Ci\u00eancia da Computa\u00e7\u00e3o"
+                    }
+                }
             },
             "RedefinirSenhaRequest": {
                 "type": "object",
@@ -3548,7 +3550,7 @@
                     "nome": {
                         "type": "string",
                         "description": "Nome completo",
-                        "example": "Maria Silva",
+                        "example": "Admin",
                         "maxLength": 2147483647,
                         "minLength": 3
                     },
@@ -3556,18 +3558,18 @@
                         "type": "string",
                         "format": "email",
                         "description": "E-mail de acesso",
-                        "example": "maria.silva@sisbolsa.com",
+                        "example": "admin@sisbolsa.com",
                         "minLength": 1
                     },
                     "fotoUrl": {
                         "type": "string",
                         "description": "URL p\u00fablica da foto de perfil",
-                        "example": "https://images.unsplash.com/photo-1494790108377-be9c29b29330"
+                        "example": "https://ui-avatars.com/api/?name=Admin"
                     },
                     "bio": {
                         "type": "string",
                         "description": "Biografia ou resumo acad\u00eamico",
-                        "example": "Pesquisadora em Intelig\u00eancia Artificial e Processamento de Linguagem Natural."
+                        "example": "Administrador do SisBolsa e respons\u00e1vel pela gest\u00e3o das bolsas do CTISM."
                     },
                     "senhaAtual": {
                         "type": "string",
@@ -3577,12 +3579,12 @@
                     "senha": {
                         "type": "string",
                         "description": "Nova senha desejada (m\u00ednimo 6 caracteres)",
-                        "example": "NovaSenha@2026"
+                        "example": "12345678"
                     },
                     "confirmaSenha": {
                         "type": "string",
                         "description": "Confirma\u00e7\u00e3o da nova senha",
-                        "example": "NovaSenha@2026"
+                        "example": "12345678"
                     }
                 },
                 "required": [

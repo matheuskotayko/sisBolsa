@@ -6,6 +6,6 @@ import jakarta.validation.constraints.NotBlank;
 @Schema(description = "Dados para cadastro de um novo curso.")
 public record CursoRequest(
         @NotBlank(message = "Nome do curso e obrigatorio.")
-        @Schema(description = "Nome do curso", example = "Engenharia de Software", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "Nome do curso", example = "Engenharia de Computação", requiredMode = Schema.RequiredMode.REQUIRED)
         String nome) {
 }

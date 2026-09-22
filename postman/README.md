@@ -27,6 +27,26 @@ A API usa JWT em cookie `httpOnly` (nao Bearer token). Fluxo no Postman:
 3. Toda chamada seguinte para `localhost:8080` na mesma sessao do Postman ja
    sai autenticada — nao precisa copiar token em lugar nenhum.
 
+## Exemplos e o seed
+
+Todo endpoint de criacao sai com um corpo que cria de primeira contra o
+banco recem-subido, sem esbarrar no seed do Flyway: professora Juliana
+Ferreira, bolsista Ana Pereira (CPF e matricula ineditos), curso Engenharia
+de Computacao, e o vinculo do Diego ao projeto do laboratorio de software.
+Rodar o mesmo POST duas vezes da 409 - e o `UNIQUE` do banco fazendo o
+trabalho dele, nao conflito com o seed.
+
+Dois cuidados:
+
+- **PUT de bolsista e de professor reaproveitam o corpo de criacao.**
+  Aplique no registro que voce acabou de criar: em outro, o e-mail e o CPF
+  do exemplo ja pertencem a esse registro novo e voltam 409. PUT substitui
+  o recurso inteiro - campo omitido fica vazio; so a senha em branco e
+  preservada.
+- **`PATCH /auth/perfil` altera quem esta logado.** O exemplo e o proprio
+  admin do seed com a mesma senha, entao so a bio muda e a sessao continua
+  valendo.
+
 ## Base URL
 
 A colecao vem com `http://localhost:8080` fixado (e o `server` declarado no
@@ -62,8 +82,12 @@ mais um `pm.test` conferindo os dois.
    admin pra bolsista na pasta 5, entao a ordem importa.
 
 A pasta `4. 409` cria 2 administradores extras pra forcar o limite e os
-desativa (soft delete) ao final - roda mais de uma vez sem deixar residuo
-no banco. A pasta `7. 429` usa um e-mail que nao existe no sistema, entao
+desativa (soft delete) ao final. Como o soft delete mantem a linha - e o
+e-mail continua ocupado -, os e-mails levam um sufixo gerado a cada
+execucao: a colecao roda quantas vezes quiser sem deixar admin ativo
+sobrando. Ela conta com o limite de 3 admins partindo de 1 (o do seed),
+entao rode antes do `POST /auth/cadastro-admin` da colecao principal - ou
+num banco recem-subido. A pasta `7. 429` usa um e-mail que nao existe no sistema, entao
 nao bloqueia nenhuma conta real.
 
 O request `Bolsista tenta cadastrar usuario` (pasta `5. 403`) tem um

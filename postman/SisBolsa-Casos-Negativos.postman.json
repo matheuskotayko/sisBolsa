@@ -16,6 +16,10 @@
     {
       "key": "adminExtra2Id",
       "value": ""
+    },
+    {
+      "key": "execucao",
+      "value": ""
     }
   ],
   "item": [
@@ -227,10 +231,20 @@
             "description": "Seed de apresentacao ja tem 1 admin (Carlos). Limite e 3. Este e o 2o, ainda dentro do limite.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nome\": \"Admin Extra Teste\",\n  \"email\": \"admin.extra.teste1@sisbolsa.com\",\n  \"senha\": \"123456\",\n  \"confirmaSenha\": \"123456\"\n}"
+              "raw": "{\n  \"nome\": \"Admin Extra Teste\",\n  \"email\": \"admin.extra.{{execucao}}.1@sisbolsa.com\",\n  \"senha\": \"123456\",\n  \"confirmaSenha\": \"123456\"\n}"
             }
           },
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// e-mail novo a cada execucao: o cleanup e soft delete e o e-mail continua ocupado no banco",
+                  "pm.collectionVariables.set('execucao', Date.now());"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -266,7 +280,7 @@
             "description": "3o admin no total - atinge exatamente o limite de 3. Ainda deve criar com sucesso.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nome\": \"Admin Extra Teste\",\n  \"email\": \"admin.extra.teste2@sisbolsa.com\",\n  \"senha\": \"123456\",\n  \"confirmaSenha\": \"123456\"\n}"
+              "raw": "{\n  \"nome\": \"Admin Extra Teste\",\n  \"email\": \"admin.extra.{{execucao}}.2@sisbolsa.com\",\n  \"senha\": \"123456\",\n  \"confirmaSenha\": \"123456\"\n}"
             }
           },
           "event": [
@@ -305,7 +319,7 @@
             "description": "Com 3 admins ja cadastrados, esta tentativa deve ser rejeitada por LimiteAdminsAtingidoException.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nome\": \"Admin Extra Teste\",\n  \"email\": \"admin.extra.teste3@sisbolsa.com\",\n  \"senha\": \"123456\",\n  \"confirmaSenha\": \"123456\"\n}"
+              "raw": "{\n  \"nome\": \"Admin Extra Teste\",\n  \"email\": \"admin.extra.{{execucao}}.3@sisbolsa.com\",\n  \"senha\": \"123456\",\n  \"confirmaSenha\": \"123456\"\n}"
             }
           },
           "event": [

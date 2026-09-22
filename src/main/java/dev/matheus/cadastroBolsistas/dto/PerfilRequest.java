@@ -14,26 +14,26 @@ import jakarta.validation.constraints.Size;
 public record PerfilRequest(
         @NotBlank(message = "O nome deve ter pelo menos 3 caracteres.")
         @Size(min = 3, message = "O nome deve ter pelo menos 3 caracteres.")
-        @Schema(description = "Nome completo", example = "Maria Silva", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "Nome completo", example = "Admin", requiredMode = Schema.RequiredMode.REQUIRED)
         String nome,
 
         @NotBlank(message = "E-mail e obrigatorio.")
         @Email(message = "Informe um e-mail valido.")
-        @Schema(description = "E-mail de acesso", example = "maria.silva@sisbolsa.com", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "E-mail de acesso", example = "admin@sisbolsa.com", requiredMode = Schema.RequiredMode.REQUIRED)
         String email,
 
-        @Schema(description = "URL pública da foto de perfil", example = "https://images.unsplash.com/photo-1494790108377-be9c29b29330", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+        @Schema(description = "URL pública da foto de perfil", example = "https://ui-avatars.com/api/?name=Admin", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
         String fotoUrl,
 
-        @Schema(description = "Biografia ou resumo acadêmico", example = "Pesquisadora em Inteligência Artificial e Processamento de Linguagem Natural.", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+        @Schema(description = "Biografia ou resumo acadêmico", example = "Administrador do SisBolsa e responsável pela gestão das bolsas do CTISM.", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
         String bio,
 
         @Schema(description = "Senha atual (obrigatória apenas se desejar trocar a senha)", example = "12345678", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
         String senhaAtual,
 
-        @Schema(description = "Nova senha desejada (mínimo 6 caracteres)", example = "NovaSenha@2026", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+        @Schema(description = "Nova senha desejada (mínimo 6 caracteres)", example = "12345678", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
         String senha,
 
-        @Schema(description = "Confirmação da nova senha", example = "NovaSenha@2026", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+        @Schema(description = "Confirmação da nova senha", example = "12345678", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
         String confirmaSenha) {
 }

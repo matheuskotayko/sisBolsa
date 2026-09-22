@@ -16,7 +16,7 @@ import java.util.UUID;
 @Schema(description = "Dados para cadastro ou atualização de bolsista / administrador.")
 public record BolsistaRequest(
         @NotBlank(message = "Nome e obrigatorio.")
-        @Schema(description = "Nome completo", example = "Lucas Oliveira", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "Nome completo", example = "Ana Pereira", requiredMode = Schema.RequiredMode.REQUIRED)
         String nome,
 
         @NotBlank(message = "E-mail e obrigatorio.")
@@ -30,7 +30,7 @@ public record BolsistaRequest(
         @Schema(description = "Data de nascimento", example = "2002-05-15", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
         LocalDate dataNascimento,
 
-        @Schema(description = "Curso de graduação do bolsista", example = "Engenharia de Software", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+        @Schema(description = "Curso de graduação do bolsista", example = "Sistemas para Internet", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
         String curso,
 
         @Schema(description = "Matrícula acadêmica única", example = "20240101", requiredMode = Schema.RequiredMode.NOT_REQUIRED)

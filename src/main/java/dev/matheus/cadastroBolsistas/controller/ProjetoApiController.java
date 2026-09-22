@@ -155,8 +155,9 @@ public class ProjetoApiController {
     })
     @PostMapping("/{id}/membros/{bolsistaId}")
     public ResponseEntity<Void> vincular(
-            @Parameter(description = "ID do projeto (UUID)", required = true) @PathVariable UUID id,
-            @Parameter(description = "ID do bolsista a vincular (UUID)", required = true) @PathVariable UUID bolsistaId) {
+            /* exemplo: Diego (lab de IA) no projeto do lab de software - vinculo que o seed ainda nao tem */
+            @Parameter(description = "ID do projeto (UUID)", required = true, example = "e1111111-1111-1111-1111-111111111111") @PathVariable UUID id,
+            @Parameter(description = "ID do bolsista a vincular (UUID)", required = true, example = "d3333333-3333-3333-3333-333333333333") @PathVariable UUID bolsistaId) {
         Usuario logado = usuarioLogado.obrigatorio();
         Projeto p = projetoService.buscarExigindoGerencia(id, logado);
         bolsistaService.buscarOuFalhar(bolsistaId);
