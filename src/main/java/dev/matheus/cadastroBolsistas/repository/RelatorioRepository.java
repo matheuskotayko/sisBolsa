@@ -10,6 +10,10 @@ import java.util.UUID;
 
 /*
  * queries analiticas da tela de relatorios com IDs UUID.
+ *
+ * unico repositorio que ainda usa @Query, de proposito: sao agregacoes
+ * (SUM/COUNT + GROUP BY + EXTRACT sobre a data) projetadas direto em interfaces,
+ * e nem consulta derivada nem Specification expressam GROUP BY com projecao.
  */
 @Repository
 public interface RelatorioRepository extends JpaRepository<Laboratorio, UUID> {

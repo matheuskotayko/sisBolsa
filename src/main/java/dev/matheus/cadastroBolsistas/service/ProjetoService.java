@@ -3,18 +3,19 @@ package dev.matheus.cadastroBolsistas.service;
 import dev.matheus.cadastroBolsistas.dto.ProjetoRequest;
 import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
 import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
+import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Projeto;
 import dev.matheus.cadastroBolsistas.model.Usuario;
+import dev.matheus.cadastroBolsistas.repository.BolsistaRepository;
+import dev.matheus.cadastroBolsistas.repository.Filtros;
 import dev.matheus.cadastroBolsistas.repository.ProjetoRepository;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 /*
@@ -28,6 +29,9 @@ public class ProjetoService {
 
     @Autowired
     private LaboratorioService laboratorioService;
+
+    @Autowired
+    private BolsistaRepository bolsistaRepository;
 
     public boolean cadastrar(Projeto p, Usuario logado) {
         if (!laboratorioService.podeGerenciar(logado, p.getLaboratorioId())) {
@@ -68,12 +72,12 @@ public class ProjetoService {
 
     public ArrayList<Projeto> buscarProjetos(String buscaNome, UUID labId) {
         String nome = buscaNome != null ? buscaNome.trim() : "";
-        return new ArrayList<>(repository.buscarProjetos(nome, labId));
+        return new ArrayList<>(repository.findAll(Filtros.projeto(nome, labId), Sort.by("nome")));
     }
 
     public ArrayList<Projeto> listarPorLaboratorio(UUID labId) {
         if (labId == null) return new ArrayList<>();
-        return new ArrayList<>(repository.buscarPorLaboratorio(labId));
+        return new ArrayList<>(repository.findByLaboratorioIdAndAtivoTrueOrderByNome(labId));
     }
 
     public Projeto buscarPorId(UUID id) {
@@ -83,7 +87,7 @@ public class ProjetoService {
 
     public int contarMembros(UUID projetoId) {
         if (projetoId == null) return 0;
-        return repository.contarMembros(projetoId);
+        return bolsistaRepository.countByProjetos_IdAndAtivoTrue(projetoId);
     }
 
     public boolean atualizar(Projeto p) {
@@ -99,64 +103,48 @@ public class ProjetoService {
         p.setLinkDocumentacao(StringUtil.limpar(body.linkDocumentacao()));
     }
 
-    /* soft delete */
+    /* soft delete: carrega, marca ativo = false e deixa o JPA fazer o UPDATE. */
     @Transactional
     public boolean excluir(UUID id) {
         if (id == null) return false;
-        return repository.desativar(id) > 0;
+        return repository.findById(id).map(p -> {
+            p.setAtivo(false);
+            repository.save(p);
+            return true;
+        }).orElse(false);
     }
 
+    /*
+     * vinculo e desvinculo sao so alteracoes na colecao do lado dono; o Hibernate
+     * traduz em INSERT/DELETE na bolsista_projeto no fim da transacao. o Set ja
+     * torna o vinculo idempotente, no lugar do antigo ON CONFLICT DO NOTHING.
+     */
     @Transactional
     public boolean vincularBolsista(UUID bolsistaId, UUID projetoId) {
-        if (bolsistaId == null || projetoId == null) return false;
-        repository.vincularBolsista(bolsistaId, projetoId);
-        return true;
+        return alterarVinculo(bolsistaId, projetoId, true);
     }
 
     @Transactional
     public boolean desvincularBolsista(UUID bolsistaId, UUID projetoId) {
-        if (bolsistaId == null || projetoId == null) return false;
-        repository.desvincularBolsista(bolsistaId, projetoId);
-        return true;
+        return alterarVinculo(bolsistaId, projetoId, false);
     }
 
-    @Transactional
-    public boolean desvincularBolsistaDeTodosProjetos(UUID bolsistaId) {
-        if (bolsistaId == null) return false;
-        repository.desvincularBolsistaDeTodosProjetos(bolsistaId);
+    private boolean alterarVinculo(UUID bolsistaId, UUID projetoId, boolean vincular) {
+        if (bolsistaId == null || projetoId == null) return false;
+        Projeto projeto = repository.findById(projetoId).orElse(null);
+        Bolsista bolsista = bolsistaRepository.findById(bolsistaId).orElse(null);
+        if (projeto == null || bolsista == null) return false;
+        if (vincular) {
+            projeto.getBolsistas().add(bolsista);
+        } else {
+            projeto.getBolsistas().remove(bolsista);
+        }
+        repository.save(projeto);
         return true;
     }
 
     public ArrayList<Projeto> listarPorBolsista(UUID bolsistaId) {
         if (bolsistaId == null) return new ArrayList<>();
-        return new ArrayList<>(repository.buscarPorBolsista(bolsistaId));
-    }
-
-    public Map<UUID, ArrayList<Projeto>> getProjetosDosBolsistasDoLaboratorio(UUID labId) {
-        if (labId == null) return new HashMap<>();
-        List<Object[]> vinculos = repository.buscarVinculosDoLaboratorio(labId);
-        if (vinculos.isEmpty()) {
-            return new HashMap<>();
-        }
-
-        List<UUID> projetoIds = vinculos.stream()
-                .map(v -> (UUID) v[1])
-                .distinct()
-                .toList();
-
-        Map<UUID, Projeto> porId = new HashMap<>();
-        for (Projeto p : repository.findAllById(projetoIds)) {
-            porId.put(p.getId(), p);
-        }
-
-        Map<UUID, ArrayList<Projeto>> mapa = new HashMap<>();
-        for (Object[] vinculo : vinculos) {
-            UUID bolsistaId = (UUID) vinculo[0];
-            Projeto projeto = porId.get((UUID) vinculo[1]);
-            if (projeto != null) {
-                mapa.computeIfAbsent(bolsistaId, k -> new ArrayList<>()).add(projeto);
-            }
-        }
-        return mapa;
+        return new ArrayList<>(repository.findByBolsistas_IdAndAtivoTrueOrderByNome(bolsistaId));
     }
 }

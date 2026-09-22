@@ -505,8 +505,8 @@ class BolsistaServiceTest {
         b1.setId(UUID.randomUUID());
         Bolsista b2 = new Bolsista();
         b2.setId(UUID.randomUUID());
-        when(repository.buscarPorLaboratorio(lab1.getId())).thenReturn(List.of(b1));
-        when(repository.buscarPorLaboratorio(lab2.getId())).thenReturn(List.of(b2));
+        when(repository.findByLaboratorioIdAndAtivoTrueOrderByNome(lab1.getId())).thenReturn(List.of(b1));
+        when(repository.findByLaboratorioIdAndAtivoTrueOrderByNome(lab2.getId())).thenReturn(List.of(b2));
 
         List<UUID> ids = bolsistaService.idsDosBolsistasCoordenadosPor(profId);
 

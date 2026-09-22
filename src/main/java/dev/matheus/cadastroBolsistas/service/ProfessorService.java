@@ -72,10 +72,14 @@ public class ProfessorService {
         return true;
     }
 
-    /* soft delete */
+    /* soft delete: carrega, marca ativo = false e deixa o JPA fazer o UPDATE. */
     @Transactional
     public boolean excluir(UUID id) {
         if (id == null) return false;
-        return repository.desativar(id) > 0;
+        return repository.findById(id).map(p -> {
+            p.setAtivo(false);
+            repository.save(p);
+            return true;
+        }).orElse(false);
     }
 }

@@ -93,19 +93,24 @@ class ProfessorServiceTest {
     @Test
     void excluir_fazSoftDeleteEmVezDeApagarALinha() throws SQLException {
         UUID id = UUID.randomUUID();
-        when(repository.desativar(id)).thenReturn(1);
+        Professor p = new Professor();
+        p.setId(id);
+        p.setAtivo(true);
+        when(repository.findById(id)).thenReturn(Optional.of(p));
 
         assertTrue(professorService.excluir(id));
-        verify(repository).desativar(id);
+        assertFalse(p.isAtivo());
+        verify(repository).save(p);
         verify(repository, never()).deleteById(any(UUID.class));
     }
 
     @Test
     void excluir_quandoNadaFoiAtualizado_retornaFalse() throws SQLException {
         UUID id = UUID.randomUUID();
-        when(repository.desativar(id)).thenReturn(0);
+        when(repository.findById(id)).thenReturn(Optional.empty());
 
         assertFalse(professorService.excluir(id));
+        verify(repository, never()).save(any(Professor.class));
     }
 
     @Test

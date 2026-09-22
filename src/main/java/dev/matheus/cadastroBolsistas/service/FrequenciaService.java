@@ -5,10 +5,13 @@ import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Frequencia;
 import dev.matheus.cadastroBolsistas.model.Usuario;
+import dev.matheus.cadastroBolsistas.repository.Filtros;
 import dev.matheus.cadastroBolsistas.repository.FrequenciaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +23,8 @@ import java.util.UUID;
 
 @Service
 public class FrequenciaService {
+
+    private static final Sort MAIS_RECENTES = Sort.by(Sort.Direction.DESC, "data");
 
     @Autowired
     private FrequenciaRepository repository;
@@ -69,12 +74,12 @@ public class FrequenciaService {
 
     public ArrayList<Frequencia> listarPorBolsista(UUID bolsistaId) {
         if (bolsistaId == null) return new ArrayList<>();
-        return new ArrayList<>(repository.buscarPorBolsista(bolsistaId));
+        return new ArrayList<>(repository.findByBolsistaIdAndAtivoTrueOrderByDataDesc(bolsistaId));
     }
 
     public ArrayList<Frequencia> listarPorLaboratorio(UUID labId) {
         if (labId == null) return new ArrayList<>();
-        return new ArrayList<>(repository.buscarPorLaboratorio(labId));
+        return new ArrayList<>(repository.findByBolsista_LaboratorioIdAndAtivoTrueOrderByDataDesc(labId));
     }
 
     public ArrayList<Frequencia> listarTodas() {
@@ -82,11 +87,8 @@ public class FrequenciaService {
     }
 
     public ArrayList<Frequencia> buscarFrequencias(UUID bolsistaId, LocalDate dataInicio, LocalDate dataFim, Integer limit, Integer offset) {
-        Pageable pageable = Pageable.unpaged();
-        if (limit != null && limit > 0 && offset != null && offset >= 0) {
-            pageable = PageRequest.of(offset / limit, limit);
-        }
-        return new ArrayList<>(repository.buscarFrequencias(bolsistaId, dataInicio, dataFim, pageable));
+        Specification<Frequencia> filtro = Filtros.frequencia(bolsistaId, dataInicio, dataFim);
+        return new ArrayList<>(repository.findAll(filtro, paginar(limit, offset)).getContent());
     }
 
     public ArrayList<Frequencia> buscarFrequencias(UUID bolsistaId, Integer limit, Integer offset) {
@@ -97,11 +99,15 @@ public class FrequenciaService {
         if (ids == null || ids.isEmpty()) {
             return new ArrayList<>();
         }
-        Pageable pageable = Pageable.unpaged();
+        Specification<Frequencia> filtro = Filtros.frequenciaDeVarios(ids, dataInicio, dataFim);
+        return new ArrayList<>(repository.findAll(filtro, paginar(limit, offset)).getContent());
+    }
+
+    private Pageable paginar(Integer limit, Integer offset) {
         if (limit != null && limit > 0 && offset != null && offset >= 0) {
-            pageable = PageRequest.of(offset / limit, limit);
+            return PageRequest.of(offset / limit, limit, MAIS_RECENTES);
         }
-        return new ArrayList<>(repository.buscarPorBolsistas(ids, dataInicio, dataFim, pageable));
+        return Pageable.unpaged(MAIS_RECENTES);
     }
 
     public ArrayList<Frequencia> buscarPorBolsistas(List<UUID> ids, Integer limit, Integer offset) {
@@ -109,7 +115,8 @@ public class FrequenciaService {
     }
 
     public int contarPorBolsistas(List<UUID> ids, LocalDate dataInicio, LocalDate dataFim) {
-        return (ids == null || ids.isEmpty()) ? 0 : repository.contarPorBolsistas(ids, dataInicio, dataFim);
+        if (ids == null || ids.isEmpty()) return 0;
+        return (int) repository.count(Filtros.frequenciaDeVarios(ids, dataInicio, dataFim));
     }
 
     public int contarPorBolsistas(List<UUID> ids) {
@@ -117,18 +124,22 @@ public class FrequenciaService {
     }
 
     public int contarFrequencias(UUID bolsistaId, LocalDate dataInicio, LocalDate dataFim) {
-        return repository.contarFrequencias(bolsistaId, dataInicio, dataFim);
+        return (int) repository.count(Filtros.frequencia(bolsistaId, dataInicio, dataFim));
     }
 
     public int contarFrequencias(UUID bolsistaId) {
         return contarFrequencias(bolsistaId, null, null);
     }
 
-    /* soft delete */
+    /* soft delete: carrega, marca ativo = false e deixa o JPA fazer o UPDATE. */
     @Transactional
     public boolean excluir(UUID id) {
         if (id == null) return false;
-        return repository.desativar(id) > 0;
+        return repository.findById(id).map(f -> {
+            f.setAtivo(false);
+            repository.save(f);
+            return true;
+        }).orElse(false);
     }
 
     /* admin ve tudo; usuario ve o proprio; professor ve quem esta no laboratorio que coordena */

@@ -129,12 +129,12 @@ public class BolsistaService {
 
     public ArrayList<Bolsista> buscarPorLaboratorio(UUID laboratorioId) {
         if (laboratorioId == null) return new ArrayList<>();
-        return new ArrayList<>(repository.buscarPorLaboratorio(laboratorioId));
+        return new ArrayList<>(repository.findByLaboratorioIdAndAtivoTrueOrderByNome(laboratorioId));
     }
 
     public ArrayList<Bolsista> buscarPorProjeto(UUID projetoId) {
         if (projetoId == null) return new ArrayList<>();
-        return new ArrayList<>(repository.buscarPorProjeto(projetoId));
+        return new ArrayList<>(repository.findByProjetos_IdAndAtivoTrueOrderByNome(projetoId));
     }
 
     public boolean atualizar(Bolsista b) {
@@ -146,7 +146,11 @@ public class BolsistaService {
     @Transactional
     public boolean excluir(UUID id) {
         if (id == null) return false;
-        return repository.desativar(id) > 0;
+        return repository.findById(id).map(b -> {
+            b.setAtivo(false);
+            repository.save(b);
+            return true;
+        }).orElse(false);
     }
 
     public ArrayList<Usuario> filtrarPorEscopo(ArrayList<Usuario> lista, Usuario usuarioLogado) {
@@ -158,7 +162,7 @@ public class BolsistaService {
         }
         if (usuarioLogado.isProfessor()) {
             ArrayList<Laboratorio> labsCoordenados =
-                    new ArrayList<>(laboratorioRepository.buscarPorCoordenador(usuarioLogado.getId()));
+                    new ArrayList<>(laboratorioRepository.findByCoordenadorIdAndAtivoTrueOrderByNome(usuarioLogado.getId()));
             return somenteBolsistas(lista, b ->
                     labsCoordenados.stream().anyMatch(l -> Objects.equals(l.getId(), b.getLaboratorioId())));
         }

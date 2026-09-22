@@ -37,3 +37,6 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Apresentacao (preview gerado pelo preview_pptx.py)
+docs/preview.html

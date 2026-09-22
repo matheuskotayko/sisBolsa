@@ -6,9 +6,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 /*
@@ -39,6 +43,17 @@ public class Projeto {
     private Laboratorio laboratorio;
 
     private boolean ativo;
+
+    /*
+     * lado dono do relacionamento N:N com bolsista. a tabela bolsista_projeto so
+     * tem as duas FKs, entao o @JoinTable da conta dela sem entidade intermediaria
+     * e sem SQL nativo pra vincular/desvincular.
+     */
+    @ManyToMany
+    @JoinTable(name = "bolsista_projeto",
+            joinColumns = @JoinColumn(name = "projeto_id"),
+            inverseJoinColumns = @JoinColumn(name = "bolsista_id"))
+    private Set<Bolsista> bolsistas = new HashSet<>();
 
     public Projeto() {}
 
@@ -74,4 +89,6 @@ public class Projeto {
 
     public boolean isAtivo() { return ativo; }
     public void setAtivo(boolean ativo) { this.ativo = ativo; }
+
+    public Set<Bolsista> getBolsistas() { return bolsistas; }
 }

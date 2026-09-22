@@ -5,11 +5,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 /*
@@ -33,6 +36,10 @@ public class Bolsista extends Usuario {
     @ManyToOne
     @JoinColumn(name = "laboratorio_id", insertable = false, updatable = false)
     private Laboratorio laboratorio;
+
+    /* lado inverso do N:N: navega de bolsista para projeto; quem grava e o Projeto. */
+    @ManyToMany(mappedBy = "bolsistas")
+    private Set<Projeto> projetos = new HashSet<>();
 
     @Enumerated(EnumType.STRING)
     private Cargo cargo;
@@ -107,6 +114,8 @@ public class Bolsista extends Usuario {
 
     public LocalDate getDataFimBolsa() { return dataFimBolsa; }
     public void setDataFimBolsa(LocalDate dataFimBolsa) { this.dataFimBolsa = dataFimBolsa; }
+
+    public Set<Projeto> getProjetos() { return projetos; }
 
     public boolean isBolsaVencida() {
         return dataFimBolsa != null && dataFimBolsa.isBefore(LocalDate.now());

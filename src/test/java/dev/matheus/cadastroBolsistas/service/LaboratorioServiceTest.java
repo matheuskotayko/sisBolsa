@@ -11,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import dev.matheus.cadastroBolsistas.repository.BolsistaRepository;
 import dev.matheus.cadastroBolsistas.repository.LaboratorioRepository;
 import dev.matheus.cadastroBolsistas.repository.ProjetoRepository;
 
@@ -30,6 +31,9 @@ class LaboratorioServiceTest {
 
     @Mock
     private ProjetoRepository projetoRepository;
+
+    @Mock
+    private BolsistaRepository bolsistaRepository;
 
     @InjectMocks
     private LaboratorioService laboratorioService;
@@ -121,11 +125,11 @@ class LaboratorioServiceTest {
         lab.setCapacidade(10);
 
         when(repository.findById(labId)).thenReturn(Optional.of(lab));
-        when(repository.contarBolsistasAtivos(labId)).thenReturn(5);
+        when(bolsistaRepository.countByLaboratorioIdAndAtivoTrue(labId)).thenReturn(5);
 
         assertTrue(laboratorioService.temVaga(labId));
         verify(repository).findById(labId);
-        verify(repository).contarBolsistasAtivos(labId);
+        verify(bolsistaRepository).countByLaboratorioIdAndAtivoTrue(labId);
     }
 
     @Test
@@ -136,11 +140,11 @@ class LaboratorioServiceTest {
         lab.setCapacidade(10);
 
         when(repository.findById(labId)).thenReturn(Optional.of(lab));
-        when(repository.contarBolsistasAtivos(labId)).thenReturn(10);
+        when(bolsistaRepository.countByLaboratorioIdAndAtivoTrue(labId)).thenReturn(10);
 
         assertFalse(laboratorioService.temVaga(labId));
         verify(repository).findById(labId);
-        verify(repository).contarBolsistasAtivos(labId);
+        verify(bolsistaRepository).countByLaboratorioIdAndAtivoTrue(labId);
     }
 
     @Test
@@ -150,7 +154,7 @@ class LaboratorioServiceTest {
 
         assertFalse(laboratorioService.temVaga(labId));
         verify(repository).findById(labId);
-        verify(repository, never()).contarBolsistasAtivos(any(UUID.class));
+        verify(bolsistaRepository, never()).countByLaboratorioIdAndAtivoTrue(any(UUID.class));
     }
 
     @Test
@@ -188,7 +192,7 @@ class LaboratorioServiceTest {
         lab.setId(id);
         lab.setAtivo(false);
         when(repository.findById(id)).thenReturn(Optional.of(lab));
-        when(projetoRepository.buscarPorLaboratorio(id)).thenReturn(List.of());
+        when(projetoRepository.findByLaboratorioIdAndAtivoTrueOrderByNome(id)).thenReturn(List.of());
 
         assertThrows(RecursoNaoEncontradoException.class, () -> laboratorioService.buscarOuFalhar(id));
     }
@@ -201,7 +205,7 @@ class LaboratorioServiceTest {
         lab.setAtivo(true);
         lab.setCoordenadorId(UUID.randomUUID());
         when(repository.findById(id)).thenReturn(Optional.of(lab));
-        when(projetoRepository.buscarPorLaboratorio(id)).thenReturn(List.of());
+        when(projetoRepository.findByLaboratorioIdAndAtivoTrueOrderByNome(id)).thenReturn(List.of());
 
         Professor outroProfessor = new Professor();
         outroProfessor.setId(UUID.randomUUID());
@@ -217,7 +221,7 @@ class LaboratorioServiceTest {
         lab.setId(id);
         lab.setAtivo(true);
         when(repository.findById(id)).thenReturn(Optional.of(lab));
-        when(projetoRepository.buscarPorLaboratorio(id)).thenReturn(List.of());
+        when(projetoRepository.findByLaboratorioIdAndAtivoTrueOrderByNome(id)).thenReturn(List.of());
 
         Professor admin = new Professor();
         admin.setTipoUsuario("ADMIN");

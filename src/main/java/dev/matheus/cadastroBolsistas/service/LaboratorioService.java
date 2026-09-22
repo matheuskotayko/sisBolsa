@@ -5,10 +5,13 @@ import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
 import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Laboratorio;
 import dev.matheus.cadastroBolsistas.model.Usuario;
+import dev.matheus.cadastroBolsistas.repository.BolsistaRepository;
+import dev.matheus.cadastroBolsistas.repository.Filtros;
 import dev.matheus.cadastroBolsistas.repository.LaboratorioRepository;
 import dev.matheus.cadastroBolsistas.repository.ProjetoRepository;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +31,9 @@ public class LaboratorioService {
 
     @Autowired
     private ProjetoRepository projetoRepository;
+
+    @Autowired
+    private BolsistaRepository bolsistaRepository;
 
     public boolean podeGerenciar(Usuario usuarioLogado, UUID labId) {
         if (usuarioLogado == null || labId == null) return false;
@@ -72,19 +78,19 @@ public class LaboratorioService {
 
     public ArrayList<Laboratorio> buscarLaboratorios(String buscaNome) {
         String nome = buscaNome != null ? buscaNome.trim() : "";
-        return new ArrayList<>(repository.buscarLaboratorios(nome));
+        return new ArrayList<>(repository.findAll(Filtros.laboratorio(nome), Sort.by("nome")));
     }
 
     public ArrayList<Laboratorio> listarPorCoordenador(UUID professorId) {
         if (professorId == null) return new ArrayList<>();
-        return new ArrayList<>(repository.buscarPorCoordenador(professorId));
+        return new ArrayList<>(repository.findByCoordenadorIdAndAtivoTrueOrderByNome(professorId));
     }
 
     public Laboratorio buscarPorId(UUID id) {
         if (id == null) return null;
         Laboratorio lab = repository.findById(id).orElse(null);
         if (lab != null) {
-            lab.setProjetos(new ArrayList<>(projetoRepository.buscarPorLaboratorio(id)));
+            lab.setProjetos(new ArrayList<>(projetoRepository.findByLaboratorioIdAndAtivoTrueOrderByNome(id)));
         }
         return lab;
     }
@@ -94,23 +100,27 @@ public class LaboratorioService {
         return true;
     }
 
-    /* soft delete */
+    /* soft delete: carrega, marca ativo = false e deixa o JPA fazer o UPDATE. */
     @Transactional
     public boolean excluir(UUID id) {
         if (id == null) return false;
-        return repository.desativar(id) > 0;
+        return repository.findById(id).map(lab -> {
+            lab.setAtivo(false);
+            repository.save(lab);
+            return true;
+        }).orElse(false);
     }
 
     public boolean temVaga(UUID labId) {
         if (labId == null) return false;
         Laboratorio lab = repository.findById(labId).orElse(null);
         if (lab == null) return false;
-        return repository.contarBolsistasAtivos(labId) < lab.getCapacidade();
+        return contarBolsistasNoLaboratorio(labId) < lab.getCapacidade();
     }
 
     public int contarBolsistasNoLaboratorio(UUID labId) {
         if (labId == null) return 0;
-        return repository.contarBolsistasAtivos(labId);
+        return bolsistaRepository.countByLaboratorioIdAndAtivoTrue(labId);
     }
 
     public void aplicar(Laboratorio lab, LaboratorioRequest body) {
