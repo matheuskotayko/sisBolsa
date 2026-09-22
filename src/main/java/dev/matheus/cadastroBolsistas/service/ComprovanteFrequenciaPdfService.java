@@ -23,6 +23,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 /*
@@ -81,7 +82,7 @@ public class ComprovanteFrequenciaPdfService {
         adicionarCelulaInfo(infoTable, "Bolsista:", bolsista != null ? bolsista.getNome() : "-", fontLabel, fontTexto);
         adicionarCelulaInfo(infoTable, "Período de Referência:", periodoStr, fontLabel, fontTexto);
 
-        adicionarCelulaInfo(infoTable, "Matrícula / CPF:", (bolsista != null ? bolsista.getMatricula() : "-") + " / " + (bolsista != null ? bolsista.getCpf() : "-"), fontLabel, fontTexto);
+        adicionarCelulaInfo(infoTable, "Matrícula / CPF:", (bolsista != null ? Objects.toString(bolsista.getMatricula(), "-") : "-") + " / " + (bolsista != null ? Objects.toString(bolsista.getCpf(), "-") : "-"), fontLabel, fontTexto);
         adicionarCelulaInfo(infoTable, "Modalidade / Cargo:", (bolsista != null && bolsista.getModalidadeBolsa() != null ? bolsista.getModalidadeBolsa().getDescricao() : "Bolsa") + " (" + (bolsista != null && bolsista.getCargo() != null ? bolsista.getCargo().getDescricao() : "Bolsista") + ")", fontLabel, fontTexto);
 
         adicionarCelulaInfo(infoTable, "Curso:", bolsista != null ? bolsista.getCurso() : "-", fontLabel, fontTexto);

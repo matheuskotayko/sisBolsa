@@ -18,7 +18,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -208,7 +207,10 @@ public class BolsistaService {
         }
     }
 
-    /* admin de autocadastro publico (AuthApiController) - dados cadastrais minimos sao fixos */
+    /*
+     * admin de autocadastro publico (AuthApiController). curso, matricula e data
+     * de nascimento ficam nulos: admin nao e aluno, e as colunas aceitam null.
+     */
     public Bolsista criarAdmin(String nome, String email, String senhaHash) {
         Bolsista admin = new Bolsista();
         admin.setNome(nome);
@@ -216,9 +218,6 @@ public class BolsistaService {
         admin.setSenha(senhaHash);
         admin.setTipoUsuario("ADMIN");
         admin.setAtivo(true);
-        admin.setDataNascimento(LocalDate.of(1990, 1, 1));
-        admin.setCurso("Gestao");
-        admin.setMatricula("ADM001");
         inserir(admin);
         return admin;
     }

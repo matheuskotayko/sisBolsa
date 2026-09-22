@@ -39,6 +39,7 @@ import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @Tag(name = "Frequência & Horas", description = "Controle de apontamento de horas, relatórios de produtividade, exportação CSV e emissão de comprovantes em PDF.")
@@ -188,7 +189,7 @@ public class FrequenciaApiController {
         try {
             byte[] pdfBytes = comprovantePdfService.gerarComprovante(b, lab, coord, frequencias, inicio, fim);
             auditoriaService.registrar(logado, "EMISSAO_COMPROVANTE_PDF", "FREQUENCIA", "Comprovante PDF emitido para bolsista " + b.getNome() + " referente ao período " + inicio + " a " + fim + ".", null);
-            return ArquivoDownloadUtil.pdf("comprovante_frequencia_" + b.getMatricula() + ".pdf", pdfBytes);
+            return ArquivoDownloadUtil.pdf("comprovante_frequencia_" + Objects.toString(b.getMatricula(), b.getId().toString()) + ".pdf", pdfBytes);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Erro ao gerar PDF do comprovante: " + e.getMessage());
         }
