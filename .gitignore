@@ -40,3 +40,8 @@ build/
 
 ### Apresentacao (preview gerado pelo preview_pptx.py)
 docs/preview.html
+
+### Apresentacoes de referencia e base (ficam so na maquina)
+docs/Gestao_Risco_Mobile_Apresentacao_ABNT.pdf
+docs/Gestao_Risco_Mobile_Apresentacao_ABNT.pptx
+docs/SisBolsa_Apresentacao_API.pdf
