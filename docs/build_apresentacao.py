@@ -231,16 +231,24 @@ def slide_contexto(prs, n):
 def slide_motivacao(prs, n):
     s = novo_slide(prs, n)
     titulo_secao(s, "2  MOTIVAÇÃO")
-    _texto(s, 1.05, 2.45, 17.91, 1.4,
+
+    # o formulario e retrato, entao a figura fica estreita e o texto ocupa o resto
+    legenda(s, 1.05, 2.30, 6.60, "Figura 1 – Formulário de registro de frequência do CTISM")
+    _, alt = figura(s, "frequencia_papel.png", 1.05, 3.10, w=6.60)
+    fonte(s, 1.05, 3.10 + alt + 0.14, 6.60,
+          texto="Fonte: Acervo do autor (2026).")
+
+    _texto(s, 8.42, 2.42, 10.54, 2.3,
            "O projeto nasceu da experiência com a minha própria bolsa no setor de realidade virtual e "
-           "inteligência artificial do CTISM, em que a coordenação exigia relatórios periódicos com o "
-           "detalhamento das entregas — um controle que, na prática, vivia em planilhas e e-mails.",
+           "inteligência artificial do CTISM. O controle de frequência era o formulário ao lado: data, "
+           "entrada, saída, horas e atividade preenchidos à mão, com espaço para a rubrica do monitor e "
+           "do preceptor — depois digitalizado e enviado por e-mail.",
            entrelinha=1.25)
-    _texto(s, 1.05, 4.35, 17.91, 4.2,
-           [[("a) Controle disperso em planilhas", True), (": cada professor e laboratório mantém os próprios registros, sem consolidação institucional", False)],
-            [("b) Sem rastreabilidade das horas", True), (": apontamentos em papel ou e-mail não geram comprovante nem trilha auditável", False)],
-            [("c) Ocupação dos laboratórios invisível", True), (": não havia como saber, em tempo real, quantas vagas restam em cada laboratório", False)],
-            [("d) Ausência de trilha de auditoria", True), (": alterações em cadastros e vínculos não ficavam registradas, dificultando a prestação de contas", False)]],
+    _texto(s, 8.42, 4.78, 10.54, 5.6,
+           [[("a) Registro manual e sem validação", True), (": nada impede hora sobreposta, data inválida ou total de horas que não fecha com o período da bolsa", False)],
+            [("b) Sem rastreabilidade das horas", True), (": o papel não gera comprovante verificável nem trilha auditável do que foi alterado", False)],
+            [("c) Controle disperso", True), (": cada professor e laboratório mantém os próprios arquivos, sem consolidação institucional", False)],
+            [("d) Ocupação dos laboratórios invisível", True), (": não havia como saber, em tempo real, quantas vagas restam em cada laboratório", False)]],
            entrelinha=1.25, espaco_entre=14)
 
 
@@ -296,7 +304,7 @@ def slide_classes(prs, n):
             "d) Cargo e ModalidadeBolsa são enums persistidos como texto; Auditoria registra as ações "
             "relevantes de qualquer perfil"],
            sz=18, entrelinha=1.2, espaco_entre=10)
-    legenda(s, 7.4, 2.32, 11.55, "Figura 1 – Diagrama de classes do domínio")
+    legenda(s, 7.4, 2.32, 11.55, "Figura 2 – Diagrama de classes do domínio")
     figura(s, "classes_p1.png", 7.7, 2.92, h=6.6)
     figura(s, "classes_p2.png", 13.6, 2.92, h=6.6)
     _texto(s, 7.4, 9.62, 5.5, 0.3, "Parte 1 de 2", sz=13, align=PP_ALIGN.CENTER, italic=True)
@@ -313,7 +321,7 @@ def slide_mer(prs, n):
          "materializada pela tabela associativa;",
          "d) cada apontamento de frequência pertence a um bolsista, e toda ação relevante do sistema "
          "gera um registro de auditoria."],
-        "mer.png", "Figura 2 – Modelo conceitual (MER)")
+        "mer.png", "Figura 3 – Modelo conceitual (MER)")
 
 
 def slide_der(prs, n):
@@ -324,7 +332,7 @@ def slide_der(prs, n):
          "c) tabela associativa bolsista_projeto para a relação N:N entre bolsista e projeto;",
          "d) exclusão lógica por campo ativo: nenhum registro é removido fisicamente, preservando o "
          "histórico de frequência e de vínculos."],
-        "der.png", "Figura 3 – Modelo lógico (DER)")
+        "der.png", "Figura 4 – Modelo lógico (DER)")
 
 
 def slide_arquitetura(prs, n):
@@ -336,14 +344,14 @@ def slide_arquitetura(prs, n):
          "c) a requisição atravessa controller, service e repository, nessa ordem, até o PostgreSQL;",
          "d) o ambiente sobe inteiro com Docker Compose: banco e API, com as migrations do Flyway e a "
          "massa de demonstração aplicadas automaticamente."],
-        "diag_arquitetura.png", "Figura 4 – Visão geral da arquitetura", img_y=3.6)
+        "diag_arquitetura.png", "Figura 5 – Visão geral da arquitetura", img_y=3.6)
 
 
 def slide_camadas(prs, n):
     s = novo_slide(prs, n)
     titulo_secao(s, "5  ARQUITETURA")
     subtitulo(s, 1.05, SUB_Y, 9.0, "5.2 CAMADAS DA APLICAÇÃO")
-    legenda(s, 1.05, 3.05, 17.91, "Figura 5 – Camadas da aplicação e pacotes correspondentes")
+    legenda(s, 1.05, 3.05, 17.91, "Figura 6 – Camadas da aplicação e pacotes correspondentes")
     _, alt = figura(s, "diag_camadas.png", 1.05, 3.65, w=17.91)
     fonte(s, 1.05, 3.65 + alt + 0.18, 17.91)
     _texto(s, 1.05, 9.9, 17.91, 0.8,
@@ -356,7 +364,7 @@ def slide_organizacao(prs, n):
     s = novo_slide(prs, n)
     titulo_secao(s, "5  ARQUITETURA")
     subtitulo(s, 1.05, SUB_Y, 9.0, "5.3 ORGANIZAÇÃO DO CÓDIGO")
-    legenda(s, 1.05, 2.98, 12.6, "Figura 6 – Estrutura de pacotes do projeto")
+    legenda(s, 1.05, 2.98, 12.6, "Figura 7 – Estrutura de pacotes do projeto")
     _, alt = figura(s, "diag_estrutura.png", 1.05, 3.55, w=12.6)
     fonte(s, 1.05, 3.55 + alt + 0.16, 12.6)
     subtitulo(s, 14.2, 3.0, 4.8, "LEITURA DA ESTRUTURA")
@@ -465,7 +473,7 @@ def slide_controller(prs, n):
          "d) a permissão não é decidida aqui: o controller chama o service, que devolve a entidade ou lança "
          "a exceção;",
          "e) respostas de recurso individual carregam links HATEOAS de navegação."],
-        "cod_controller.png", "Figura 7 – Trecho de código: verbo, status e links HATEOAS",
+        "cod_controller.png", "Figura 8 – Trecho de código: verbo, status e links HATEOAS",
         img_y=3.3, sz=18)
 
 
@@ -478,7 +486,7 @@ def slide_service(prs, n):
          "c) o service recebe o usuário autenticado como parâmetro e decide; o controller apenas repassa;",
          "d) o mesmo método é reaproveitado por vários endpoints, o que elimina a duplicação de regra que "
          "existia antes no controller."],
-        "cod_service.png", "Figura 8 – Trecho de código: busca com 404 e permissão no service",
+        "cod_service.png", "Figura 9 – Trecho de código: busca com 404 e permissão no service",
         img_y=3.15, sz=18)
 
 
@@ -490,7 +498,7 @@ def slide_excecoes(prs, n):
          "permissão negada, 409 para conflito de regra, 401 para credencial inválida e 429 para conta bloqueada;",
          "c) o corpo de erro é sempre o mesmo objeto, com a mensagem do domínio;",
          "d) falhas de Bean Validation respondem em lista, com o campo e a mensagem de cada violação."],
-        "cod_exception.png", "Figura 9 – Trecho de código: exceções de domínio mapeadas para HTTP",
+        "cod_exception.png", "Figura 10 – Trecho de código: exceções de domínio mapeadas para HTTP",
         img_y=3.15, sz=18)
 
 
@@ -505,7 +513,7 @@ def slide_entidade(prs, n):
          "d) a tabela associativa bolsista_projeto é mapeada como @ManyToMany: vincular um bolsista a um "
          "projeto é alterar uma coleção, e o JPA emite o INSERT ou o DELETE correspondente;",
          "e) enums persistidos como texto com @Enumerated(EnumType.STRING), legíveis direto no banco."],
-        "cod_entidade.png", "Figura 10 – Trecho de código: entidade Bolsista",
+        "cod_entidade.png", "Figura 11 – Trecho de código: entidade Bolsista",
         img_y=3.15, sz=18)
 
 
@@ -519,7 +527,7 @@ def slide_repositorio(prs, n):
          "próprio JPA: cada predicado só entra no WHERE se o parâmetro tiver sido informado;",
          "d) @Query ficou restrito ao repositório de relatórios, onde há agregação com GROUP BY;",
          "e) a exclusão é um soft delete e o schema é versionado em 10 migrations do Flyway."],
-        "cod_repositorio.png", "Figura 11 – Trecho de código: repositório Spring Data JPA",
+        "cod_repositorio.png", "Figura 12 – Trecho de código: repositório Spring Data JPA",
         img_y=3.15, sz=18)
 
 
@@ -532,7 +540,7 @@ def slide_seguranca_config(prs, n):
          "c) o filtro roda antes da autenticação padrão do Spring Security e popula o contexto;",
          "d) as rotas públicas são explícitas; o restante de /api/** exige token válido;",
          "e) senhas com BCrypt e bloqueio temporário após cinco tentativas malsucedidas."],
-        "cod_seguranca.png", "Figura 12 – Trecho de código: cadeia de filtros e sessão stateless",
+        "cod_seguranca.png", "Figura 13 – Trecho de código: cadeia de filtros e sessão stateless",
         img_y=3.15, sz=18)
 
 
@@ -608,7 +616,7 @@ def slide_documentacao(prs, n):
     s = novo_slide(prs, n)
     titulo_secao(s, "11  DOCUMENTAÇÃO E DEMONSTRAÇÃO")
     subtitulo(s, 1.05, SUB_Y, 9.0, "11.1 SWAGGER E COLEÇÕES POSTMAN")
-    legenda(s, 1.05, 2.95, 17.91, "Figura 13 – Swagger UI: visão geral e os recursos após a divisão por tipo de usuário")
+    legenda(s, 1.05, 2.95, 17.91, "Figura 14 – Swagger UI: visão geral e os recursos após a divisão por tipo de usuário")
     figura(s, "swagger_visao.png", 1.05, 3.45, w=8.4)
     figura(s, "swagger_recursos.png", 10.55, 3.45, w=8.4)
     fonte(s, 1.05, 9.66, 17.91)
@@ -621,7 +629,7 @@ def slide_casos_negativos(prs, n):
     s = novo_slide(prs, n)
     titulo_secao(s, "11  DOCUMENTAÇÃO E DEMONSTRAÇÃO")
     subtitulo(s, 1.05, SUB_Y, 12.0, "11.2 SUCESSO E CASOS NEGATIVOS")
-    legenda(s, 1.05, 2.92, 17.91, "Figura 14 – Respostas reais da API: criação bem-sucedida e exceções de domínio")
+    legenda(s, 1.05, 2.92, 17.91, "Figura 15 – Respostas reais da API: criação bem-sucedida e exceções de domínio")
     figura(s, "http_201.png", 1.05, 3.45, w=6.3)
     figura(s, "http_erros.png", 7.85, 3.45, w=11.1)
     _texto(s, 1.05, 8.5, 6.3, 1.5,
