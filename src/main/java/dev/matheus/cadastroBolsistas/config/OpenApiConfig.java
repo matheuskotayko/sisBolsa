@@ -32,7 +32,7 @@ public class OpenApiConfig {
                                 API RESTful para gerenciamento completo de bolsistas, professores, laboratórios de pesquisa, projetos acadêmicos, controle de frequência/horas e trilha de auditoria.
 
                                 ### Autenticação e Segurança
-                                - **Autenticação Baseada em JWT:** Para autenticar, utilize `POST /api/auth/login`. A API grava automaticamente um cookie `httpOnly` (`token`) com proteção `SameSite=Strict`.
+                                - **Autenticação Baseada em JWT:** Para autenticar, utilize `POST /api/v1/auth/login`. A API grava automaticamente um cookie `httpOnly` (`token`) com proteção `SameSite=Strict`.
                                 - **Rate Limiting & Anti-Brute Force:** Limite de 5 tentativas consecutivas com erro. Em caso de excesso, a conta é bloqueada temporariamente por 5 minutos (HTTP 429).
                                 - **Controle de Acesso Baseado em Perfis (RBAC):**
                                   - **`ADMIN`:** Acesso total irrestrito a todos os recursos, auditoria, configurações e relatórios globais.
@@ -61,7 +61,7 @@ public class OpenApiConfig {
                                 .type(SecurityScheme.Type.APIKEY)
                                 .in(SecurityScheme.In.COOKIE)
                                 .name("token")
-                                .description("Token JWT gravado automaticamente em cookie HttpOnly após autenticação em /api/auth/login.")))
+                                .description("Token JWT gravado automaticamente em cookie HttpOnly após autenticação em /api/v1/auth/login.")))
                 .addSecurityItem(new SecurityRequirement().addList(COOKIE_JWT));
     }
 }

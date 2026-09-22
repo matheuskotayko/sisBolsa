@@ -2,7 +2,7 @@
     "openapi": "3.1.0",
     "info": {
         "title": "SisBolsa API - Sistema de Gest\u00e3o de Bolsistas e Laborat\u00f3rios",
-        "description": "### Vis\u00e3o Geral\nAPI RESTful para gerenciamento completo de bolsistas, professores, laborat\u00f3rios de pesquisa, projetos acad\u00eamicos, controle de frequ\u00eancia/horas e trilha de auditoria.\n\n### Autentica\u00e7\u00e3o e Seguran\u00e7a\n- **Autentica\u00e7\u00e3o Baseada em JWT:** Para autenticar, utilize `POST /api/auth/login`. A API grava automaticamente um cookie `httpOnly` (`token`) com prote\u00e7\u00e3o `SameSite=Strict`.\n- **Rate Limiting & Anti-Brute Force:** Limite de 5 tentativas consecutivas com erro. Em caso de excesso, a conta \u00e9 bloqueada temporariamente por 5 minutos (HTTP 429).\n- **Controle de Acesso Baseado em Perfis (RBAC):**\n  - **`ADMIN`:** Acesso total irrestrito a todos os recursos, auditoria, configura\u00e7\u00f5es e relat\u00f3rios globais.\n  - **`PROFESSOR`:** Gerenciamento dos laborat\u00f3rios que coordena, seus projetos associados e bolsistas vinculados.\n  - **`BOLSISTA`:** Apontamento de frequ\u00eancia pr\u00f3pria, visualiza\u00e7\u00e3o do seu laborat\u00f3rio, projetos e comprovantes em PDF.\n",
+        "description": "### Vis\u00e3o Geral\nAPI RESTful para gerenciamento completo de bolsistas, professores, laborat\u00f3rios de pesquisa, projetos acad\u00eamicos, controle de frequ\u00eancia/horas e trilha de auditoria.\n\n### Autentica\u00e7\u00e3o e Seguran\u00e7a\n- **Autentica\u00e7\u00e3o Baseada em JWT:** Para autenticar, utilize `POST /api/v1/auth/login`. A API grava automaticamente um cookie `httpOnly` (`token`) com prote\u00e7\u00e3o `SameSite=Strict`.\n- **Rate Limiting & Anti-Brute Force:** Limite de 5 tentativas consecutivas com erro. Em caso de excesso, a conta \u00e9 bloqueada temporariamente por 5 minutos (HTTP 429).\n- **Controle de Acesso Baseado em Perfis (RBAC):**\n  - **`ADMIN`:** Acesso total irrestrito a todos os recursos, auditoria, configura\u00e7\u00f5es e relat\u00f3rios globais.\n  - **`PROFESSOR`:** Gerenciamento dos laborat\u00f3rios que coordena, seus projetos associados e bolsistas vinculados.\n  - **`BOLSISTA`:** Apontamento de frequ\u00eancia pr\u00f3pria, visualiza\u00e7\u00e3o do seu laborat\u00f3rio, projetos e comprovantes em PDF.\n",
         "contact": {
             "name": "Suporte SisBolsa",
             "email": "admin@sisbolsa.com"
@@ -3894,7 +3894,7 @@
         "securitySchemes": {
             "cookieJwt": {
                 "type": "apiKey",
-                "description": "Token JWT gravado automaticamente em cookie HttpOnly ap\u00f3s autentica\u00e7\u00e3o em /api/auth/login.",
+                "description": "Token JWT gravado automaticamente em cookie HttpOnly ap\u00f3s autentica\u00e7\u00e3o em /api/v1/auth/login.",
                 "name": "token",
                 "in": "cookie"
             }
