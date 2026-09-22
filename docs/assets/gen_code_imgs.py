@@ -102,7 +102,7 @@ TRECHOS = [
     ("cod_controller", "src/main/java/.../controller/BolsistaApiController.java",
      "src/main/java/dev/matheus/cadastroBolsistas/controller/BolsistaApiController.java", 231, 252),
     ("cod_service", "src/main/java/.../service/BolsistaService.java",
-     "src/main/java/dev/matheus/cadastroBolsistas/service/BolsistaService.java", 86, 112),
+     "src/main/java/dev/matheus/cadastroBolsistas/service/BolsistaService.java", 85, 111),
     ("cod_exception", "src/main/java/.../exceptions/ApiExceptionHandler.java",
      "src/main/java/dev/matheus/cadastroBolsistas/exceptions/ApiExceptionHandler.java", 20, 46),
     ("cod_entidade", "src/main/java/.../model/Bolsista.java",
