@@ -118,14 +118,14 @@ public class ProfessorApiController {
         return ResponseEntity.created(uri).body(comLinks(UsuarioResponse.de(p)));
     }
 
-    @Operation(summary = "Atualizar professor", description = "Atualiza os dados de um professor existente (restrito a Administradores). Se a senha for enviada em branco, a atual é preservada.")
+    @Operation(summary = "Atualizar professor", description = "Substitui os dados do professor pelos enviados: campo omitido fica vazio (restrito a Administradores). Se a senha vier em branco, a atual é preservada.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Professor atualizado com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResponse.class))),
             @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content(schema = @Schema(implementation = ErroResponse.class))),
             @ApiResponse(responseCode = "403", description = "Acesso restrito a administradores", content = @Content(schema = @Schema(implementation = ErroResponse.class))),
             @ApiResponse(responseCode = "404", description = "Professor não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
-    @PatchMapping("/{id}")
+    @PutMapping("/{id}")
     public EntityModel<UsuarioResponse> atualizar(@Parameter(description = "ID do professor a atualizar", required = true) @PathVariable UUID id,
                                      @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do professor", required = true)
                                      @Valid @RequestBody ProfessorRequest body) {

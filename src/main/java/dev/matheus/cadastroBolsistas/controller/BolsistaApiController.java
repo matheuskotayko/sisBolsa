@@ -198,14 +198,14 @@ public class BolsistaApiController {
         return ResponseEntity.created(uri).body(comLinks(UsuarioResponse.de(b)));
     }
 
-    @Operation(summary = "Atualizar bolsista ou administrador", description = "Atualiza os dados de um bolsista existente. Se o campo de senha for enviado em branco, a senha atual é preservada.")
+    @Operation(summary = "Atualizar bolsista ou administrador", description = "Substitui os dados do bolsista pelos enviados: campo omitido fica vazio. Se a senha vier em branco, a atual é preservada.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Bolsista atualizado com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResponse.class))),
             @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content(schema = @Schema(implementation = ErroResponse.class))),
             @ApiResponse(responseCode = "403", description = "Sem permissão para editar este bolsista", content = @Content(schema = @Schema(implementation = ErroResponse.class))),
             @ApiResponse(responseCode = "404", description = "Bolsista não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
-    @PatchMapping("/{id}")
+    @PutMapping("/{id}")
     public EntityModel<UsuarioResponse> atualizar(@Parameter(description = "ID do bolsista a atualizar", required = true) @PathVariable UUID id,
                                      @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do bolsista", required = true)
                                      @Valid @RequestBody BolsistaRequest body) {
