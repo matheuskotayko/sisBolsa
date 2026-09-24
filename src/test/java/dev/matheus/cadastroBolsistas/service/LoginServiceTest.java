@@ -1,34 +1,46 @@
 package dev.matheus.cadastroBolsistas.service;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import dev.matheus.cadastroBolsistas.repository.BolsistaRepository;
+import dev.matheus.cadastroBolsistas.repository.ProfessorRepository;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@ExtendWith(MockitoExtension.class)
 class LoginServiceTest {
 
-    private LoginAttemptService service;
+    @Mock
+    private BolsistaRepository bolsistaRepository;
 
-    @BeforeEach
-    void setUp() {
-        service = new LoginAttemptService();
-    }
+    @Mock
+    private ProfessorRepository professorRepository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @InjectMocks
+    private LoginService service;
 
     @Test
-    void naoBloqueiaInicialmente() {
+    void rateLimiting_naoBloqueiaInicialmente() {
         assertFalse(service.isBloqueado("teste@exemplo.com"));
         assertEquals(5, service.getTentativasRestantes("teste@exemplo.com"));
     }
 
     @Test
-    void reduzTentativasAposFalha() {
+    void rateLimiting_reduzTentativasAposFalha() {
         service.registrarFalha("teste@exemplo.com");
         assertEquals(4, service.getTentativasRestantes("teste@exemplo.com"));
         assertFalse(service.isBloqueado("teste@exemplo.com"));
     }
 
     @Test
-    void bloqueiaAposCincoFalhas() {
+    void rateLimiting_bloqueiaAposCincoFalhas() {
         String email = "ataque@exemplo.com";
         for (int i = 0; i < 5; i++) {
             service.registrarFalha(email);
@@ -40,7 +52,7 @@ class LoginServiceTest {
     }
 
     @Test
-    void sucessoResetaContadorEFalhas() {
+    void rateLimiting_sucessoResetaContadorEFalhas() {
         String email = "usuario@exemplo.com";
         service.registrarFalha(email);
         service.registrarFalha(email);

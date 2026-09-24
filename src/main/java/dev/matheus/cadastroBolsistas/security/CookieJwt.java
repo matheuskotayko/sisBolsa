@@ -1,8 +1,7 @@
 package dev.matheus.cadastroBolsistas.security;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.ResponseCookie;
 
 /*
  * o token viaja em cookie httpOnly, nao em localStorage, por dois motivos:
@@ -18,29 +17,29 @@ public final class CookieJwt {
 
     private CookieJwt() {}
 
-    public static void gravar(HttpServletResponse response, String token, long expiracaoMinutos) {
-        Cookie cookie = new Cookie(NOME, token);
-        cookie.setHttpOnly(true);
-        cookie.setPath("/");
-        cookie.setMaxAge((int) (expiracaoMinutos * 60));
-        cookie.setAttribute("SameSite", "Strict");
-        response.addCookie(cookie);
+    public static ResponseCookie gravarCookie(String token, long expiracaoMinutos) {
+        return ResponseCookie.from(NOME, token)
+                .httpOnly(true)
+                .path("/")
+                .maxAge(expiracaoMinutos * 60)
+                .sameSite("Strict")
+                .build();
     }
 
-    public static void limpar(HttpServletResponse response) {
-        Cookie cookie = new Cookie(NOME, "");
-        cookie.setHttpOnly(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(0);
-        cookie.setAttribute("SameSite", "Strict");
-        response.addCookie(cookie);
+    public static ResponseCookie limparCookie() {
+        return ResponseCookie.from(NOME, "")
+                .httpOnly(true)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Strict")
+                .build();
     }
 
     public static String ler(HttpServletRequest request) {
         if (request.getCookies() == null) {
             return null;
         }
-        for (Cookie c : request.getCookies()) {
+        for (var c : request.getCookies()) {
             if (NOME.equals(c.getName())) {
                 return c.getValue();
             }

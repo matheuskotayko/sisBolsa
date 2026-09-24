@@ -6,10 +6,9 @@ import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Professor;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.security.JwtCookieFilter;
-import dev.matheus.cadastroBolsistas.security.JwtService;
-import dev.matheus.cadastroBolsistas.security.LoginAttemptService;
 import dev.matheus.cadastroBolsistas.security.SecurityConfig;
 import dev.matheus.cadastroBolsistas.service.BolsistaService;
+import dev.matheus.cadastroBolsistas.service.JwtService;
 import dev.matheus.cadastroBolsistas.service.LoginService;
 import dev.matheus.cadastroBolsistas.service.ProfessorService;
 import org.junit.jupiter.api.AfterEach;
@@ -85,10 +84,7 @@ class AuthApiControllerTest {
     private ProfessorService professorService;
 
     @MockitoBean
-    private LoginAttemptService loginAttemptService;
-
-    @MockitoBean
-    private dev.matheus.cadastroBolsistas.security.PasswordResetService passwordResetService;
+    private dev.matheus.cadastroBolsistas.service.PasswordResetService passwordResetService;
 
     private Bolsista bolsistaLogado;
 
@@ -143,8 +139,8 @@ class AuthApiControllerTest {
 
     @Test
     void login_quandoContaBloqueadaPorRateLimiting_retorna429() throws Exception {
-        when(loginAttemptService.isBloqueado("bloqueado@teste.com")).thenReturn(true);
-        when(loginAttemptService.getSegundosRestantesBloqueio("bloqueado@teste.com")).thenReturn(300L);
+        when(loginService.isBloqueado("bloqueado@teste.com")).thenReturn(true);
+        when(loginService.getSegundosRestantesBloqueio("bloqueado@teste.com")).thenReturn(300L);
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

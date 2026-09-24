@@ -18,7 +18,6 @@ import dev.matheus.cadastroBolsistas.service.JwtService;
 import dev.matheus.cadastroBolsistas.service.LoginService;
 import dev.matheus.cadastroBolsistas.service.PasswordResetService;
 import dev.matheus.cadastroBolsistas.service.BolsistaService;
-import dev.matheus.cadastroBolsistas.service.LoginService;
 import dev.matheus.cadastroBolsistas.service.ProfessorService;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,8 +26,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -48,13 +48,11 @@ public class AuthApiController {
     private final BolsistaService bolsistaService;
     private final ProfessorService professorService;
     private final PasswordEncoder passwordEncoder;
-    private final LoginService loginAttemptService;
     private final PasswordResetService passwordResetService;
 
     public AuthApiController(LoginService loginService, JwtService jwtService, UsuarioLogado usuarioLogado,
                              BolsistaService bolsistaService, ProfessorService professorService,
                              PasswordEncoder passwordEncoder,
-                             LoginService loginAttemptService,
                              PasswordResetService passwordResetService) {
         this.loginService = loginService;
         this.jwtService = jwtService;
@@ -62,7 +60,6 @@ public class AuthApiController {
         this.bolsistaService = bolsistaService;
         this.professorService = professorService;
         this.passwordEncoder = passwordEncoder;
-        this.loginAttemptService = loginAttemptService;
         this.passwordResetService = passwordResetService;
     }
 
@@ -73,13 +70,12 @@ public class AuthApiController {
             @ApiResponse(responseCode = "429", description = "Conta bloqueada temporariamente por excesso de tentativas incorretas", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PostMapping("/login")
-    public UsuarioResponse login(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Credenciais de e-mail e senha", required = true)
-                                 @RequestBody LoginRequest body,
-                                 HttpServletResponse response) {
+    public ResponseEntity<UsuarioResponse> login(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Credenciais de e-mail e senha", required = true)
+                                 @RequestBody LoginRequest body) {
         String email = body.email() != null ? body.email().trim() : "";
 
-        if (loginAttemptService.isBloqueado(email)) {
-            long segundos = loginAttemptService.getSegundosRestantesBloqueio(email);
+        if (loginService.isBloqueado(email)) {
+            long segundos = loginService.getSegundosRestantesBloqueio(email);
             long minutos = Math.max(1, (segundos + 59) / 60);
             throw new ContaBloqueadaException(
                     "Muitas tentativas incorretas. Conta bloqueada temporariamente por " + minutos + " minuto(s).");
@@ -90,10 +86,10 @@ public class AuthApiController {
                 body.senha() != null ? body.senha().trim() : null);
 
         if (usuario == null) {
-            loginAttemptService.registrarFalha(email);
-            int restantes = loginAttemptService.getTentativasRestantes(email);
+            loginService.registrarFalha(email);
+            int restantes = loginService.getTentativasRestantes(email);
 
-            if (loginAttemptService.isBloqueado(email)) {
+            if (loginService.isBloqueado(email)) {
                 throw new ContaBloqueadaException(
                         "Limite de 5 tentativas consecutivas excedido. Conta bloqueada temporariamente por 5 minutos.");
             }
@@ -102,10 +98,12 @@ public class AuthApiController {
             throw new CredenciaisInvalidasException("E-mail ou senha incorretos." + aviso);
         }
 
-        loginAttemptService.registrarSucesso(email);
+        loginService.registrarSucesso(email);
         String token = jwtService.gerarToken(usuario.getEmail(), usuario.getTipoUsuario());
-        CookieJwt.gravar(response, token, jwtService.getExpiracaoMinutos());
-        return UsuarioResponse.de(usuario);
+        ResponseCookie cookie = CookieJwt.gravarCookie(token, jwtService.getExpiracaoMinutos());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(UsuarioResponse.de(usuario));
     }
 
     @Operation(summary = "Encerrar sessão (Logout)", description = "Limpa o cookie HttpOnly contendo o token JWT e invalida a sessão no servidor.")
@@ -113,9 +111,11 @@ public class AuthApiController {
             @ApiResponse(responseCode = "204", description = "Sessão encerrada com sucesso")
     })
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletResponse response) {
-        CookieJwt.limpar(response);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Void> logout() {
+        ResponseCookie cookie = CookieJwt.limparCookie();
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .build();
     }
 
     @Operation(summary = "Obter dados do usuário autenticado (/me)", description = "Retorna as informações do usuário atualmente logado na sessão.")
