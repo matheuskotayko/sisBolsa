@@ -14,7 +14,7 @@ Construida em **Spring Boot 4 / Java 21**, com persistencia via **Spring Data JP
 | Camada | Tecnologias |
 |---|---|
 | **Backend** | Spring Boot 4.0.6, Java 21, Spring Data JPA, Hibernate |
-| **Seguranca** | Spring Security, JWT em Cookie `httpOnly`, BCrypt, Rate Limiting anti-bruteforce |
+| **Seguranca** | Spring Security, JWT Bearer Token, BCrypt, Rate Limiting anti-bruteforce |
 | **Banco de Dados** | PostgreSQL 15, Flyway Migration |
 | **Documentacao** | OpenAPI 3 / Swagger UI (springdoc 3.1.0) |
 | **Relatorios** | LibrePDF / OpenPDF (geracao nativa de comprovantes em PDF) |
@@ -46,11 +46,7 @@ Construida em **Spring Boot 4 / Java 21**, com persistencia via **Spring Data JP
    - Graficos interativos com Recharts (Ocupacao dos labs, distribuicao de cargos, horas trabalhadas no mes e projetos por laboratorio).
    - Alternancia rapida entre visualizacao grafica e tabular.
 
-6. **Trilha de Auditoria (Audit Log):**
-   - Rastreamento centralizado de acoes criticas (logins, alteracoes cadastrais, cadastros, exclusoes e emissao de comprovantes).
-   - Filtros por entidade, tipo de acao, datas e exportacao em CSV.
-
-7. **Seguranca & Controle de Acesso (RBAC):**
+6. **Seguranca & Controle de Acesso (RBAC):**
    - Tres perfis bem definidos: `ADMIN`, `PROFESSOR` e `BOLSISTA`.
    - **Rate Limiting no Login:** Bloqueio temporario de 5 minutos apos 5 falhas consecutivas de autenticacao.
    - **Fluxo de "Esqueci a Senha":** Recuperacao segura de senha atraves de codigo de verificacao temporario.
@@ -60,7 +56,7 @@ Construida em **Spring Boot 4 / Java 21**, com persistencia via **Spring Data JP
 
 ## Perfis de Acesso
 
-- **`ADMIN`:** Acesso irrestrito a todos os laboratorios, bolsistas, projetos, relatorios globais, trilha de auditoria e configuracoes.
+- **`ADMIN`:** Acesso irrestrito a todos os laboratorios, bolsistas, projetos e relatorios globais.
 - **`PROFESSOR`:** Gerenciamento dos laboratorios que coordena, seus projetos associados e bolsistas vinculados.
 - **`BOLSISTA`:** Apontamento e edicao de frequencia propria, visualizacao de equipe/projetos do laboratorio e emissao de comprovantes em PDF.
 
@@ -71,7 +67,7 @@ Construida em **Spring Boot 4 / Java 21**, com persistencia via **Spring Data JP
 Modelagem relacional e conceitual projetada na ferramenta **brModelo**, refletindo as regras de negocio, entidades e integridade referencial do sistema.
 
 ### Modelo Conceitual (MER)
-Representacao das entidades (`PROFESSOR`, `LABORATORIO`, `BOLSISTA`, `PROJETO`, `FREQUENCIA` e `AUDITORIA`), seus atributos e relacionamentos de cardinalidade (1:N e N:N).
+Representacao das entidades (`PROFESSOR`, `LABORATORIO`, `BOLSISTA`, `PROJETO` e `FREQUENCIA`), seus atributos e relacionamentos de cardinalidade (1:N e N:N).
 
 ![Modelo Conceitual (MER)](./docs/images/diagrama-er.png)
 

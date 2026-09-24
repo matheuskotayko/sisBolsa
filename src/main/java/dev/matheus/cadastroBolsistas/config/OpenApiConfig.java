@@ -19,7 +19,7 @@ import java.util.List;
 @Configuration
 public class OpenApiConfig {
 
-    private static final String COOKIE_JWT = "cookieJwt";
+    private static final String BEARER_TOKEN = "bearerToken";
 
     @Bean
     public OpenAPI sisBolsaOpenApi() {
@@ -32,7 +32,7 @@ public class OpenApiConfig {
                                 API RESTful para gerenciamento completo de bolsistas, professores, laboratórios de pesquisa, projetos acadêmicos, e controle de frequência/horas.
 
                                 ### Autenticação e Segurança
-                                - **Autenticação Baseada em JWT:** Para autenticar, utilize `POST /api/v1/auth/login`. A API grava automaticamente um cookie `httpOnly` (`token`) com proteção `SameSite=Strict`.
+                                - **Autenticação Bearer JWT:** Para autenticar, utilize `POST /api/v1/auth/login`. A resposta contém o token no header `X-Auth-Token`. Use em requisições subsequentes: `Authorization: Bearer <token>`.
                                 - **Rate Limiting & Anti-Brute Force:** Limite de 5 tentativas consecutivas com erro. Em caso de excesso, a conta é bloqueada temporariamente por 5 minutos (HTTP 429).
                                 - **Controle de Acesso Baseado em Perfis (RBAC):**
                                   - **`ADMIN`:** Acesso total irrestrito a todos os recursos, configurações e relatórios globais.
@@ -55,12 +55,12 @@ public class OpenApiConfig {
                         new Tag().name("Frequência & Horas").description("Apontamento de horas trabalhadas, resumo mensal, exportação em CSV e emissão de comprovantes em PDF."),
                         new Tag().name("Relatórios & Estatísticas").description("Métricas de ocupação, carga horária mensal, projetos ativos e exportação CSV gerencial.")
                 ))
-                .components(new Components().addSecuritySchemes(COOKIE_JWT,
+                .components(new Components().addSecuritySchemes(BEARER_TOKEN,
                         new SecurityScheme()
-                                .type(SecurityScheme.Type.APIKEY)
-                                .in(SecurityScheme.In.COOKIE)
-                                .name("token")
-                                .description("Token JWT gravado automaticamente em cookie HttpOnly após autenticação em /api/v1/auth/login.")))
-                .addSecurityItem(new SecurityRequirement().addList(COOKIE_JWT));
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")
+                                .description("Token JWT obtido via POST /api/v1/auth/login (retornado no header X-Auth-Token). Use como: Authorization: Bearer <token>")))
+                .addSecurityItem(new SecurityRequirement().addList(BEARER_TOKEN));
     }
 }
