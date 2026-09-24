@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.util.List;
 
 /*
- * le o jwt do cookie e autentica a requisicao.
+ * le o jwt do header Authorization e autentica a requisicao.
  *
  * sem sessao de servidor: o token e a unica fonte de verdade. a cada
  * requisicao o usuario e recarregado do banco a partir do e-mail do
@@ -26,6 +26,8 @@ import java.util.List;
  */
 @Component
 public class JwtCookieFilter extends OncePerRequestFilter {
+
+    private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtService jwtService;
     private final LoginService loginService;
@@ -39,7 +41,7 @@ public class JwtCookieFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
-        String token = CookieJwt.ler(request);
+        String token = extrairBearerToken(request);
         if (token != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             Claims claims = jwtService.validar(token);
             if (claims != null) {
@@ -47,6 +49,14 @@ public class JwtCookieFilter extends OncePerRequestFilter {
             }
         }
         chain.doFilter(request, response);
+    }
+
+    private String extrairBearerToken(HttpServletRequest request) {
+        String authorization = request.getHeader("Authorization");
+        if (authorization != null && authorization.startsWith(BEARER_PREFIX)) {
+            return authorization.substring(BEARER_PREFIX.length());
+        }
+        return null;
     }
 
     private void autenticar(Claims claims) {

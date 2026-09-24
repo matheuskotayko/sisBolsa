@@ -119,21 +119,19 @@ class AuthApiControllerTest {
     }
 
     @Test
-    void login_comCredenciaisValidas_gravaCookieComOToken() throws Exception {
+    void login_comCredenciaisValidas_retornaTokenNoHeader() throws Exception {
         Bolsista u = new Bolsista();
         u.setId(USUARIO_ID);
         u.setNome("Thiago");
         u.setEmail("thiago@teste.com");
         when(loginService.autenticar("thiago@teste.com", "12345678")).thenReturn(u);
         when(jwtService.gerarToken("thiago@teste.com", "BOLSISTA")).thenReturn("token-fake");
-        when(jwtService.getExpiracaoMinutos()).thenReturn(120L);
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("email", "thiago@teste.com", "senha", "12345678")))
                 .andExpect(status().isOk())
-                .andExpect(cookie().value("token", "token-fake"))
-                .andExpect(cookie().httpOnly("token", true))
+                .andExpect(header().string("X-Auth-Token", "token-fake"))
                 .andExpect(jsonPath("$.email").value("thiago@teste.com"));
     }
 
@@ -164,23 +162,21 @@ class AuthApiControllerTest {
     }
 
     @Test
-    void login_comCredenciaisInvalidas_retorna401SemCookie() throws Exception {
+    void login_comCredenciaisInvalidas_retorna401() throws Exception {
         when(loginService.autenticar(any(), any())).thenReturn(null);
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("email", "x@teste.com", "senha", "errada")))
-                .andExpect(status().isUnauthorized())
-                .andExpect(cookie().doesNotExist("token"));
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
-    void logout_limpaOCookie() throws Exception {
+    void logout_retorna204() throws Exception {
         logarComo(bolsistaLogado);
 
         mockMvc.perform(post("/api/v1/auth/logout"))
-                .andExpect(status().isNoContent())
-                .andExpect(cookie().maxAge("token", 0));
+                .andExpect(status().isNoContent());
     }
 
     @Test

@@ -13,7 +13,6 @@ import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Professor;
 import dev.matheus.cadastroBolsistas.model.Usuario;
-import dev.matheus.cadastroBolsistas.security.CookieJwt;
 import dev.matheus.cadastroBolsistas.service.JwtService;
 import dev.matheus.cadastroBolsistas.service.LoginService;
 import dev.matheus.cadastroBolsistas.service.PasswordResetService;
@@ -27,8 +26,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -37,7 +34,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.net.URI;
 import java.util.Map;
 
-@Tag(name = "Autenticação", description = "Endpoints para autenticação, controle de sessão via JWT HttpOnly, perfil e recuperação de senha.")
+@Tag(name = "Autenticação", description = "Endpoints para autenticação com Bearer token JWT, perfil e recuperação de senha.")
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthApiController {
@@ -63,7 +60,7 @@ public class AuthApiController {
         this.passwordResetService = passwordResetService;
     }
 
-    @Operation(summary = "Autenticar usuário", description = "Valida as credenciais e grava o token JWT em um cookie HttpOnly com proteção SameSite. Possui proteção por Rate Limiting contra força bruta.")
+    @Operation(summary = "Autenticar usuário", description = "Valida as credenciais e retorna o token JWT no header X-Auth-Token. Possui proteção por Rate Limiting contra força bruta. Use o token com Authorization: Bearer <token>")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Autenticado com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResponse.class))),
             @ApiResponse(responseCode = "401", description = "Credenciais inválidas", content = @Content(schema = @Schema(implementation = ErroResponse.class))),
@@ -100,22 +97,18 @@ public class AuthApiController {
 
         loginService.registrarSucesso(email);
         String token = jwtService.gerarToken(usuario.getEmail(), usuario.getTipoUsuario());
-        ResponseCookie cookie = CookieJwt.gravarCookie(token, jwtService.getExpiracaoMinutos());
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .header("X-Auth-Token", token)
                 .body(UsuarioResponse.de(usuario));
     }
 
-    @Operation(summary = "Encerrar sessão (Logout)", description = "Limpa o cookie HttpOnly contendo o token JWT e invalida a sessão no servidor.")
+    @Operation(summary = "Encerrar sessão (Logout)", description = "Encerra a sessão. O cliente deve descartar o token local. Como o token é stateless, o servidor não mantém estado.")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Sessão encerrada com sucesso")
     })
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {
-        ResponseCookie cookie = CookieJwt.limparCookie();
-        return ResponseEntity.noContent()
-                .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .build();
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Obter dados do usuário autenticado (/me)", description = "Retorna as informações do usuário atualmente logado na sessão.")
