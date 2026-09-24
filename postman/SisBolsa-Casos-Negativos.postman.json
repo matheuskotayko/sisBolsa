@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "SisBolsa API - Casos Negativos",
-    "description": "Colecao escrita a mao (nao regenerada do OpenAPI) demonstrando os casos de erro da API: cada exceção de domínio (RecursoNaoEncontradoException, PermissaoNegadaException, LimiteAdminsAtingidoException, CredenciaisInvalidasException, ContaBloqueadaException), a validação de Bean Validation (JSR 380) e um IllegalArgumentException de regra de negócio, cada um com o status HTTP e a mensagem de erro reais retornados pelo ApiExceptionHandler.\n\nRode a pasta inteira em ordem (Collection Runner) com a aplicação de pé em localhost:8080 e o seed de apresentação intacto. A pasta '409' cria 2 administradores extras para forçar o limite e os remove ao final (soft delete) - não deixa resíduo no banco.",
+    "description": "Colecao escrita a mao (nao regenerada do OpenAPI) demonstrando os casos de erro da API: cada exceção de domínio (RecursoNaoEncontradoException, PermissaoNegadaException, LimiteAdminsAtingidoException, CredenciaisInvalidasException, ContaBloqueadaException), a validação de Bean Validation (JSR 380) e um IllegalArgumentException de regra de negócio, cada um com o status HTTP e a mensagem de erro reais retornados pelo ApiExceptionHandler.\n\nRode a pasta inteira em ordem (Collection Runner) com a aplicação de pé em localhost:8080 e o seed de apresentação intacto. A pasta '409' cria 2 administradores extras para forçar o limite e os remove ao final (soft delete) - não deixa resíduo no banco.\n\nAs pastas 8, 9 e 10 completam a matriz de erros: o 409 do UNIQUE do banco (DataIntegrityViolationException, nao excecao de dominio) e os dois casos respondidos pelo proprio Spring Security, antes de qualquer controller - 403 por falta de papel em /relatorios/** e 401 por ausencia de token. Nas pastas 5 e 6 os mesmos status vem do dominio, com outra mensagem.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -20,6 +20,10 @@
     {
       "key": "execucao",
       "value": ""
+    },
+    {
+      "key": "baseUrlSemCookie",
+      "value": "http://127.0.0.1:8080/api/v1"
     }
   ],
   "item": [
@@ -694,6 +698,147 @@
                   "pm.test('mensagem de erro menciona bloqueio', function () {",
                   "    const json = pm.response.json();",
                   "    pm.expect(json.mensagem).to.include('bloqueada');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "8. 409 - DataIntegrityViolationException",
+      "description": "Conflito que nao e checado no service: quem barra e o UNIQUE do proprio banco. O ApiExceptionHandler traduz DataIntegrityViolationException para 409 e devolve a mensagem conforme a constraint violada (e-mail, cpf ou chave estrangeira). Diferente da pasta 4, onde o 409 vem de uma excecao de dominio lancada antes do INSERT.",
+      "item": [
+        {
+          "name": "Cadastro admin com e-mail ja existente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Admin Duplicado\",\n  \"email\": \"admin@sisbolsa.com\",\n  \"senha\": \"12345678\",\n  \"confirmaSenha\": \"12345678\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/cadastro-admin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "cadastro-admin"
+              ]
+            },
+            "description": "Usa o e-mail do admin do seed. Passa pela Bean Validation e pela checagem de vagas de admin, chega no INSERT e esbarra no UNIQUE de bolsista.email. Rode com menos de 3 admins ativos, senao o erro vira o da pasta 4 (limite atingido) antes de tocar o banco."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 409', function () { pm.response.to.have.status(409); });",
+                  "pm.test('mensagem de erro correta', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.mensagem).to.eql('E-mail ja cadastrado.');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "9. 403 - Acesso negado (Spring Security)",
+      "description": "Segundo 403 da API, de origem diferente do da pasta 5. Aqui quem barra e o accessDeniedHandler do SecurityConfig, na regra hasRole(\"ADMIN\") de /api/v1/relatorios/**: a requisicao nem chega no controller. Mensagem \"Acesso negado.\", contra a mensagem de dominio da pasta 5, que vem do service.",
+      "item": [
+        {
+          "name": "Bolsista tenta abrir relatorio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/relatorios/resumo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "relatorios",
+                "resumo"
+              ]
+            },
+            "description": "Unico grupo de rotas restrito por papel na propria configuracao do Spring Security. O bolsista esta autenticado, mas sem ROLE_ADMIN nao passa do filtro."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// garante sessao de bolsista mesmo rodando este request isolado",
+                  "pm.sendRequest({",
+                  "    url: pm.collectionVariables.get('baseUrl') + '/auth/login',",
+                  "    method: 'POST',",
+                  "    header: { 'Content-Type': 'application/json' },",
+                  "    body: { mode: 'raw', raw: JSON.stringify({ email: 'diego.almeida@aluno.sisbolsa.com', senha: '12345678' }) }",
+                  "}, function (err, res) {});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 403', function () { pm.response.to.have.status(403); });",
+                  "pm.test('mensagem vem do Spring Security, nao do dominio', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.mensagem).to.eql('Acesso negado.');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10. 401 - Nao autenticado (sem token)",
+      "description": "Segundo 401 da API. O da pasta 6 e credencial errada, lancado pelo controller de login; este e ausencia de token, respondido pelo authenticationEntryPoint do SecurityConfig antes de qualquer controller.\n\nChama por 127.0.0.1 em vez de localhost de proposito: cookie e escopado por dominio, entao o cookie jar do Postman nao manda o token de localhost para o IP. Efeito identico ao de nao estar logado, sem precisar limpar cookie na mao.",
+      "item": [
+        {
+          "name": "GET /auth/me sem cookie de sessao",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlSemCookie}}/auth/me",
+              "host": [
+                "{{baseUrlSemCookie}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Endpoint que exige autenticacao. Sem o cookie JWT a cadeia de filtros recusa antes do controller."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 401', function () { pm.response.to.have.status(401); });",
+                  "pm.test('mensagem vem do Spring Security, nao do dominio', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.mensagem).to.eql('Nao autenticado.');",
                   "});"
                 ]
               }

@@ -1,6 +1,7 @@
 package dev.matheus.cadastroBolsistas.security;
 
 import dev.matheus.cadastroBolsistas.model.Usuario;
+import dev.matheus.cadastroBolsistas.service.JwtService;
 import dev.matheus.cadastroBolsistas.service.LoginService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;

@@ -14,9 +14,9 @@ import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Professor;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.security.CookieJwt;
-import dev.matheus.cadastroBolsistas.security.JwtService;
-import dev.matheus.cadastroBolsistas.security.LoginAttemptService;
-import dev.matheus.cadastroBolsistas.security.PasswordResetService;
+import dev.matheus.cadastroBolsistas.service.JwtService;
+import dev.matheus.cadastroBolsistas.service.LoginService;
+import dev.matheus.cadastroBolsistas.service.PasswordResetService;
 import dev.matheus.cadastroBolsistas.service.BolsistaService;
 import dev.matheus.cadastroBolsistas.service.LoginService;
 import dev.matheus.cadastroBolsistas.service.ProfessorService;
@@ -48,13 +48,13 @@ public class AuthApiController {
     private final BolsistaService bolsistaService;
     private final ProfessorService professorService;
     private final PasswordEncoder passwordEncoder;
-    private final LoginAttemptService loginAttemptService;
+    private final LoginService loginAttemptService;
     private final PasswordResetService passwordResetService;
 
     public AuthApiController(LoginService loginService, JwtService jwtService, UsuarioLogado usuarioLogado,
                              BolsistaService bolsistaService, ProfessorService professorService,
                              PasswordEncoder passwordEncoder,
-                             LoginAttemptService loginAttemptService,
+                             LoginService loginAttemptService,
                              PasswordResetService passwordResetService) {
         this.loginService = loginService;
         this.jwtService = jwtService;

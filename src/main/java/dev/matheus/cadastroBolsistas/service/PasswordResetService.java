@@ -1,4 +1,4 @@
-package dev.matheus.cadastroBolsistas.security;
+package dev.matheus.cadastroBolsistas.service;
 
 import org.springframework.stereotype.Service;
 
