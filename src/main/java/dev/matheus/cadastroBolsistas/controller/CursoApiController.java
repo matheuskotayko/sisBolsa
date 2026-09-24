@@ -4,8 +4,6 @@ import dev.matheus.cadastroBolsistas.dto.CursoRequest;
 import dev.matheus.cadastroBolsistas.dto.CursoResponse;
 import dev.matheus.cadastroBolsistas.dto.ErroResponse;
 import dev.matheus.cadastroBolsistas.model.Curso;
-import dev.matheus.cadastroBolsistas.model.Usuario;
-import dev.matheus.cadastroBolsistas.service.AuditoriaService;
 import dev.matheus.cadastroBolsistas.service.CursoService;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,12 +31,10 @@ public class CursoApiController {
 
     private final CursoService cursoService;
     private final UsuarioLogado usuarioLogado;
-    private final AuditoriaService auditoriaService;
 
-    public CursoApiController(CursoService cursoService, UsuarioLogado usuarioLogado, AuditoriaService auditoriaService) {
+    public CursoApiController(CursoService cursoService, UsuarioLogado usuarioLogado) {
         this.cursoService = cursoService;
         this.usuarioLogado = usuarioLogado;
-        this.auditoriaService = auditoriaService;
     }
 
     @Operation(summary = "Listar cursos disponíveis", description = "Retorna todos os cursos ativos cadastrados no sistema, usados no cadastro de bolsistas.")
@@ -62,10 +58,8 @@ public class CursoApiController {
     public ResponseEntity<CursoResponse> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do curso", required = true)
                                                 @Valid @RequestBody CursoRequest body,
                                                 UriComponentsBuilder uriBuilder) {
-        Usuario logado = usuarioLogado.obrigatorio();
         String nome = StringUtil.limpar(body.nome());
-        Curso curso = cursoService.cadastrar(nome, logado);
-        auditoriaService.registrar(logado, "CRIAR_CURSO", "CURSO", "Curso '" + curso.getNome() + "' cadastrado.", null);
+        Curso curso = cursoService.cadastrar(nome);
         URI uri = uriBuilder.replacePath("/api/v1/cursos").build().toUri();
         return ResponseEntity.created(uri).body(CursoResponse.de(curso));
     }

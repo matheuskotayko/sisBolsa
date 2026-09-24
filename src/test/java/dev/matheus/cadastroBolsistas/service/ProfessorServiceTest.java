@@ -135,45 +135,20 @@ class ProfessorServiceTest {
     }
 
     @Test
-    void exigirAdmin_naoAdmin_lancaPermissaoNegada() {
-        Bolsista bolsista = new Bolsista();
-        bolsista.setTipoUsuario("BOLSISTA");
-
-        assertThrows(PermissaoNegadaException.class, () -> professorService.exigirAdmin(bolsista));
-    }
-
-    @Test
-    void buscarExigindoAdmin_naoAdmin_lancaPermissaoNegadaSemConsultarRepositorio() {
-        Bolsista bolsista = new Bolsista();
-        bolsista.setTipoUsuario("BOLSISTA");
-
-        assertThrows(PermissaoNegadaException.class,
-                () -> professorService.buscarExigindoAdmin(UUID.randomUUID(), bolsista));
-        verifyNoInteractions(repository);
-    }
-
-    @Test
-    void buscarExigindoAdmin_adminMasProfessorInexistente_lancaRecursoNaoEncontrado() {
+    void buscarOuFalhar_professorInexistente_lancaRecursoNaoEncontrado() {
         UUID id = UUID.randomUUID();
         when(repository.findById(id)).thenReturn(Optional.empty());
 
-        Bolsista admin = new Bolsista();
-        admin.setTipoUsuario("ADMIN");
-
-        assertThrows(RecursoNaoEncontradoException.class,
-                () -> professorService.buscarExigindoAdmin(id, admin));
+        assertThrows(RecursoNaoEncontradoException.class, () -> professorService.buscarOuFalhar(id));
     }
 
     @Test
-    void buscarExigindoAdmin_adminEProfessorExistente_retornaProfessor() {
+    void buscarOuFalhar_professorExistente_retornaProfessor() {
         UUID id = UUID.randomUUID();
         Professor p = new Professor();
         p.setId(id);
         when(repository.findById(id)).thenReturn(Optional.of(p));
 
-        Bolsista admin = new Bolsista();
-        admin.setTipoUsuario("ADMIN");
-
-        assertSame(p, professorService.buscarExigindoAdmin(id, admin));
+        assertSame(p, professorService.buscarOuFalhar(id));
     }
 }

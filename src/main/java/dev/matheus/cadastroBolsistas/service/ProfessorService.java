@@ -1,10 +1,8 @@
 package dev.matheus.cadastroBolsistas.service;
 
 import dev.matheus.cadastroBolsistas.dto.ProfessorRequest;
-import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
 import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Professor;
-import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.repository.ProfessorRepository;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,18 +51,6 @@ public class ProfessorService {
             throw new RecursoNaoEncontradoException("Professor nao encontrado.");
         }
         return p;
-    }
-
-    /* so admin mexe em cadastro de professor. */
-    public void exigirAdmin(Usuario logado) {
-        if (!logado.isAdmin()) {
-            throw new PermissaoNegadaException("Requer perfil de administrador.");
-        }
-    }
-
-    public Professor buscarExigindoAdmin(UUID id, Usuario logado) {
-        exigirAdmin(logado);
-        return buscarOuFalhar(id);
     }
 
     public boolean atualizar(Professor p) {

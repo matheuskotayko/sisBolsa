@@ -9,7 +9,6 @@ import dev.matheus.cadastroBolsistas.security.JwtCookieFilter;
 import dev.matheus.cadastroBolsistas.security.JwtService;
 import dev.matheus.cadastroBolsistas.security.LoginAttemptService;
 import dev.matheus.cadastroBolsistas.security.SecurityConfig;
-import dev.matheus.cadastroBolsistas.service.AuditoriaService;
 import dev.matheus.cadastroBolsistas.service.BolsistaService;
 import dev.matheus.cadastroBolsistas.service.LoginService;
 import dev.matheus.cadastroBolsistas.service.ProfessorService;
@@ -84,9 +83,6 @@ class AuthApiControllerTest {
 
     @MockitoBean
     private ProfessorService professorService;
-
-    @MockitoBean
-    private AuditoriaService auditoriaService;
 
     @MockitoBean
     private LoginAttemptService loginAttemptService;

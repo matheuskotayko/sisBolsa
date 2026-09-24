@@ -17,7 +17,6 @@ import dev.matheus.cadastroBolsistas.security.CookieJwt;
 import dev.matheus.cadastroBolsistas.security.JwtService;
 import dev.matheus.cadastroBolsistas.security.LoginAttemptService;
 import dev.matheus.cadastroBolsistas.security.PasswordResetService;
-import dev.matheus.cadastroBolsistas.service.AuditoriaService;
 import dev.matheus.cadastroBolsistas.service.BolsistaService;
 import dev.matheus.cadastroBolsistas.service.LoginService;
 import dev.matheus.cadastroBolsistas.service.ProfessorService;
@@ -28,7 +27,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -50,14 +48,12 @@ public class AuthApiController {
     private final BolsistaService bolsistaService;
     private final ProfessorService professorService;
     private final PasswordEncoder passwordEncoder;
-    private final AuditoriaService auditoriaService;
     private final LoginAttemptService loginAttemptService;
     private final PasswordResetService passwordResetService;
 
     public AuthApiController(LoginService loginService, JwtService jwtService, UsuarioLogado usuarioLogado,
                              BolsistaService bolsistaService, ProfessorService professorService,
                              PasswordEncoder passwordEncoder,
-                             AuditoriaService auditoriaService,
                              LoginAttemptService loginAttemptService,
                              PasswordResetService passwordResetService) {
         this.loginService = loginService;
@@ -66,7 +62,6 @@ public class AuthApiController {
         this.bolsistaService = bolsistaService;
         this.professorService = professorService;
         this.passwordEncoder = passwordEncoder;
-        this.auditoriaService = auditoriaService;
         this.loginAttemptService = loginAttemptService;
         this.passwordResetService = passwordResetService;
     }
@@ -80,15 +75,12 @@ public class AuthApiController {
     @PostMapping("/login")
     public UsuarioResponse login(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Credenciais de e-mail e senha", required = true)
                                  @RequestBody LoginRequest body,
-                                 HttpServletRequest request,
                                  HttpServletResponse response) {
         String email = body.email() != null ? body.email().trim() : "";
-        String ip = extrairIp(request);
 
         if (loginAttemptService.isBloqueado(email)) {
             long segundos = loginAttemptService.getSegundosRestantesBloqueio(email);
             long minutos = Math.max(1, (segundos + 59) / 60);
-            auditoriaService.registrar(null, "Anônimo", "LOGIN_BLOQUEADO", "AUTH", "Tentativa de login com conta temporariamente bloqueada: " + email, ip);
             throw new ContaBloqueadaException(
                     "Muitas tentativas incorretas. Conta bloqueada temporariamente por " + minutos + " minuto(s).");
         }
@@ -100,7 +92,6 @@ public class AuthApiController {
         if (usuario == null) {
             loginAttemptService.registrarFalha(email);
             int restantes = loginAttemptService.getTentativasRestantes(email);
-            auditoriaService.registrar(null, "Anônimo", "LOGIN_FALHA", "AUTH", "Tentativa de login inválida com e-mail: " + email + " (" + restantes + " restantes)", ip);
 
             if (loginAttemptService.isBloqueado(email)) {
                 throw new ContaBloqueadaException(
@@ -114,17 +105,7 @@ public class AuthApiController {
         loginAttemptService.registrarSucesso(email);
         String token = jwtService.gerarToken(usuario.getEmail(), usuario.getTipoUsuario());
         CookieJwt.gravar(response, token, jwtService.getExpiracaoMinutos());
-        auditoriaService.registrar(usuario, "LOGIN", "AUTH", "Login efetuado com sucesso (" + usuario.getTipoUsuario() + ")", ip);
         return UsuarioResponse.de(usuario);
-    }
-
-    private static String extrairIp(HttpServletRequest request) {
-        if (request == null) return null;
-        String xfHeader = request.getHeader("X-Forwarded-For");
-        if (xfHeader != null && !xfHeader.isBlank()) {
-            return xfHeader.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
     }
 
     @Operation(summary = "Encerrar sessão (Logout)", description = "Limpa o cookie HttpOnly contendo o token JWT e invalida a sessão no servidor.")
@@ -133,8 +114,6 @@ public class AuthApiController {
     })
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletResponse response) {
-        Usuario usuario = usuarioLogado.obrigatorio();
-        auditoriaService.registrar(usuario, "LOGOUT", "AUTH", "Sessão encerrada pelo usuário", null);
         CookieJwt.limpar(response);
         return ResponseEntity.noContent().build();
     }
@@ -172,12 +151,6 @@ public class AuthApiController {
             bolsistaService.aplicarDadosPerfil(b, body, senhaNova);
             bolsistaService.atualizar(b);
             atualizado = b;
-        }
-
-        if (senhaNova != null) {
-            auditoriaService.registrar(atualizado, "ALTERAR_SENHA", "USUARIO", "Senha de acesso alterada pelo próprio usuário com sucesso.", null);
-        } else {
-            auditoriaService.registrar(atualizado, "ATUALIZAR_PERFIL", "USUARIO", "Dados cadastrais do perfil atualizados.", null);
         }
 
         return UsuarioResponse.de(atualizado);
@@ -218,8 +191,7 @@ public class AuthApiController {
     })
     @PostMapping("/password-reset-requests")
     public Map<String, String> esqueciSenha(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "E-mail do usuário", required = true)
-                                           @Valid @RequestBody EsqueciSenhaRequest body,
-                                           HttpServletRequest request) {
+                                           @Valid @RequestBody EsqueciSenhaRequest body) {
         String email = StringUtil.limpar(body.email());
 
         Usuario u = loginService.buscarPorEmail(email);
@@ -228,8 +200,6 @@ public class AuthApiController {
         }
 
         String codigo = passwordResetService.gerarCodigo(email);
-        String ip = extrairIp(request);
-        auditoriaService.registrar(u, "SOLICITAR_RECUPERACAO_SENHA", "AUTH", "Código de recuperação gerado para " + email, ip);
 
         return Map.of(
                 "mensagem", "Código de verificação enviado para o e-mail informado (Válido por 15 minutos).",
@@ -245,8 +215,7 @@ public class AuthApiController {
     })
     @PostMapping("/password-resets")
     public Map<String, String> redefinirSenha(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados para redefinição de senha", required = true)
-                                              @Valid @RequestBody RedefinirSenhaRequest body,
-                                              HttpServletRequest request) {
+                                              @Valid @RequestBody RedefinirSenhaRequest body) {
         String email = StringUtil.limpar(body.email());
         String codigo = StringUtil.limpar(body.codigo());
         String novaSenha = StringUtil.limpar(body.novaSenha());
@@ -281,8 +250,6 @@ public class AuthApiController {
         }
 
         passwordResetService.invalidarCodigo(email);
-        String ip = extrairIp(request);
-        auditoriaService.registrar(u, "REDEFINICAO_SENHA", "AUTH", "Senha redefinida com sucesso via código de verificação.", ip);
 
         return Map.of("mensagem", "Senha redefinida com sucesso! Você já pode acessar sua conta com a nova senha.");
     }

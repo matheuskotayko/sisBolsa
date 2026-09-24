@@ -45,10 +45,8 @@ public class LaboratorioService {
         return false;
     }
 
-    public boolean cadastrar(Laboratorio lab, Usuario logado) {
-        if (!logado.isAdmin()) {
-            throw new PermissaoNegadaException("Requer perfil de administrador.");
-        }
+    /* quem barra nao-admin e o SecurityConfig, na regra POST /api/v1/laboratorios. */
+    public boolean cadastrar(Laboratorio lab) {
         lab.setAtivo(true);
         repository.save(lab);
         return true;

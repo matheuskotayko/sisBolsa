@@ -9,7 +9,6 @@ import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Cargo;
 import dev.matheus.cadastroBolsistas.model.ModalidadeBolsa;
 import dev.matheus.cadastroBolsistas.model.Usuario;
-import dev.matheus.cadastroBolsistas.service.AuditoriaService;
 import dev.matheus.cadastroBolsistas.service.BolsistaService;
 import dev.matheus.cadastroBolsistas.service.ProjetoService;
 import dev.matheus.cadastroBolsistas.util.ArquivoDownloadUtil;
@@ -54,16 +53,13 @@ public class BolsistaApiController {
     private final ProjetoService projetoService;
     private final PasswordEncoder passwordEncoder;
     private final UsuarioLogado usuarioLogado;
-    private final AuditoriaService auditoriaService;
 
     public BolsistaApiController(BolsistaService bolsistaService, ProjetoService projetoService,
-                                 PasswordEncoder passwordEncoder, UsuarioLogado usuarioLogado,
-                                 AuditoriaService auditoriaService) {
+                                 PasswordEncoder passwordEncoder, UsuarioLogado usuarioLogado) {
         this.bolsistaService = bolsistaService;
         this.projetoService = projetoService;
         this.passwordEncoder = passwordEncoder;
         this.usuarioLogado = usuarioLogado;
-        this.auditoriaService = auditoriaService;
     }
 
     @Operation(summary = "Listar bolsistas paginados", description = "Retorna a listagem de bolsistas de acordo com o escopo do usuário autenticado: ADMIN visualiza todos, PROFESSOR visualiza os bolsistas dos laboratórios que coordena, e BOLSISTA visualiza seus colegas de laboratório.")
@@ -102,7 +98,7 @@ public class BolsistaApiController {
             @ApiResponse(responseCode = "404", description = "Bolsista não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public EntityModel<UsuarioResponse> buscar(@Parameter(description = "ID do bolsista (UUID)", required = true) @PathVariable UUID id) {
+    public EntityModel<UsuarioResponse> buscar(@Parameter(description = "ID do bolsista (UUID)", required = true, example = "d1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
         Usuario logado = usuarioLogado.obrigatorio();
         Bolsista b = bolsistaService.buscarComPermissaoDeVisualizacao(id, logado);
         return comLinks(UsuarioResponse.de(b));
@@ -164,7 +160,7 @@ public class BolsistaApiController {
             @ApiResponse(responseCode = "404", description = "Bolsista não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}/projetos")
-    public List<ProjetoResponse> projetos(@Parameter(description = "ID do bolsista", required = true) @PathVariable UUID id) {
+    public List<ProjetoResponse> projetos(@Parameter(description = "ID do bolsista", required = true, example = "d1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
         Usuario logado = usuarioLogado.obrigatorio();
         bolsistaService.buscarComPermissaoDeVisualizacao(id, logado);
         return projetoService.listarPorBolsista(id).stream().map(ProjetoResponse::de).toList();
@@ -193,7 +189,6 @@ public class BolsistaApiController {
         bolsistaService.aplicarCamposDeBolsista(b, body, logado);
         b.setSenha(passwordEncoder.encode(body.senha()));
         bolsistaService.inserir(b);
-        auditoriaService.registrar(logado, "CRIAR_USUARIO", "USUARIO", "Usuário '" + b.getNome() + "' (" + b.getTipoUsuario() + ") cadastrado.", null);
         URI uri = uriBuilder.replacePath("/api/v1/bolsistas/{id}").buildAndExpand(b.getId()).toUri();
         return ResponseEntity.created(uri).body(comLinks(UsuarioResponse.de(b)));
     }
@@ -206,7 +201,7 @@ public class BolsistaApiController {
             @ApiResponse(responseCode = "404", description = "Bolsista não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PutMapping("/{id}")
-    public EntityModel<UsuarioResponse> atualizar(@Parameter(description = "ID do bolsista a atualizar", required = true) @PathVariable UUID id,
+    public EntityModel<UsuarioResponse> atualizar(@Parameter(description = "ID do bolsista a atualizar", required = true, example = "d1111111-1111-1111-1111-111111111111") @PathVariable UUID id,
                                      @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do bolsista", required = true)
                                      @Valid @RequestBody BolsistaRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
@@ -218,7 +213,6 @@ public class BolsistaApiController {
         bolsistaService.aplicarCamposDeBolsista(b, body, logado);
         b.setSenha(StringUtil.estaVazio(body.senha()) ? senhaAtual : passwordEncoder.encode(body.senha()));
         bolsistaService.atualizar(b);
-        auditoriaService.registrar(logado, "ATUALIZAR_USUARIO", "USUARIO", "Usuário '" + b.getNome() + "' atualizado.", null);
         return comLinks(UsuarioResponse.de(b));
     }
 
@@ -229,11 +223,10 @@ public class BolsistaApiController {
             @ApiResponse(responseCode = "404", description = "Bolsista não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@Parameter(description = "ID do bolsista a desativar", required = true) @PathVariable UUID id) {
+    public ResponseEntity<Void> excluir(@Parameter(description = "ID do bolsista a desativar", required = true, example = "d1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
         Usuario logado = usuarioLogado.obrigatorio();
-        Bolsista b = bolsistaService.buscarComPermissaoDeExclusao(id, logado);
+        bolsistaService.buscarComPermissaoDeExclusao(id, logado);
         bolsistaService.excluir(id);
-        auditoriaService.registrar(logado, "EXCLUIR_USUARIO", "USUARIO", "Usuário '" + b.getNome() + "' desativado.", null);
         return ResponseEntity.noContent().build();
     }
 

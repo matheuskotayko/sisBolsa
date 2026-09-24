@@ -158,23 +158,12 @@ class LaboratorioServiceTest {
     }
 
     @Test
-    void cadastrar_admin_salvaEAtivaOLaboratorio() {
-        Professor admin = new Professor();
-        admin.setTipoUsuario("ADMIN");
+    void cadastrar_salvaEAtivaOLaboratorio() {
         Laboratorio lab = new Laboratorio();
 
-        assertTrue(laboratorioService.cadastrar(lab, admin));
+        assertTrue(laboratorioService.cadastrar(lab));
         assertTrue(lab.isAtivo());
         verify(repository).save(lab);
-    }
-
-    @Test
-    void cadastrar_naoAdmin_lancaPermissaoNegadaSemSalvar() {
-        Professor professor = new Professor();
-        professor.setTipoUsuario("PROFESSOR");
-
-        assertThrows(PermissaoNegadaException.class, () -> laboratorioService.cadastrar(new Laboratorio(), professor));
-        verify(repository, never()).save(any());
     }
 
     @Test

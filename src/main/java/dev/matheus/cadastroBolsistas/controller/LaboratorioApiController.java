@@ -8,7 +8,6 @@ import dev.matheus.cadastroBolsistas.dto.ProjetoResponse;
 import dev.matheus.cadastroBolsistas.dto.UsuarioResponse;
 import dev.matheus.cadastroBolsistas.model.Laboratorio;
 import dev.matheus.cadastroBolsistas.model.Usuario;
-import dev.matheus.cadastroBolsistas.service.AuditoriaService;
 import dev.matheus.cadastroBolsistas.service.BolsistaService;
 import dev.matheus.cadastroBolsistas.service.LaboratorioService;
 import dev.matheus.cadastroBolsistas.service.ProjetoService;
@@ -43,16 +42,13 @@ public class LaboratorioApiController {
     private final BolsistaService bolsistaService;
     private final ProjetoService projetoService;
     private final UsuarioLogado usuarioLogado;
-    private final AuditoriaService auditoriaService;
 
     public LaboratorioApiController(LaboratorioService laboratorioService, BolsistaService bolsistaService,
-                                    ProjetoService projetoService, UsuarioLogado usuarioLogado,
-                                    AuditoriaService auditoriaService) {
+                                    ProjetoService projetoService, UsuarioLogado usuarioLogado) {
         this.laboratorioService = laboratorioService;
         this.bolsistaService = bolsistaService;
         this.projetoService = projetoService;
         this.usuarioLogado = usuarioLogado;
-        this.auditoriaService = auditoriaService;
     }
 
     @Operation(summary = "Listar laboratórios paginados", description = "Retorna laboratórios ativos do sistema ou apenas os que o professor autenticado coordena.")
@@ -78,7 +74,7 @@ public class LaboratorioApiController {
             @ApiResponse(responseCode = "404", description = "Laboratório não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public EntityModel<LaboratorioResponse> buscar(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id) {
+    public EntityModel<LaboratorioResponse> buscar(@Parameter(description = "ID do laboratório (UUID)", required = true, example = "c1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
         usuarioLogado.obrigatorio();
         return comLinks(comOcupacao(laboratorioService.buscarOuFalhar(id)));
     }
@@ -89,7 +85,7 @@ public class LaboratorioApiController {
             @ApiResponse(responseCode = "404", description = "Laboratório não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}/bolsistas")
-    public List<UsuarioResponse> bolsistas(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id) {
+    public List<UsuarioResponse> bolsistas(@Parameter(description = "ID do laboratório (UUID)", required = true, example = "c1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
         usuarioLogado.obrigatorio();
         laboratorioService.buscarOuFalhar(id);
         return bolsistaService.buscarPorLaboratorio(id).stream().map(UsuarioResponse::de).toList();
@@ -101,7 +97,7 @@ public class LaboratorioApiController {
             @ApiResponse(responseCode = "404", description = "Laboratório não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}/projetos")
-    public List<ProjetoResponse> projetos(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id) {
+    public List<ProjetoResponse> projetos(@Parameter(description = "ID do laboratório (UUID)", required = true, example = "c1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
         usuarioLogado.obrigatorio();
         laboratorioService.buscarOuFalhar(id);
         return projetoService.listarPorLaboratorio(id).stream()
@@ -119,12 +115,9 @@ public class LaboratorioApiController {
     public ResponseEntity<EntityModel<LaboratorioResponse>> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do laboratório", required = true)
                                                      @Valid @RequestBody LaboratorioRequest body,
                                                      UriComponentsBuilder uriBuilder) {
-        Usuario logado = usuarioLogado.obrigatorio();
-
         Laboratorio lab = new Laboratorio();
         laboratorioService.aplicar(lab, body);
-        laboratorioService.cadastrar(lab, logado);
-        auditoriaService.registrar(logado, "CRIAR_LABORATORIO", "LABORATORIO", "Laboratório '" + lab.getNome() + "' criado com sucesso.", null);
+        laboratorioService.cadastrar(lab);
         URI uri = uriBuilder.replacePath("/api/v1/laboratorios/{id}").buildAndExpand(lab.getId()).toUri();
         return ResponseEntity.created(uri).body(comLinks(comOcupacao(lab)));
     }
@@ -137,7 +130,7 @@ public class LaboratorioApiController {
             @ApiResponse(responseCode = "404", description = "Laboratório não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PutMapping("/{id}")
-    public EntityModel<LaboratorioResponse> atualizar(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id,
+    public EntityModel<LaboratorioResponse> atualizar(@Parameter(description = "ID do laboratório (UUID)", required = true, example = "c1111111-1111-1111-1111-111111111111") @PathVariable UUID id,
                                          @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do laboratório", required = true)
                                          @Valid @RequestBody LaboratorioRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
@@ -146,7 +139,6 @@ public class LaboratorioApiController {
         laboratorioService.aplicar(lab, body);
         lab.setAtivo(true);
         laboratorioService.atualizar(lab);
-        auditoriaService.registrar(logado, "ATUALIZAR_LABORATORIO", "LABORATORIO", "Laboratório '" + lab.getNome() + "' atualizado.", null);
         return comLinks(comOcupacao(lab));
     }
 
@@ -157,11 +149,10 @@ public class LaboratorioApiController {
             @ApiResponse(responseCode = "404", description = "Laboratório não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@Parameter(description = "ID do laboratório (UUID)", required = true) @PathVariable UUID id) {
+    public ResponseEntity<Void> excluir(@Parameter(description = "ID do laboratório (UUID)", required = true, example = "c1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
         Usuario logado = usuarioLogado.obrigatorio();
-        Laboratorio lab = laboratorioService.buscarExigindoGerencia(id, logado);
+        laboratorioService.buscarExigindoGerencia(id, logado);
         laboratorioService.excluir(id);
-        auditoriaService.registrar(logado, "EXCLUIR_LABORATORIO", "LABORATORIO", "Laboratório '" + lab.getNome() + "' desativado.", null);
         return ResponseEntity.noContent().build();
     }
 

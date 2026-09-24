@@ -1,7 +1,6 @@
 package dev.matheus.cadastroBolsistas.controller;
 
 import dev.matheus.cadastroBolsistas.dto.ErroResponse;
-import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.repository.RelatorioRepository;
 import dev.matheus.cadastroBolsistas.service.BolsistaService;
 import dev.matheus.cadastroBolsistas.service.LaboratorioService;
@@ -21,8 +20,8 @@ import java.util.List;
 import java.util.Map;
 
 /*
- * relatorios sao so para admin. o SecurityConfig ja barra a rota por role,
- * a checagem aqui e o cinto alem do suspensorio.
+ * relatorios sao so para admin: quem barra e a regra hasRole("ADMIN") de
+ * /api/v1/relatorios/** no SecurityConfig.
  */
 @Tag(name = "Relatórios & Estatísticas", description = "Métricas consolidadas do sistema e indicadores de desempenho (exclusivo para perfil ADMIN).")
 @RestController
@@ -33,16 +32,13 @@ public class RelatorioApiController {
     private final BolsistaService bolsistaService;
     private final LaboratorioService laboratorioService;
     private final ProjetoService projetoService;
-    private final UsuarioLogado usuarioLogado;
 
     public RelatorioApiController(RelatorioService relatorioService, BolsistaService bolsistaService,
-                                  LaboratorioService laboratorioService, ProjetoService projetoService,
-                                  UsuarioLogado usuarioLogado) {
+                                  LaboratorioService laboratorioService, ProjetoService projetoService) {
         this.relatorioService = relatorioService;
         this.bolsistaService = bolsistaService;
         this.laboratorioService = laboratorioService;
         this.projetoService = projetoService;
-        this.usuarioLogado = usuarioLogado;
     }
 
     @Operation(summary = "Resumo quantitativo global", description = "Retorna o total geral de bolsistas, laboratórios e projetos ativos cadastrados no sistema.")
@@ -52,7 +48,6 @@ public class RelatorioApiController {
     })
     @GetMapping("/resumo")
     public Map<String, Object> resumo() {
-        exigirAdmin();
         return Map.of(
                 "totalBolsistas", bolsistaService.listarTodos().size(),
                 "totalLaboratorios", laboratorioService.listarTodos().size(),
@@ -66,7 +61,6 @@ public class RelatorioApiController {
     })
     @GetMapping("/horas-mes")
     public List<RelatorioRepository.HorasBolsista> horasDoMes() {
-        exigirAdmin();
         return relatorioService.getHorasBolsistasMesCorrente();
     }
 
@@ -77,7 +71,6 @@ public class RelatorioApiController {
     })
     @GetMapping("/projetos-por-laboratorio")
     public List<RelatorioRepository.ProjetosPorLaboratorio> projetosPorLaboratorio() {
-        exigirAdmin();
         return relatorioService.getProjetosAtivosPorLaboratorio();
     }
 
@@ -88,7 +81,6 @@ public class RelatorioApiController {
     })
     @GetMapping("/bolsistas-por-cargo")
     public List<RelatorioRepository.BolsistasPorCargo> bolsistasPorCargo() {
-        exigirAdmin();
         return relatorioService.getBolsistasPorCargo();
     }
 
@@ -99,12 +91,7 @@ public class RelatorioApiController {
     })
     @GetMapping("/ocupacao")
     public List<RelatorioRepository.OcupacaoLaboratorio> ocupacao() {
-        exigirAdmin();
         return relatorioService.getLaboratoriosOcupacao();
     }
 
-    private void exigirAdmin() {
-        Usuario logado = usuarioLogado.obrigatorio();
-        relatorioService.exigirAdmin(logado);
-    }
 }

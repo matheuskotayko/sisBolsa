@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -40,7 +41,16 @@ public class SecurityConfig {
                     "/api/v1/auth/password-reset-requests",
                     "/api/v1/auth/password-resets"
                 ).permitAll()
+                /*
+                 * gates puros de papel ficam aqui, no proprio spring security. o que
+                 * depende do dado (professor so mexe no lab que coordena, bolsista so
+                 * no proprio cadastro) continua no service, porque um matcher de url
+                 * nao sabe de quem e a linha que esta sendo editada.
+                 */
                 .requestMatchers("/api/v1/relatorios/**").hasRole("ADMIN")
+                .requestMatchers("/api/v1/professores/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/cursos").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/laboratorios").hasRole("ADMIN")
                 .anyRequest().authenticated())
             .formLogin(form -> form.disable())
             .httpBasic(basic -> basic.disable())

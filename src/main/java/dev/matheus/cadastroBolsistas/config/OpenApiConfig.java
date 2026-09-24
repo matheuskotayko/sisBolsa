@@ -29,13 +29,13 @@ public class OpenApiConfig {
                         .version("1.0.0")
                         .description("""
                                 ### Visão Geral
-                                API RESTful para gerenciamento completo de bolsistas, professores, laboratórios de pesquisa, projetos acadêmicos, controle de frequência/horas e trilha de auditoria.
+                                API RESTful para gerenciamento completo de bolsistas, professores, laboratórios de pesquisa, projetos acadêmicos, e controle de frequência/horas.
 
                                 ### Autenticação e Segurança
                                 - **Autenticação Baseada em JWT:** Para autenticar, utilize `POST /api/v1/auth/login`. A API grava automaticamente um cookie `httpOnly` (`token`) com proteção `SameSite=Strict`.
                                 - **Rate Limiting & Anti-Brute Force:** Limite de 5 tentativas consecutivas com erro. Em caso de excesso, a conta é bloqueada temporariamente por 5 minutos (HTTP 429).
                                 - **Controle de Acesso Baseado em Perfis (RBAC):**
-                                  - **`ADMIN`:** Acesso total irrestrito a todos os recursos, auditoria, configurações e relatórios globais.
+                                  - **`ADMIN`:** Acesso total irrestrito a todos os recursos, configurações e relatórios globais.
                                   - **`PROFESSOR`:** Gerenciamento dos laboratórios que coordena, seus projetos associados e bolsistas vinculados.
                                   - **`BOLSISTA`:** Apontamento de frequência própria, visualização do seu laboratório, projetos e comprovantes em PDF.
                                 """)
@@ -53,8 +53,7 @@ public class OpenApiConfig {
                         new Tag().name("Laboratórios").description("Gestão de laboratórios de pesquisa, vinculação de coordenadores e controle de ocupação."),
                         new Tag().name("Projetos").description("Gestão de projetos de pesquisa, vinculação de membros e anexação de entregáveis/repositórios."),
                         new Tag().name("Frequência & Horas").description("Apontamento de horas trabalhadas, resumo mensal, exportação em CSV e emissão de comprovantes em PDF."),
-                        new Tag().name("Relatórios & Estatísticas").description("Métricas de ocupação, carga horária mensal, projetos ativos e exportação CSV gerencial."),
-                        new Tag().name("Auditoria").description("Rastreamento de acessos e trilha de auditoria de ações críticas no sistema.")
+                        new Tag().name("Relatórios & Estatísticas").description("Métricas de ocupação, carga horária mensal, projetos ativos e exportação CSV gerencial.")
                 ))
                 .components(new Components().addSecuritySchemes(COOKIE_JWT,
                         new SecurityScheme()

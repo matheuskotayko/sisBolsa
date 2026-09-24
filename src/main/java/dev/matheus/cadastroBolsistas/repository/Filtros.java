@@ -1,6 +1,5 @@
 package dev.matheus.cadastroBolsistas.repository;
 
-import dev.matheus.cadastroBolsistas.model.Auditoria;
 import dev.matheus.cadastroBolsistas.model.Frequencia;
 import dev.matheus.cadastroBolsistas.model.Laboratorio;
 import dev.matheus.cadastroBolsistas.model.Projeto;
@@ -11,7 +10,6 @@ import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -19,7 +17,7 @@ import java.util.UUID;
 /*
  * filtros dinamicos montados com a Criteria API do proprio JPA.
  *
- * as consultas com parametro opcional (entidade, acao, periodo, termo de busca)
+ * as consultas com parametro opcional (periodo, termo de busca)
  * ficavam em @Query usando o truque ":x IS NULL OR campo = :x", que obriga o
  * banco a avaliar todo filtro mesmo quando nao foi informado. com Specification
  * o predicado so entra no WHERE se o valor existir, e a mesma especificacao
@@ -28,21 +26,6 @@ import java.util.UUID;
 public final class Filtros {
 
     private Filtros() {
-    }
-
-    public static Specification<Auditoria> auditoria(String entidade, String acao,
-                                                     LocalDateTime inicio, LocalDateTime fim) {
-        return (raiz, consulta, cb) -> {
-            List<Predicate> ps = new ArrayList<>();
-            if (entidade != null) {
-                ps.add(cb.equal(raiz.get("entidade"), entidade));
-            }
-            if (acao != null) {
-                ps.add(cb.equal(raiz.get("acao"), acao));
-            }
-            ps.addAll(periodo(raiz.get("dataHora"), inicio, fim, cb));
-            return cb.and(ps.toArray(new Predicate[0]));
-        };
     }
 
     public static Specification<Frequencia> frequencia(UUID bolsistaId, LocalDate inicio, LocalDate fim) {

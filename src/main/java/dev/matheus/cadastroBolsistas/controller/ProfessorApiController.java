@@ -5,8 +5,6 @@ import dev.matheus.cadastroBolsistas.dto.PaginaResponse;
 import dev.matheus.cadastroBolsistas.dto.ProfessorRequest;
 import dev.matheus.cadastroBolsistas.dto.UsuarioResponse;
 import dev.matheus.cadastroBolsistas.model.Professor;
-import dev.matheus.cadastroBolsistas.model.Usuario;
-import dev.matheus.cadastroBolsistas.service.AuditoriaService;
 import dev.matheus.cadastroBolsistas.service.BolsistaService;
 import dev.matheus.cadastroBolsistas.service.LaboratorioService;
 import dev.matheus.cadastroBolsistas.service.ProfessorService;
@@ -32,8 +30,8 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 /*
- * so admin mexe em professor - manter/criar/editar/excluir e ate listar. e a
- * mesma restricao que ja existia quando professor vivia dentro de /usuarios.
+ * so admin mexe em professor - criar/editar/excluir e ate listar. quem barra e
+ * a regra hasRole("ADMIN") de /api/v1/professores/** no SecurityConfig.
  */
 @Tag(name = "Professores", description = "Gestão de professores coordenadores (restrito a Administradores).")
 @RestController
@@ -47,18 +45,13 @@ public class ProfessorApiController {
     private final BolsistaService bolsistaService;
     private final LaboratorioService laboratorioService;
     private final PasswordEncoder passwordEncoder;
-    private final UsuarioLogado usuarioLogado;
-    private final AuditoriaService auditoriaService;
 
     public ProfessorApiController(ProfessorService professorService, BolsistaService bolsistaService,
-                                  LaboratorioService laboratorioService, PasswordEncoder passwordEncoder,
-                                  UsuarioLogado usuarioLogado, AuditoriaService auditoriaService) {
+                                  LaboratorioService laboratorioService, PasswordEncoder passwordEncoder) {
         this.professorService = professorService;
         this.bolsistaService = bolsistaService;
         this.laboratorioService = laboratorioService;
         this.passwordEncoder = passwordEncoder;
-        this.usuarioLogado = usuarioLogado;
-        this.auditoriaService = auditoriaService;
     }
 
     @Operation(summary = "Listar professores paginados", description = "Retorna os professores coordenadores cadastrados (restrito a Administradores).")
@@ -71,9 +64,6 @@ public class ProfessorApiController {
             @Parameter(description = "Número da página", example = "1") @RequestParam(defaultValue = "1") int pagina,
             @Parameter(description = "Quantidade de itens por página", example = "10") @RequestParam(required = false) Integer tamanho,
             @Parameter(description = "Filtro de busca textual por nome", example = "Roberto") @RequestParam(required = false) String buscaNome) {
-        Usuario logado = usuarioLogado.obrigatorio();
-        professorService.exigirAdmin(logado);
-
         ArrayList<Professor> lista = StringUtil.estaVazio(buscaNome)
                 ? professorService.listarTodos()
                 : professorService.buscarPorNome(buscaNome);
@@ -89,9 +79,8 @@ public class ProfessorApiController {
             @ApiResponse(responseCode = "404", description = "Professor não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public EntityModel<UsuarioResponse> buscar(@Parameter(description = "ID do professor (UUID)", required = true) @PathVariable UUID id) {
-        Usuario logado = usuarioLogado.obrigatorio();
-        Professor p = professorService.buscarExigindoAdmin(id, logado);
+    public EntityModel<UsuarioResponse> buscar(@Parameter(description = "ID do professor (UUID)", required = true, example = "b1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
+        Professor p = professorService.buscarOuFalhar(id);
         return comLinks(UsuarioResponse.de(p));
     }
 
@@ -105,15 +94,12 @@ public class ProfessorApiController {
     public ResponseEntity<EntityModel<UsuarioResponse>> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do professor a ser cadastrado", required = true)
                                                  @Valid @RequestBody ProfessorRequest body,
                                                  UriComponentsBuilder uriBuilder) {
-        Usuario logado = usuarioLogado.obrigatorio();
-        professorService.exigirAdmin(logado);
         bolsistaService.validarSenha(body.senha(), true);
 
         Professor p = new Professor();
         professorService.aplicarComuns(p, body);
         p.setSenha(passwordEncoder.encode(body.senha()));
         professorService.inserir(p);
-        auditoriaService.registrar(logado, "CRIAR_PROFESSOR", "USUARIO", "Professor '" + p.getNome() + "' (" + p.getEmail() + ") cadastrado.", null);
         URI uri = uriBuilder.replacePath("/api/v1/professores/{id}").buildAndExpand(p.getId()).toUri();
         return ResponseEntity.created(uri).body(comLinks(UsuarioResponse.de(p)));
     }
@@ -126,19 +112,17 @@ public class ProfessorApiController {
             @ApiResponse(responseCode = "404", description = "Professor não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PutMapping("/{id}")
-    public EntityModel<UsuarioResponse> atualizar(@Parameter(description = "ID do professor a atualizar", required = true) @PathVariable UUID id,
+    public EntityModel<UsuarioResponse> atualizar(@Parameter(description = "ID do professor a atualizar", required = true, example = "b1111111-1111-1111-1111-111111111111") @PathVariable UUID id,
                                      @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do professor", required = true)
                                      @Valid @RequestBody ProfessorRequest body) {
-        Usuario logado = usuarioLogado.obrigatorio();
         bolsistaService.validarSenha(body.senha(), false);
-        Professor p = professorService.buscarExigindoAdmin(id, logado);
+        Professor p = professorService.buscarOuFalhar(id);
 
         professorService.aplicarComuns(p, body);
         if (!StringUtil.estaVazio(body.senha())) {
             p.setSenha(passwordEncoder.encode(body.senha()));
         }
         professorService.atualizar(p);
-        auditoriaService.registrar(logado, "ATUALIZAR_PROFESSOR", "USUARIO", "Professor '" + p.getNome() + "' atualizado.", null);
         return comLinks(UsuarioResponse.de(p));
     }
 
@@ -149,11 +133,9 @@ public class ProfessorApiController {
             @ApiResponse(responseCode = "404", description = "Professor não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@Parameter(description = "ID do professor a desativar", required = true) @PathVariable UUID id) {
-        Usuario logado = usuarioLogado.obrigatorio();
-        Professor p = professorService.buscarExigindoAdmin(id, logado);
+    public ResponseEntity<Void> excluir(@Parameter(description = "ID do professor a desativar", required = true, example = "b1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
+        professorService.buscarOuFalhar(id);
         professorService.excluir(id);
-        auditoriaService.registrar(logado, "EXCLUIR_PROFESSOR", "USUARIO", "Professor '" + p.getNome() + "' desativado.", null);
         return ResponseEntity.noContent().build();
     }
 

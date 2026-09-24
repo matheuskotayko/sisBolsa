@@ -9,7 +9,6 @@ import dev.matheus.cadastroBolsistas.model.Frequencia;
 import dev.matheus.cadastroBolsistas.model.Laboratorio;
 import dev.matheus.cadastroBolsistas.model.Professor;
 import dev.matheus.cadastroBolsistas.model.Usuario;
-import dev.matheus.cadastroBolsistas.service.AuditoriaService;
 import dev.matheus.cadastroBolsistas.service.BolsistaService;
 import dev.matheus.cadastroBolsistas.service.ComprovanteFrequenciaPdfService;
 import dev.matheus.cadastroBolsistas.service.FrequenciaService;
@@ -53,20 +52,17 @@ public class FrequenciaApiController {
     private final BolsistaService bolsistaService;
     private final LaboratorioService laboratorioService;
     private final UsuarioLogado usuarioLogado;
-    private final AuditoriaService auditoriaService;
     private final ComprovanteFrequenciaPdfService comprovantePdfService;
     private final ProfessorService professorService;
 
     public FrequenciaApiController(FrequenciaService frequenciaService, BolsistaService bolsistaService,
                                    LaboratorioService laboratorioService, UsuarioLogado usuarioLogado,
-                                   AuditoriaService auditoriaService,
                                    ComprovanteFrequenciaPdfService comprovantePdfService,
                                    ProfessorService professorService) {
         this.frequenciaService = frequenciaService;
         this.bolsistaService = bolsistaService;
         this.laboratorioService = laboratorioService;
         this.usuarioLogado = usuarioLogado;
-        this.auditoriaService = auditoriaService;
         this.comprovantePdfService = comprovantePdfService;
         this.professorService = professorService;
     }
@@ -79,9 +75,9 @@ public class FrequenciaApiController {
     @GetMapping
     public PaginaResponse<FrequenciaResponse> listar(
             @Parameter(description = "Número da página", example = "1") @RequestParam(defaultValue = "1") int pagina,
-            @Parameter(description = "ID do bolsista (UUID)") @RequestParam(required = false) UUID bolsistaId,
-            @Parameter(description = "Data de início do intervalo", example = "2026-08-01") @RequestParam(required = false) LocalDate dataInicio,
-            @Parameter(description = "Data de término do intervalo", example = "2026-08-31") @RequestParam(required = false) LocalDate dataFim) {
+            @Parameter(description = "ID do bolsista (UUID)", example = "d1111111-1111-1111-1111-111111111111") @RequestParam(required = false) UUID bolsistaId,
+            @Parameter(description = "Data de início do intervalo") @RequestParam(required = false) LocalDate dataInicio,
+            @Parameter(description = "Data de término do intervalo") @RequestParam(required = false) LocalDate dataFim) {
         Usuario logado = usuarioLogado.obrigatorio();
         UUID filtro = logado.isBolsista() ? logado.getId() : bolsistaId;
 
@@ -113,7 +109,7 @@ public class FrequenciaApiController {
             @ApiResponse(responseCode = "200", description = "Resumo de horas calculado")
     })
     @GetMapping("/resumo")
-    public Map<String, Double> resumo(@Parameter(description = "ID do bolsista (UUID)") @RequestParam(required = false) UUID bolsistaId) {
+    public Map<String, Double> resumo(@Parameter(description = "ID do bolsista (UUID)", example = "d1111111-1111-1111-1111-111111111111") @RequestParam(required = false) UUID bolsistaId) {
         Usuario logado = usuarioLogado.obrigatorio();
         UUID alvo = logado.isBolsista() ? logado.getId()
                  : (bolsistaId != null ? bolsistaId : logado.getId());
@@ -136,7 +132,7 @@ public class FrequenciaApiController {
     })
     @GetMapping("/exportar")
     public ResponseEntity<byte[]> exportar(
-            @Parameter(description = "ID do bolsista") @RequestParam(required = false) UUID bolsistaId,
+            @Parameter(description = "ID do bolsista", example = "d1111111-1111-1111-1111-111111111111") @RequestParam(required = false) UUID bolsistaId,
             @Parameter(description = "Data inicial") @RequestParam(required = false) LocalDate dataInicio,
             @Parameter(description = "Data final") @RequestParam(required = false) LocalDate dataFim) {
         Usuario logado = usuarioLogado.obrigatorio();
@@ -170,7 +166,7 @@ public class FrequenciaApiController {
     })
     @GetMapping("/comprovante-pdf")
     public ResponseEntity<byte[]> comprovantePdf(
-            @Parameter(description = "ID do bolsista") @RequestParam(required = false) UUID bolsistaId,
+            @Parameter(description = "ID do bolsista", example = "d1111111-1111-1111-1111-111111111111") @RequestParam(required = false) UUID bolsistaId,
             @Parameter(description = "Data inicial de referência") @RequestParam(required = false) LocalDate dataInicio,
             @Parameter(description = "Data final de referência") @RequestParam(required = false) LocalDate dataFim) {
         Usuario logado = usuarioLogado.obrigatorio();
@@ -188,7 +184,6 @@ public class FrequenciaApiController {
 
         try {
             byte[] pdfBytes = comprovantePdfService.gerarComprovante(b, lab, coord, frequencias, inicio, fim);
-            auditoriaService.registrar(logado, "EMISSAO_COMPROVANTE_PDF", "FREQUENCIA", "Comprovante PDF emitido para bolsista " + b.getNome() + " referente ao período " + inicio + " a " + fim + ".", null);
             return ArquivoDownloadUtil.pdf("comprovante_frequencia_" + Objects.toString(b.getMatricula(), b.getId().toString()) + ".pdf", pdfBytes);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Erro ao gerar PDF do comprovante: " + e.getMessage());
@@ -201,7 +196,7 @@ public class FrequenciaApiController {
             @ApiResponse(responseCode = "404", description = "Frequência não encontrada", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public EntityModel<FrequenciaResponse> buscar(@Parameter(description = "ID da frequência (UUID)", required = true) @PathVariable UUID id) {
+    public EntityModel<FrequenciaResponse> buscar(@Parameter(description = "ID da frequência (UUID)", required = true, example = "f1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
         Usuario logado = usuarioLogado.obrigatorio();
         Frequencia f = frequenciaService.buscarComPermissao(id, logado);
         return comLinks(FrequenciaResponse.de(f));
@@ -229,7 +224,6 @@ public class FrequenciaApiController {
         f.setDescricao(StringUtil.limpar(body.descricao()));
         f.setLinkComprovante(StringUtil.limpar(body.linkComprovante()));
         frequenciaService.registrar(f);
-        auditoriaService.registrar(logado, "REGISTRAR_FREQUENCIA", "FREQUENCIA", "Apontamento de " + f.getHorasTrabalhadas() + "h para o dia " + f.getData() + ".", null);
         URI uri = uriBuilder.replacePath("/api/v1/frequencias/{id}").buildAndExpand(f.getId()).toUri();
         return ResponseEntity.created(uri).body(comLinks(FrequenciaResponse.de(f)));
     }
@@ -242,7 +236,7 @@ public class FrequenciaApiController {
     })
     @PutMapping("/{id}")
     public EntityModel<FrequenciaResponse> atualizar(
-            @Parameter(description = "ID da frequência (UUID)", required = true) @PathVariable UUID id,
+            @Parameter(description = "ID da frequência (UUID)", required = true, example = "f1111111-1111-1111-1111-111111111111") @PathVariable UUID id,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados da frequência", required = true)
             @Valid @RequestBody FrequenciaRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
@@ -253,7 +247,6 @@ public class FrequenciaApiController {
         f.setDescricao(StringUtil.limpar(body.descricao()));
         f.setLinkComprovante(StringUtil.limpar(body.linkComprovante()));
         frequenciaService.atualizar(f);
-        auditoriaService.registrar(logado, "ATUALIZAR_FREQUENCIA", "FREQUENCIA", "Apontamento de frequência atualizado (" + f.getHorasTrabalhadas() + "h em " + f.getData() + ").", null);
         return comLinks(FrequenciaResponse.de(f));
     }
 
@@ -263,11 +256,10 @@ public class FrequenciaApiController {
             @ApiResponse(responseCode = "404", description = "Frequência não encontrada", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@Parameter(description = "ID da frequência (UUID)", required = true) @PathVariable UUID id) {
+    public ResponseEntity<Void> excluir(@Parameter(description = "ID da frequência (UUID)", required = true, example = "f1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
         Usuario logado = usuarioLogado.obrigatorio();
-        Frequencia f = frequenciaService.buscarComPermissao(id, logado);
+        frequenciaService.buscarComPermissao(id, logado);
         frequenciaService.excluir(id);
-        auditoriaService.registrar(logado, "EXCLUIR_FREQUENCIA", "FREQUENCIA", "Registro de frequência de " + f.getHorasTrabalhadas() + "h do dia " + f.getData() + " desativado.", null);
         return ResponseEntity.noContent().build();
     }
 

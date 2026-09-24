@@ -1,8 +1,6 @@
 package dev.matheus.cadastroBolsistas.service;
 
-import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
 import dev.matheus.cadastroBolsistas.model.Curso;
-import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.repository.CursoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,11 +21,8 @@ public class CursoService {
         return repository.existsByNomeIgnoreCaseAndAtivoTrue(nome);
     }
 
-    /* so admin cadastra curso novo, e o nome precisa ser unico (ativo). */
-    public Curso cadastrar(String nome, Usuario logado) {
-        if (!logado.isAdmin()) {
-            throw new PermissaoNegadaException("Requer perfil de administrador.");
-        }
+    /* quem barra nao-admin e o SecurityConfig; aqui so sobra o nome unico (ativo). */
+    public Curso cadastrar(String nome) {
         if (existePorNome(nome)) {
             throw new IllegalArgumentException("Este curso ja esta cadastrado.");
         }
