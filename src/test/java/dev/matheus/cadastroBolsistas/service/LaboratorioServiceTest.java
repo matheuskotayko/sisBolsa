@@ -5,6 +5,7 @@ import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Laboratorio;
 import dev.matheus.cadastroBolsistas.model.Professor;
+import dev.matheus.cadastroBolsistas.model.Usuario;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -40,7 +41,7 @@ class LaboratorioServiceTest {
 
     @Test
     void podeGerenciar_adminSempreRetornaTrue() throws SQLException {
-        Professor admin = new Professor();
+        Usuario admin = new Usuario();
         admin.setId(UUID.randomUUID());
         admin.setTipoUsuario("ADMIN");
 
@@ -53,7 +54,7 @@ class LaboratorioServiceTest {
         UUID profId = UUID.randomUUID();
         UUID labId = UUID.randomUUID();
 
-        Professor professor = new Professor();
+        Usuario professor = new Usuario();
         professor.setId(profId);
         professor.setTipoUsuario("PROFESSOR");
 
@@ -72,7 +73,7 @@ class LaboratorioServiceTest {
         UUID profId = UUID.randomUUID();
         UUID labId = UUID.randomUUID();
 
-        Professor professor = new Professor();
+        Usuario professor = new Usuario();
         professor.setId(profId);
         professor.setTipoUsuario("PROFESSOR");
 
@@ -91,7 +92,7 @@ class LaboratorioServiceTest {
         UUID profId = UUID.randomUUID();
         UUID labId = UUID.randomUUID();
 
-        Professor professor = new Professor();
+        Usuario professor = new Usuario();
         professor.setId(profId);
         professor.setTipoUsuario("PROFESSOR");
 
@@ -103,7 +104,7 @@ class LaboratorioServiceTest {
 
     @Test
     void podeGerenciar_bolsistaRetornaFalse() throws SQLException {
-        Bolsista bolsista = new Bolsista();
+        Usuario bolsista = new Usuario();
         bolsista.setId(UUID.randomUUID());
         bolsista.setTipoUsuario("BOLSISTA");
 
@@ -196,7 +197,7 @@ class LaboratorioServiceTest {
         when(repository.findById(id)).thenReturn(Optional.of(lab));
         when(projetoRepository.findByLaboratorioIdAndAtivoTrueOrderByNome(id)).thenReturn(List.of());
 
-        Professor outroProfessor = new Professor();
+        Usuario outroProfessor = new Usuario();
         outroProfessor.setId(UUID.randomUUID());
         outroProfessor.setTipoUsuario("PROFESSOR");
 
@@ -212,7 +213,7 @@ class LaboratorioServiceTest {
         when(repository.findById(id)).thenReturn(Optional.of(lab));
         when(projetoRepository.findByLaboratorioIdAndAtivoTrueOrderByNome(id)).thenReturn(List.of());
 
-        Professor admin = new Professor();
+        Usuario admin = new Usuario();
         admin.setTipoUsuario("ADMIN");
 
         assertSame(lab, laboratorioService.buscarExigindoGerencia(id, admin));

@@ -39,12 +39,25 @@ public class ProfessorService {
         return new ArrayList<>(repository.findByNomeContainingIgnoreCaseAndAtivoTrueOrderByNome(nome));
     }
 
+    public Professor buscarPorId(String publicId) {
+        if (publicId == null || publicId.isBlank()) return null;
+        return repository.findByPublicIdAndAtivoTrue(publicId).orElse(null);
+    }
+
     public Professor buscarPorId(UUID id) {
         if (id == null) return null;
         return repository.findById(id).orElse(null);
     }
 
     /* lookup + 404 num so lugar, pra nenhum controller precisar checar null na mao. */
+    public Professor buscarOuFalhar(String publicId) {
+        Professor p = buscarPorId(publicId);
+        if (p == null) {
+            throw new RecursoNaoEncontradoException("Professor nao encontrado.");
+        }
+        return p;
+    }
+
     public Professor buscarOuFalhar(UUID id) {
         Professor p = buscarPorId(id);
         if (p == null) {
@@ -59,6 +72,16 @@ public class ProfessorService {
     }
 
     /* soft delete: carrega, marca ativo = false e deixa o JPA fazer o UPDATE. */
+    @Transactional
+    public boolean excluir(String publicId) {
+        if (publicId == null || publicId.isBlank()) return false;
+        return repository.findByPublicId(publicId).map(p -> {
+            p.setAtivo(false);
+            repository.save(p);
+            return true;
+        }).orElse(false);
+    }
+
     @Transactional
     public boolean excluir(UUID id) {
         if (id == null) return false;

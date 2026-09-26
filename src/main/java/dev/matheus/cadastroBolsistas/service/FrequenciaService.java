@@ -47,12 +47,25 @@ public class FrequenciaService {
         return true;
     }
 
+    public Frequencia buscarPorId(String publicId) {
+        if (publicId == null || publicId.isBlank()) return null;
+        return repository.findByPublicIdAndAtivoTrue(publicId).orElse(null);
+    }
+
     public Frequencia buscarPorId(UUID id) {
         if (id == null) return null;
         return repository.findByIdAndAtivoTrue(id).orElse(null);
     }
 
     /* lookup + 404 num so lugar, pra nenhum controller precisar checar null na mao. */
+    public Frequencia buscarOuFalhar(String publicId) {
+        Frequencia f = buscarPorId(publicId);
+        if (f == null) {
+            throw new RecursoNaoEncontradoException("Registro de frequencia nao encontrado.");
+        }
+        return f;
+    }
+
     public Frequencia buscarOuFalhar(UUID id) {
         Frequencia f = buscarPorId(id);
         if (f == null) {
@@ -61,10 +74,22 @@ public class FrequenciaService {
         return f;
     }
 
+    public void exigirAcesso(Usuario logado, String bolsistaPublicId) {
+        if (!podeAcessar(logado, bolsistaPublicId)) {
+            throw new PermissaoNegadaException("Sem permissao para acessar as frequencias deste usuario.");
+        }
+    }
+
     public void exigirAcesso(Usuario logado, UUID bolsistaId) {
         if (!podeAcessar(logado, bolsistaId)) {
             throw new PermissaoNegadaException("Sem permissao para acessar as frequencias deste usuario.");
         }
+    }
+
+    public Frequencia buscarComPermissao(String publicId, Usuario logado) {
+        Frequencia f = buscarOuFalhar(publicId);
+        exigirAcesso(logado, f.getBolsistaId());
+        return f;
     }
 
     public Frequencia buscarComPermissao(UUID id, Usuario logado) {
@@ -78,9 +103,19 @@ public class FrequenciaService {
         return true;
     }
 
+    public ArrayList<Frequencia> listarPorBolsista(String bolsistaPublicId) {
+        if (bolsistaPublicId == null || bolsistaPublicId.isBlank()) return new ArrayList<>();
+        return new ArrayList<>(repository.findByBolsista_PublicIdAndAtivoTrueOrderByDataDesc(bolsistaPublicId));
+    }
+
     public ArrayList<Frequencia> listarPorBolsista(UUID bolsistaId) {
         if (bolsistaId == null) return new ArrayList<>();
         return new ArrayList<>(repository.findByBolsistaIdAndAtivoTrueOrderByDataDesc(bolsistaId));
+    }
+
+    public ArrayList<Frequencia> listarPorLaboratorio(String labPublicId) {
+        if (labPublicId == null || labPublicId.isBlank()) return new ArrayList<>();
+        return new ArrayList<>(repository.findByBolsista_Laboratorio_PublicIdAndAtivoTrueOrderByDataDesc(labPublicId));
     }
 
     public ArrayList<Frequencia> listarPorLaboratorio(UUID labId) {
@@ -139,6 +174,16 @@ public class FrequenciaService {
 
     /* soft delete: carrega, marca ativo = false e deixa o JPA fazer o UPDATE. */
     @Transactional
+    public boolean excluir(String publicId) {
+        if (publicId == null || publicId.isBlank()) return false;
+        return repository.findByPublicId(publicId).map(f -> {
+            f.setAtivo(false);
+            repository.save(f);
+            return true;
+        }).orElse(false);
+    }
+
+    @Transactional
     public boolean excluir(UUID id) {
         if (id == null) return false;
         return repository.findById(id).map(f -> {
@@ -146,6 +191,12 @@ public class FrequenciaService {
             repository.save(f);
             return true;
         }).orElse(false);
+    }
+
+    public boolean podeAcessar(Usuario logado, String bolsistaPublicId) {
+        if (bolsistaPublicId == null || bolsistaPublicId.isBlank()) return false;
+        Bolsista b = bolsistaService.buscarPorId(bolsistaPublicId);
+        return b != null && podeAcessar(logado, b.getId());
     }
 
     /* admin ve tudo; usuario ve o proprio; professor ve quem esta no laboratorio que coordena */
@@ -162,6 +213,16 @@ public class FrequenciaService {
                     && laboratorioService.podeGerenciar(logado, b.getLaboratorioId());
         }
         return false;
+    }
+
+    public Bolsista resolverBolsistaAlvo(Usuario logado, String bolsistaPublicId) {
+        if (logado.isBolsista()) {
+            return bolsistaService.buscarOuFalhar(logado.getId());
+        }
+        if (bolsistaPublicId == null || bolsistaPublicId.isBlank()) {
+            throw new IllegalArgumentException("Informe o bolsista para o qual o registro esta sendo feito.");
+        }
+        return bolsistaService.buscarOuFalhar(bolsistaPublicId);
     }
 
     public UUID resolverBolsistaAlvo(Usuario logado, UUID bolsistaId) {

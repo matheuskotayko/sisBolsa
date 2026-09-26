@@ -5,15 +5,14 @@ import dev.matheus.cadastroBolsistas.model.Usuario;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
 /*
- * representacao publica de um usuario com IDs em UUID e vigencia da bolsa.
+ * representacao publica de um usuario com identificadores publicos prefixados no estilo Stripe e vigencia da bolsa.
  */
 @Schema(description = "Dados detalhados do usuário (Bolsista, Professor ou Administrador).")
 public record UsuarioResponse(
-        @Schema(description = "Identificador único (UUID)", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
-        UUID id,
+        @Schema(description = "Identificador público único", example = "bol_k8s2M4n9P1q3W5z7A0b2")
+        String id,
 
         @Schema(description = "Nome completo do usuário", example = "Lucas Oliveira")
         String nome,
@@ -48,8 +47,8 @@ public record UsuarioResponse(
         @Schema(description = "Data de nascimento", example = "2002-05-15")
         LocalDate dataNascimento,
 
-        @Schema(description = "ID do laboratório vinculado", example = "4fa85f64-5717-4562-b3fc-2c963f66afa6")
-        UUID laboratorioId,
+        @Schema(description = "ID público do laboratório vinculado", example = "lab_a1B2c3D4e5F6g7H8i9J0")
+        String laboratorioId,
 
         @Schema(description = "Nome do laboratório vinculado", example = "Laboratório de Sistemas Inteligentes (LSI)")
         String nomeLaboratorio,
@@ -82,27 +81,41 @@ public record UsuarioResponse(
         if (u == null) {
             return null;
         }
-        if (u instanceof Bolsista b) {
-            String modalidade = b.getModalidadeBolsa() != null ? b.getModalidadeBolsa().name() : null;
-            String modalidadeDesc = b.getModalidadeBolsa() != null ? b.getModalidadeBolsa().getDescricao() : null;
-            return new UsuarioResponse(
-                    b.getId(), b.getNome(), b.getEmail(), b.getTipoUsuario(), b.getFotoUrl(), b.getBio(),
-                    b.isAtivo(), b.getCurso(), b.getMatricula(), b.getCpf(), b.getTelefone(),
-                    b.getDataNascimento(),
-                    b.getLaboratorioId(),
-                    b.getNomeLaboratorio(),
-                    b.getCargo() != null ? b.getCargo().name() : null,
-                    modalidade,
-                    modalidadeDesc,
-                    b.getValorBolsa(),
-                    b.getDataInicioBolsa(),
-                    b.getDataFimBolsa(),
-                    b.isBolsaVencida(),
-                    b.isBolsaPrestesAVencer());
+        return new UsuarioResponse(
+                u.getPublicId(), u.getNome(), u.getEmail(), u.getTipoUsuario(), u.getFotoUrl(), u.getBio(),
+                u.isAtivo(), null, null, null, null, null, null, u.getNomeLaboratorio(), null,
+                null, null, null, null, null, false, false);
+    }
+
+    public static UsuarioResponse de(Bolsista b) {
+        if (b == null) {
+            return null;
+        }
+        String modalidade = b.getModalidadeBolsa() != null ? b.getModalidadeBolsa().name() : null;
+        String modalidadeDesc = b.getModalidadeBolsa() != null ? b.getModalidadeBolsa().getDescricao() : null;
+        return new UsuarioResponse(
+                b.getPublicId(), b.getNome(), b.getEmail(), b.getTipoUsuario(), b.getFotoUrl(), b.getBio(),
+                b.isAtivo(), b.getCurso(), b.getMatricula(), b.getCpf(), b.getTelefone(),
+                b.getDataNascimento(),
+                b.getLaboratorioPublicId(),
+                b.getNomeLaboratorio(),
+                b.getCargo() != null ? b.getCargo().name() : null,
+                modalidade,
+                modalidadeDesc,
+                b.getValorBolsa(),
+                b.getDataInicioBolsa(),
+                b.getDataFimBolsa(),
+                b.isBolsaVencida(),
+                b.isBolsaPrestesAVencer());
+    }
+
+    public static UsuarioResponse de(dev.matheus.cadastroBolsistas.model.Professor p) {
+        if (p == null) {
+            return null;
         }
         return new UsuarioResponse(
-                u.getId(), u.getNome(), u.getEmail(), u.getTipoUsuario(), u.getFotoUrl(), u.getBio(),
-                u.isAtivo(), null, null, null, null, null, null, u.getNomeLaboratorio(), null,
+                p.getPublicId(), p.getNome(), p.getEmail(), p.getTipoUsuario(), p.getFotoUrl(), p.getBio(),
+                p.isAtivo(), null, null, null, null, null, null, p.getNomeLaboratorio(), null,
                 null, null, null, null, null, false, false);
     }
 }

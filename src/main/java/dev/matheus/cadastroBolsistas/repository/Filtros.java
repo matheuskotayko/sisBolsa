@@ -66,6 +66,21 @@ public final class Filtros {
         };
     }
 
+    public static Specification<Projeto> projeto(String buscaNome, String labPublicId) {
+        return (raiz, consulta, cb) -> {
+            List<Predicate> ps = new ArrayList<>();
+            ps.add(cb.isTrue(raiz.get("ativo")));
+            if (temTermo(buscaNome)) {
+                ps.add(cb.or(contem(raiz.get("nome"), buscaNome, cb),
+                        contem(raiz.get("descricao"), buscaNome, cb)));
+            }
+            if (labPublicId != null && !labPublicId.isBlank()) {
+                ps.add(cb.equal(raiz.join("laboratorio", JoinType.INNER).get("publicId"), labPublicId));
+            }
+            return cb.and(ps.toArray(new Predicate[0]));
+        };
+    }
+
     public static Specification<Laboratorio> laboratorio(String buscaNome) {
         return (raiz, consulta, cb) -> {
             List<Predicate> ps = new ArrayList<>();

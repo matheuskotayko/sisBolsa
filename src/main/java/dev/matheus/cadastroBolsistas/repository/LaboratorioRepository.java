@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /*
@@ -15,7 +16,13 @@ import java.util.UUID;
 @Repository
 public interface LaboratorioRepository extends JpaRepository<Laboratorio, UUID>, JpaSpecificationExecutor<Laboratorio> {
 
+    Optional<Laboratorio> findByPublicId(String publicId);
+
+    Optional<Laboratorio> findByPublicIdAndAtivoTrue(String publicId);
+
     List<Laboratorio> findByAtivoTrueOrderByNome();
 
     List<Laboratorio> findByCoordenadorIdAndAtivoTrueOrderByNome(UUID coordenadorId);
+
+    List<Laboratorio> findByCoordenadorProfessor_PublicIdAndAtivoTrueOrderByNome(String coordenadorPublicId);
 }

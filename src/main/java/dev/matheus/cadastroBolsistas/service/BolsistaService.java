@@ -29,8 +29,6 @@ import java.util.UUID;
 @Service
 public class BolsistaService {
 
-    private static final int LIMITE_ADMINS = 3;
-
     @Autowired
     private BolsistaRepository repository;
 
@@ -77,12 +75,25 @@ public class BolsistaService {
         return new ArrayList<>(repository.findByAtivoTrueOrderByNome());
     }
 
+    public Bolsista buscarPorId(String publicId) {
+        if (publicId == null || publicId.isBlank()) return null;
+        return repository.findByPublicIdAndAtivoTrue(publicId).orElse(null);
+    }
+
     public Bolsista buscarPorId(UUID id) {
         if (id == null) return null;
         return repository.findById(id).orElse(null);
     }
 
     /* lookup + 404 num so lugar, pra nenhum controller precisar checar null na mao. */
+    public Bolsista buscarOuFalhar(String publicId) {
+        Bolsista b = buscarPorId(publicId);
+        if (b == null) {
+            throw new RecursoNaoEncontradoException("Usuario nao encontrado.");
+        }
+        return b;
+    }
+
     public Bolsista buscarOuFalhar(UUID id) {
         Bolsista b = buscarPorId(id);
         if (b == null) {
@@ -92,6 +103,14 @@ public class BolsistaService {
     }
 
     /* dono do proprio cadastro ou quem gerencia pode ver. */
+    public Bolsista buscarComPermissaoDeVisualizacao(String publicId, Usuario logado) {
+        Bolsista b = buscarOuFalhar(publicId);
+        if (!Objects.equals(logado.getId(), b.getId()) && !podeGerenciar(logado, b)) {
+            throw new PermissaoNegadaException("Sem permissao para ver este usuario.");
+        }
+        return b;
+    }
+
     public Bolsista buscarComPermissaoDeVisualizacao(UUID id, Usuario logado) {
         Bolsista b = buscarOuFalhar(id);
         if (!Objects.equals(logado.getId(), id) && !podeGerenciar(logado, b)) {
@@ -101,6 +120,14 @@ public class BolsistaService {
     }
 
     /* dono do proprio cadastro ou quem gerencia pode editar. */
+    public Bolsista buscarComPermissaoDeEdicao(String publicId, Usuario logado) {
+        Bolsista b = buscarOuFalhar(publicId);
+        if (!Objects.equals(logado.getId(), b.getId()) && !podeGerenciar(logado, b)) {
+            throw new PermissaoNegadaException("Sem permissao para editar este usuario.");
+        }
+        return b;
+    }
+
     public Bolsista buscarComPermissaoDeEdicao(UUID id, Usuario logado) {
         Bolsista b = buscarOuFalhar(id);
         if (!Objects.equals(logado.getId(), id) && !podeGerenciar(logado, b)) {
@@ -110,6 +137,14 @@ public class BolsistaService {
     }
 
     /* so quem gerencia pode excluir - ao contrario de ver/editar, nao ha excecao de "ver o proprio". */
+    public Bolsista buscarComPermissaoDeExclusao(String publicId, Usuario logado) {
+        Bolsista b = buscarOuFalhar(publicId);
+        if (!podeGerenciar(logado, b)) {
+            throw new PermissaoNegadaException("Sem permissao para excluir este usuario.");
+        }
+        return b;
+    }
+
     public Bolsista buscarComPermissaoDeExclusao(UUID id, Usuario logado) {
         Bolsista b = buscarOuFalhar(id);
         if (!podeGerenciar(logado, b)) {
@@ -126,9 +161,19 @@ public class BolsistaService {
         return new ArrayList<>(repository.findByCursoContainingIgnoreCaseAndAtivoTrueOrderByNome(curso));
     }
 
+    public ArrayList<Bolsista> buscarPorLaboratorio(String labPublicId) {
+        if (labPublicId == null || labPublicId.isBlank()) return new ArrayList<>();
+        return new ArrayList<>(repository.findByLaboratorioPublicIdAndAtivoTrueOrderByNome(labPublicId));
+    }
+
     public ArrayList<Bolsista> buscarPorLaboratorio(UUID laboratorioId) {
         if (laboratorioId == null) return new ArrayList<>();
         return new ArrayList<>(repository.findByLaboratorioIdAndAtivoTrueOrderByNome(laboratorioId));
+    }
+
+    public ArrayList<Bolsista> buscarPorProjeto(String projPublicId) {
+        if (projPublicId == null || projPublicId.isBlank()) return new ArrayList<>();
+        return new ArrayList<>(repository.findByProjetosPublicIdAndAtivoTrueOrderByNome(projPublicId));
     }
 
     public ArrayList<Bolsista> buscarPorProjeto(UUID projetoId) {
@@ -143,6 +188,16 @@ public class BolsistaService {
 
     /* soft delete: marca ativo = false, nunca apaga a linha */
     @Transactional
+    public boolean excluir(String publicId) {
+        if (publicId == null || publicId.isBlank()) return false;
+        return repository.findByPublicId(publicId).map(b -> {
+            b.setAtivo(false);
+            repository.save(b);
+            return true;
+        }).orElse(false);
+    }
+
+    @Transactional
     public boolean excluir(UUID id) {
         if (id == null) return false;
         return repository.findById(id).map(b -> {
@@ -152,7 +207,7 @@ public class BolsistaService {
         }).orElse(false);
     }
 
-    public ArrayList<Usuario> filtrarPorEscopo(ArrayList<Usuario> lista, Usuario usuarioLogado) {
+    public ArrayList<Bolsista> filtrarPorEscopo(ArrayList<Bolsista> lista, Usuario usuarioLogado) {
         if (usuarioLogado == null) {
             return new ArrayList<>();
         }
@@ -162,64 +217,26 @@ public class BolsistaService {
         if (usuarioLogado.isProfessor()) {
             ArrayList<Laboratorio> labsCoordenados =
                     new ArrayList<>(laboratorioRepository.findByCoordenadorIdAndAtivoTrueOrderByNome(usuarioLogado.getId()));
-            return somenteBolsistas(lista, b ->
-                    labsCoordenados.stream().anyMatch(l -> Objects.equals(l.getId(), b.getLaboratorioId())));
+            ArrayList<Bolsista> filtrados = new ArrayList<>();
+            for (Bolsista b : lista) {
+                if (labsCoordenados.stream().anyMatch(l -> Objects.equals(l.getId(), b.getLaboratorioId()))) {
+                    filtrados.add(b);
+                }
+            }
+            return filtrados;
         }
         if (usuarioLogado.isBolsista()) {
-            UUID labId = ((Bolsista) usuarioLogado).getLaboratorioId();
-            return somenteBolsistas(lista, b -> Objects.equals(b.getLaboratorioId(), labId));
+            Bolsista bLogado = buscarPorId(usuarioLogado.getId());
+            UUID labId = bLogado != null ? bLogado.getLaboratorioId() : null;
+            ArrayList<Bolsista> filtrados = new ArrayList<>();
+            for (Bolsista b : lista) {
+                if (Objects.equals(b.getLaboratorioId(), labId)) {
+                    filtrados.add(b);
+                }
+            }
+            return filtrados;
         }
         return new ArrayList<>();
-    }
-
-    private ArrayList<Usuario> somenteBolsistas(ArrayList<Usuario> lista, java.util.function.Predicate<Bolsista> filtro) {
-        ArrayList<Usuario> filtrados = new ArrayList<>();
-        for (Usuario u : lista) {
-            if (u instanceof Bolsista b && filtro.test(b)) {
-                filtrados.add(b);
-            }
-        }
-        return filtrados;
-    }
-
-    public int contarAdmins() {
-        return repository.countByTipoUsuarioAndAtivoTrue("ADMIN");
-    }
-
-    public boolean podeCriarAdmin() {
-        return contarAdmins() < LIMITE_ADMINS;
-    }
-
-    /* usado quando um admin ja autenticado cria outro admin. */
-    public void exigirPodeCriarAdmin(Usuario logado) {
-        if (!logado.isAdmin()) {
-            throw new PermissaoNegadaException("Requer perfil de administrador.");
-        }
-        if (!podeCriarAdmin()) {
-            throw new LimiteAdminsAtingidoException("Limite de administradores atingido.");
-        }
-    }
-
-    /* usado no autocadastro publico de admin (sem usuario logado ainda). */
-    public void exigirVagaParaNovoAdmin() {
-        if (!podeCriarAdmin()) {
-            throw new LimiteAdminsAtingidoException("O sistema ja possui o numero maximo de administradores permitido.");
-        }
-    }
-
-    /*
-     * admin de autocadastro publico (AuthApiController). curso, matricula e data
-     * de nascimento ficam nulos: admin nao e aluno, e as colunas aceitam null.
-     */
-    public Bolsista criarAdmin(String nome, String email, String senhaHash) {
-        Bolsista admin = new Bolsista();
-        admin.setNome(nome);
-        admin.setEmail(email);
-        admin.setSenha(senhaHash);
-        admin.setTipoUsuario("ADMIN");
-        admin.setAtivo(true);
-        inserir(admin);
-        return admin;
     }
 
     /*
@@ -236,12 +253,12 @@ public class BolsistaService {
         }
     }
 
-    public void aplicarComuns(Usuario u, BolsistaRequest body) {
-        u.setNome(StringUtil.limpar(body.nome()));
-        u.setEmail(StringUtil.limpar(body.email()));
-        u.setFotoUrl(body.fotoUrl());
-        u.setBio(body.bio());
-        u.setAtivo(true);
+    public void aplicarComuns(Bolsista b, BolsistaRequest body) {
+        b.setNome(StringUtil.limpar(body.nome()));
+        b.setEmail(StringUtil.limpar(body.email()));
+        b.setFotoUrl(body.fotoUrl());
+        b.setBio(body.bio());
+        b.setAtivo(true);
     }
 
     public void aplicarCamposDeBolsista(Bolsista b, BolsistaRequest body, Usuario logado) {
@@ -255,13 +272,20 @@ public class BolsistaService {
         b.setValorBolsa(body.valorBolsa());
         b.setDataInicioBolsa(body.dataInicioBolsa());
         b.setDataFimBolsa(body.dataFimBolsa());
-        b.setTipoUsuario("ADMIN".equalsIgnoreCase(body.tipoUsuario()) ? "ADMIN" : "BOLSISTA");
+        b.setTipoUsuario("BOLSISTA");
 
-        UUID labId = body.laboratorioId();
-        if (labId != null && !laboratorioService.podeGerenciar(logado, labId)) {
-            throw new PermissaoNegadaException("Sem permissao para vincular usuario a este laboratorio.");
+        String labId = body.laboratorioId();
+        if (labId != null && !labId.isBlank()) {
+            Laboratorio lab = laboratorioRepository.findByPublicIdAndAtivoTrue(labId)
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("Laboratorio nao encontrado com id: " + labId));
+            if (!laboratorioService.podeGerenciar(logado, lab.getId())) {
+                throw new PermissaoNegadaException("Sem permissao para vincular usuario a este laboratorio.");
+            }
+            b.setLaboratorio(lab);
+        } else {
+            b.setLaboratorio(null);
+            b.setLaboratorioId(null);
         }
-        b.setLaboratorioId(labId);
     }
 
     /* dados comuns de perfil (Bolsista ou Professor alterando o proprio cadastro) */
@@ -296,7 +320,7 @@ public class BolsistaService {
         return passwordEncoder.encode(senhaNova);
     }
 
-    public ArrayList<Usuario> filtrarPorTipo(ArrayList<Usuario> lista, String tipo) {
+    public ArrayList<Bolsista> filtrarPorTipo(ArrayList<Bolsista> lista, String tipo) {
         if (StringUtil.estaVazio(tipo)) {
             return lista;
         }
@@ -309,7 +333,7 @@ public class BolsistaService {
     public List<UUID> idsDosBolsistasCoordenadosPor(UUID professorId) {
         return laboratorioService.listarPorCoordenador(professorId).stream()
                 .flatMap(lab -> buscarPorLaboratorio(lab.getId()).stream())
-                .map(Usuario::getId)
+                .map(Bolsista::getId)
                 .toList();
     }
 }

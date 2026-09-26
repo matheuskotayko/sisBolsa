@@ -4,6 +4,7 @@ import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
 import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Professor;
 import dev.matheus.cadastroBolsistas.model.Projeto;
+import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.repository.ProjetoRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,15 +30,15 @@ class ProjetoServiceTest {
     @InjectMocks
     private ProjetoService projetoService;
 
-    private Professor admin() {
-        Professor p = new Professor();
+    private Usuario admin() {
+        Usuario p = new Usuario();
         p.setTipoUsuario("ADMIN");
         return p;
     }
 
     @Test
     void cadastrar_semPermissaoNoLaboratorio_lancaPermissaoNegadaSemSalvar() {
-        Professor logado = admin();
+        Usuario logado = admin();
         Projeto p = new Projeto();
         UUID labId = UUID.randomUUID();
         p.setLaboratorioId(labId);
@@ -49,7 +50,7 @@ class ProjetoServiceTest {
 
     @Test
     void cadastrar_comPermissao_ativaESalva() {
-        Professor logado = admin();
+        Usuario logado = admin();
         Projeto p = new Projeto();
         UUID labId = UUID.randomUUID();
         p.setLaboratorioId(labId);
@@ -110,7 +111,7 @@ class ProjetoServiceTest {
     @Test
     void exigirPodeMoverPara_semPermissaoNoLabDestino_lancaPermissaoNegada() {
         UUID novoLabId = UUID.randomUUID();
-        Professor logado = admin();
+        Usuario logado = admin();
         when(laboratorioService.podeGerenciar(logado, novoLabId)).thenReturn(false);
 
         assertThrows(PermissaoNegadaException.class, () -> projetoService.exigirPodeMoverPara(logado, novoLabId));
@@ -119,7 +120,7 @@ class ProjetoServiceTest {
     @Test
     void exigirPodeMoverPara_comPermissao_naoLancaNada() {
         UUID novoLabId = UUID.randomUUID();
-        Professor logado = admin();
+        Usuario logado = admin();
         when(laboratorioService.podeGerenciar(logado, novoLabId)).thenReturn(true);
 
         assertDoesNotThrow(() -> projetoService.exigirPodeMoverPara(logado, novoLabId));

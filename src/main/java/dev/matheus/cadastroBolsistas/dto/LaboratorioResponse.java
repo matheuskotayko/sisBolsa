@@ -3,12 +3,10 @@ package dev.matheus.cadastroBolsistas.dto;
 import dev.matheus.cadastroBolsistas.model.Laboratorio;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.util.UUID;
-
 @Schema(description = "Dados detalhados do laboratório com métricas de ocupação.")
 public record LaboratorioResponse(
-        @Schema(description = "Identificador único do laboratório (UUID)", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
-        UUID id,
+        @Schema(description = "Identificador público único do laboratório", example = "lab_5h8k0l4n7o9u1x3y6z8a")
+        String id,
 
         @Schema(description = "Nome do laboratório", example = "Laboratório de Sistemas Inteligentes (LSI)")
         String nome,
@@ -22,8 +20,8 @@ public record LaboratorioResponse(
         @Schema(description = "Capacidade total de vagas", example = "10")
         int capacidade,
 
-        @Schema(description = "ID do professor coordenador", example = "4fa85f64-5717-4562-b3fc-2c963f66afa6")
-        UUID coordenadorId,
+        @Schema(description = "ID público do professor coordenador", example = "prf_7k0m2n6p9q1w3z5a8b0c")
+        String coordenadorId,
 
         @Schema(description = "Nome do professor coordenador", example = "Prof. Dra. Ana Mendes")
         String coordenador,
@@ -37,6 +35,10 @@ public record LaboratorioResponse(
         @Schema(description = "Percentual de ocupação em relação à capacidade (0 a 100%)", example = "60.0")
         double percentualOcupacao) {
 
+    public static LaboratorioResponse de(Laboratorio l) {
+        return de(l, 0);
+    }
+
     public static LaboratorioResponse de(Laboratorio l, int totalBolsistas) {
         if (l == null) {
             return null;
@@ -45,8 +47,8 @@ public record LaboratorioResponse(
                 ? (totalBolsistas / (double) l.getCapacidade()) * 100.0
                 : 0.0;
         return new LaboratorioResponse(
-                l.getId(), l.getNome(), l.getAreaPesquisa(), l.getStatus(), l.getCapacidade(),
-                l.getCoordenadorId(),
+                l.getPublicId(), l.getNome(), l.getAreaPesquisa(), l.getStatus(), l.getCapacidade(),
+                l.getCoordenadorPublicId(),
                 l.getCoordenador(), l.isAtivo(), totalBolsistas, percentual);
     }
 }

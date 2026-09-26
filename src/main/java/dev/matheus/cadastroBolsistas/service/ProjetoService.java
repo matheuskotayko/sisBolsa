@@ -4,6 +4,7 @@ import dev.matheus.cadastroBolsistas.dto.ProjetoRequest;
 import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
 import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
+import dev.matheus.cadastroBolsistas.model.Laboratorio;
 import dev.matheus.cadastroBolsistas.model.Projeto;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.repository.BolsistaRepository;
@@ -43,6 +44,14 @@ public class ProjetoService {
     }
 
     /* lookup + 404 (incluindo desativado) num so lugar, pra nenhum controller precisar checar null na mao. */
+    public Projeto buscarOuFalhar(String publicId) {
+        Projeto p = buscarPorId(publicId);
+        if (p == null || !p.isAtivo()) {
+            throw new RecursoNaoEncontradoException("Projeto nao encontrado.");
+        }
+        return p;
+    }
+
     public Projeto buscarOuFalhar(UUID id) {
         Projeto p = buscarPorId(id);
         if (p == null || !p.isAtivo()) {
@@ -52,12 +61,26 @@ public class ProjetoService {
     }
 
     /* so quem gerencia o laboratorio do projeto pode editar/excluir/(des)vincular membros. */
+    public Projeto buscarExigindoGerencia(String publicId, Usuario logado) {
+        Projeto p = buscarOuFalhar(publicId);
+        if (!laboratorioService.podeGerenciar(logado, p.getLaboratorioId())) {
+            throw new PermissaoNegadaException("Sem permissao para gerenciar projetos deste laboratorio.");
+        }
+        return p;
+    }
+
     public Projeto buscarExigindoGerencia(UUID id, Usuario logado) {
         Projeto p = buscarOuFalhar(id);
         if (!laboratorioService.podeGerenciar(logado, p.getLaboratorioId())) {
             throw new PermissaoNegadaException("Sem permissao para gerenciar projetos deste laboratorio.");
         }
         return p;
+    }
+
+    public void exigirPodeMoverPara(Usuario logado, String novoLabPublicId) {
+        if (!laboratorioService.podeGerenciar(logado, novoLabPublicId)) {
+            throw new PermissaoNegadaException("Sem permissao para mover o projeto para este laboratorio.");
+        }
     }
 
     public void exigirPodeMoverPara(Usuario logado, UUID novoLaboratorioId) {
@@ -67,7 +90,7 @@ public class ProjetoService {
     }
 
     public ArrayList<Projeto> listarTodos() {
-        return buscarProjetos(null, null);
+        return buscarProjetos(null, (String) null);
     }
 
     public ArrayList<Projeto> buscarProjetos(String buscaNome, UUID labId) {
@@ -75,14 +98,34 @@ public class ProjetoService {
         return new ArrayList<>(repository.findAll(Filtros.projeto(nome, labId), Sort.by("nome")));
     }
 
+    public ArrayList<Projeto> buscarProjetos(String buscaNome, String labPublicId) {
+        String nome = buscaNome != null ? buscaNome.trim() : "";
+        return new ArrayList<>(repository.findAll(Filtros.projeto(nome, labPublicId), Sort.by("nome")));
+    }
+
+    public ArrayList<Projeto> listarPorLaboratorio(String labPublicId) {
+        if (labPublicId == null || labPublicId.isBlank()) return new ArrayList<>();
+        return new ArrayList<>(repository.findByLaboratorio_PublicIdAndAtivoTrueOrderByNome(labPublicId));
+    }
+
     public ArrayList<Projeto> listarPorLaboratorio(UUID labId) {
         if (labId == null) return new ArrayList<>();
         return new ArrayList<>(repository.findByLaboratorioIdAndAtivoTrueOrderByNome(labId));
     }
 
+    public Projeto buscarPorId(String publicId) {
+        if (publicId == null || publicId.isBlank()) return null;
+        return repository.findByPublicIdAndAtivoTrue(publicId).orElse(null);
+    }
+
     public Projeto buscarPorId(UUID id) {
         if (id == null) return null;
         return repository.findById(id).orElse(null);
+    }
+
+    public int contarMembros(String publicId) {
+        Projeto p = buscarPorId(publicId);
+        return p != null ? contarMembros(p.getId()) : 0;
     }
 
     public int contarMembros(UUID projetoId) {
@@ -98,12 +141,26 @@ public class ProjetoService {
     public void aplicar(Projeto p, ProjetoRequest body) {
         p.setNome(StringUtil.limpar(body.nome()));
         p.setDescricao(body.descricao());
-        p.setLaboratorioId(body.laboratorioId());
+        String labPublicId = body.laboratorioId();
+        if (labPublicId != null && !labPublicId.isBlank()) {
+            Laboratorio lab = laboratorioService.buscarOuFalhar(labPublicId);
+            p.setLaboratorio(lab);
+        }
         p.setLinkRepositorio(StringUtil.limpar(body.linkRepositorio()));
         p.setLinkDocumentacao(StringUtil.limpar(body.linkDocumentacao()));
     }
 
     /* soft delete: carrega, marca ativo = false e deixa o JPA fazer o UPDATE. */
+    @Transactional
+    public boolean excluir(String publicId) {
+        if (publicId == null || publicId.isBlank()) return false;
+        return repository.findByPublicId(publicId).map(p -> {
+            p.setAtivo(false);
+            repository.save(p);
+            return true;
+        }).orElse(false);
+    }
+
     @Transactional
     public boolean excluir(UUID id) {
         if (id == null) return false;
@@ -120,13 +177,37 @@ public class ProjetoService {
      * torna o vinculo idempotente, no lugar do antigo ON CONFLICT DO NOTHING.
      */
     @Transactional
+    public boolean vincularBolsista(String bolsistaPublicId, String projetoPublicId) {
+        return alterarVinculo(bolsistaPublicId, projetoPublicId, true);
+    }
+
+    @Transactional
     public boolean vincularBolsista(UUID bolsistaId, UUID projetoId) {
         return alterarVinculo(bolsistaId, projetoId, true);
     }
 
     @Transactional
+    public boolean desvincularBolsista(String bolsistaPublicId, String projetoPublicId) {
+        return alterarVinculo(bolsistaPublicId, projetoPublicId, false);
+    }
+
+    @Transactional
     public boolean desvincularBolsista(UUID bolsistaId, UUID projetoId) {
         return alterarVinculo(bolsistaId, projetoId, false);
+    }
+
+    private boolean alterarVinculo(String bolsistaPublicId, String projetoPublicId, boolean vincular) {
+        if (bolsistaPublicId == null || projetoPublicId == null) return false;
+        Projeto projeto = repository.findByPublicIdAndAtivoTrue(projetoPublicId).orElse(null);
+        Bolsista bolsista = bolsistaRepository.findByPublicIdAndAtivoTrue(bolsistaPublicId).orElse(null);
+        if (projeto == null || bolsista == null) return false;
+        if (vincular) {
+            projeto.getBolsistas().add(bolsista);
+        } else {
+            projeto.getBolsistas().remove(bolsista);
+        }
+        repository.save(projeto);
+        return true;
     }
 
     private boolean alterarVinculo(UUID bolsistaId, UUID projetoId, boolean vincular) {
@@ -141,6 +222,11 @@ public class ProjetoService {
         }
         repository.save(projeto);
         return true;
+    }
+
+    public ArrayList<Projeto> listarPorBolsista(String bolsistaPublicId) {
+        if (bolsistaPublicId == null || bolsistaPublicId.isBlank()) return new ArrayList<>();
+        return new ArrayList<>(repository.findByBolsistas_PublicIdAndAtivoTrueOrderByNome(bolsistaPublicId));
     }
 
     public ArrayList<Projeto> listarPorBolsista(UUID bolsistaId) {

@@ -5,8 +5,6 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-import java.util.UUID;
-
 @Schema(description = "Dados para criação ou atualização de um laboratório de pesquisa.")
 public record LaboratorioRequest(
         @NotBlank(message = "Nome do laboratorio e obrigatorio.")
@@ -25,6 +23,6 @@ public record LaboratorioRequest(
         @Schema(description = "Capacidade máxima de bolsistas e pesquisadores simultâneos", example = "10", requiredMode = Schema.RequiredMode.REQUIRED)
         Integer capacidade,
 
-        @Schema(description = "ID do professor coordenador responsável", example = "b2222222-2222-2222-2222-222222222222", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-        UUID coordenadorId) {
+        @Schema(description = "ID público do professor coordenador responsável", example = "prf_7k0m2n6p9q1w3z5a8b0c", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+        String coordenadorId) {
 }

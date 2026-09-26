@@ -11,6 +11,11 @@ import java.util.UUID;
 @Repository
 public interface ProfessorRepository extends JpaRepository<Professor, UUID> {
 
+    Optional<Professor> findByPublicId(String publicId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT p FROM Professor p WHERE p.publicId = :publicId AND p.usuario.ativo = true")
+    Optional<Professor> findByPublicIdAndAtivoTrue(@org.springframework.data.repository.query.Param("publicId") String publicId);
+
     Optional<Professor> findByEmailAndAtivoTrue(String email);
 
     List<Professor> findByAtivoTrueOrderByNome();

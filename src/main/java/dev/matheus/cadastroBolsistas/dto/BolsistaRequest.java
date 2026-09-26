@@ -8,12 +8,10 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 /*
- * o que a api aceita para criar ou editar um bolsista (tipoUsuario BOLSISTA
- * ou ADMIN - admin e uma linha na tabela bolsista, nao uma entidade separada).
- * senha opcional na edicao: vazia significa "mantem a que ja esta la", entao
- * o tamanho minimo dela e checado na mao no controller, nao aqui.
+ * Dados que a API aceita para criar ou editar um bolsista.
+ * Senha opcional na edicao: vazia significa "mantem a que ja esta la".
  */
-@Schema(description = "Dados para cadastro ou atualização de bolsista / administrador.")
+@Schema(description = "Dados para cadastro ou atualização de bolsista.")
 public record BolsistaRequest(
         @NotBlank(message = "Nome e obrigatorio.")
         @Schema(description = "Nome completo", example = "Ana Pereira", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -42,10 +40,10 @@ public record BolsistaRequest(
         @Schema(description = "Telefone de contato", example = "(48) 99999-1234", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
         String telefone,
 
-        @Schema(description = "ID do laboratório de lotação", example = "c1111111-1111-1111-1111-111111111111", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-        UUID laboratorioId,
+        @Schema(description = "ID público do laboratório de lotação", example = "lab_5h8k0l4n7o9u1x3y6z8a", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+        String laboratorioId,
 
-        @Schema(description = "Tipo de perfil de acesso", example = "BOLSISTA", allowableValues = {"ADMIN", "BOLSISTA"}, requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "Tipo de perfil de acesso", example = "BOLSISTA", allowableValues = {"BOLSISTA"}, requiredMode = Schema.RequiredMode.NOT_REQUIRED)
         String tipoUsuario,
 
         @Schema(description = "URL pública da foto de perfil", example = "https://images.unsplash.com/photo-1534528741775-53994a69daeb", requiredMode = Schema.RequiredMode.NOT_REQUIRED)

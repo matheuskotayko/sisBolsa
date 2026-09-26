@@ -31,4 +31,17 @@ public class CursoService {
         curso.setAtivo(true);
         return repository.save(curso);
     }
+
+    public Curso buscarPorId(String publicId) {
+        if (publicId == null || publicId.isBlank()) return null;
+        return repository.findByPublicIdAndAtivoTrue(publicId).orElse(null);
+    }
+
+    public Curso buscarOuFalhar(String publicId) {
+        Curso c = buscarPorId(publicId);
+        if (c == null) {
+            throw new dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException("Curso nao encontrado.");
+        }
+        return c;
+    }
 }

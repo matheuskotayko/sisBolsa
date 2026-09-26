@@ -3,12 +3,10 @@ package dev.matheus.cadastroBolsistas.dto;
 import dev.matheus.cadastroBolsistas.model.Projeto;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.util.UUID;
-
 @Schema(description = "Dados detalhados do projeto com métricas de membros e links.")
 public record ProjetoResponse(
-        @Schema(description = "Identificador único do projeto (UUID)", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
-        UUID id,
+        @Schema(description = "Identificador público único do projeto", example = "prj_4g7j9k3m6n8t0w2x5y7z")
+        String id,
 
         @Schema(description = "Título / Nome do projeto", example = "Processamento de Linguagem Natural para Documentos Médicos")
         String nome,
@@ -16,8 +14,8 @@ public record ProjetoResponse(
         @Schema(description = "Descrição detalhada do projeto", example = "Desenvolvimento de modelos LLM para sumarização de prontuários clínicos.")
         String descricao,
 
-        @Schema(description = "ID do laboratório vinculado", example = "4fa85f64-5717-4562-b3fc-2c963f66afa6")
-        UUID laboratorioId,
+        @Schema(description = "ID público do laboratório vinculado", example = "lab_5h8k0l4n7o9u1x3y6z8a")
+        String laboratorioId,
 
         @Schema(description = "Nome do laboratório", example = "Laboratório de Sistemas Inteligentes (LSI)")
         String nomeLaboratorio,
@@ -43,8 +41,8 @@ public record ProjetoResponse(
             return null;
         }
         return new ProjetoResponse(
-                p.getId(), p.getNome(), p.getDescricao(),
-                p.getLaboratorioId(),
+                p.getPublicId(), p.getNome(), p.getDescricao(),
+                p.getLaboratorioPublicId(),
                 p.getNomeLaboratorio(), p.isAtivo(), totalMembros,
                 p.getLinkRepositorio(), p.getLinkDocumentacao());
     }

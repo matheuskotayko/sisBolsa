@@ -16,12 +16,20 @@ import java.util.UUID;
 @Repository
 public interface FrequenciaRepository extends JpaRepository<Frequencia, UUID>, JpaSpecificationExecutor<Frequencia> {
 
+    Optional<Frequencia> findByPublicId(String publicId);
+
+    Optional<Frequencia> findByPublicIdAndAtivoTrue(String publicId);
+
     Optional<Frequencia> findByIdAndAtivoTrue(UUID id);
 
     List<Frequencia> findByBolsistaIdAndAtivoTrueOrderByDataDesc(UUID bolsistaId);
 
+    List<Frequencia> findByBolsista_PublicIdAndAtivoTrueOrderByDataDesc(String bolsistaPublicId);
+
     /* atravessa a associacao Frequencia -> Bolsista pra filtrar pelo laboratorio dele. */
     List<Frequencia> findByBolsista_LaboratorioIdAndAtivoTrueOrderByDataDesc(UUID laboratorioId);
+
+    List<Frequencia> findByBolsista_Laboratorio_PublicIdAndAtivoTrueOrderByDataDesc(String laboratorioPublicId);
 
     List<Frequencia> findByAtivoTrueOrderByDataDesc();
 }

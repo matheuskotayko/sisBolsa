@@ -5,6 +5,7 @@ import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Frequencia;
 import dev.matheus.cadastroBolsistas.model.Professor;
+import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.repository.FrequenciaRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -69,7 +70,7 @@ class FrequenciaServiceTest {
 
     @Test
     void exigirAcesso_admin_naoLancaNada() {
-        Professor admin = new Professor();
+        Usuario admin = new Usuario();
         admin.setTipoUsuario("ADMIN");
 
         assertDoesNotThrow(() -> frequenciaService.exigirAcesso(admin, UUID.randomUUID()));
@@ -77,7 +78,7 @@ class FrequenciaServiceTest {
 
     @Test
     void exigirAcesso_bolsistaVendoOutroBolsista_lancaPermissaoNegada() {
-        Bolsista logado = new Bolsista();
+        Usuario logado = new Usuario();
         logado.setId(UUID.randomUUID());
         logado.setTipoUsuario("BOLSISTA");
 
@@ -93,7 +94,7 @@ class FrequenciaServiceTest {
         f.setBolsistaId(bolsistaId);
         when(repository.findByIdAndAtivoTrue(id)).thenReturn(Optional.of(f));
 
-        Bolsista outroBolsista = new Bolsista();
+        Usuario outroBolsista = new Usuario();
         outroBolsista.setId(UUID.randomUUID());
         outroBolsista.setTipoUsuario("BOLSISTA");
 
@@ -109,7 +110,7 @@ class FrequenciaServiceTest {
         f.setBolsistaId(bolsistaId);
         when(repository.findByIdAndAtivoTrue(id)).thenReturn(Optional.of(f));
 
-        Bolsista dono = new Bolsista();
+        Usuario dono = new Usuario();
         dono.setId(bolsistaId);
         dono.setTipoUsuario("BOLSISTA");
 

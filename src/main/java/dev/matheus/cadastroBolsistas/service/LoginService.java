@@ -4,23 +4,19 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import dev.matheus.cadastroBolsistas.model.Usuario;
-import dev.matheus.cadastroBolsistas.repository.BolsistaRepository;
-import dev.matheus.cadastroBolsistas.repository.ProfessorRepository;
+import dev.matheus.cadastroBolsistas.repository.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class LoginService {
 
-    private final BolsistaRepository bolsistaRepository;
-    private final ProfessorRepository professorRepository;
+    private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public LoginService(BolsistaRepository bolsistaRepository,
-                        ProfessorRepository professorRepository,
+    public LoginService(UsuarioRepository usuarioRepository,
                         PasswordEncoder passwordEncoder) {
-        this.bolsistaRepository = bolsistaRepository;
-        this.professorRepository = professorRepository;
+        this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -36,16 +32,22 @@ public class LoginService {
     }
 
     /*
-     * procura primeiro na tabela bolsista, que guarda bolsista e admin, e so
-     * depois cai para professor. usado tambem pelo filtro do jwt para repor o
-     * usuario na sessao.
+     * Procura diretamente na entidade Usuario, unificada para todos os perfis
+     * (Administrador, Bolsista, Professor). Usado tambem pelo filtro JWT para
+     * repor o usuario no contexto de seguranca.
      */
     public Usuario buscarPorEmail(String email) {
-        Usuario bolsista = bolsistaRepository.findByEmailAndAtivoTrue(email).orElse(null);
-        if (bolsista != null) {
-            return bolsista;
+        if (email == null) {
+            return null;
         }
-        return professorRepository.findByEmailAndAtivoTrue(email).orElse(null);
+        return usuarioRepository.findByEmailAndAtivoTrue(email).orElse(null);
+    }
+
+    public Usuario buscarPorPublicId(String publicId) {
+        if (publicId == null || publicId.isBlank()) {
+            return null;
+        }
+        return usuarioRepository.findByPublicIdAndAtivoTrue(publicId).orElse(null);
     }
 
     // Rate limiting from LoginService

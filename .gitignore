@@ -43,3 +43,8 @@ docs/preview.html
 docs/Gestao_Risco_Mobile_Apresentacao_ABNT.pdf
 docs/Gestao_Risco_Mobile_Apresentacao_ABNT.pptx
 docs/SisBolsa_Apresentacao_API.pdf
+
+### Spec Kit & Agents ###
+.specify/
+.agents/
+specs/

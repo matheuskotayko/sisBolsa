@@ -4,8 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-import java.util.UUID;
-
 @Schema(description = "Dados para criação ou edição de um projeto de pesquisa.")
 public record ProjetoRequest(
         @NotBlank(message = "Nome do projeto e obrigatorio.")
@@ -17,8 +15,8 @@ public record ProjetoRequest(
         String descricao,
 
         @NotNull(message = "Projeto precisa estar vinculado a um laboratorio.")
-        @Schema(description = "ID do laboratório ao qual o projeto pertence", example = "c2222222-2222-2222-2222-222222222222", requiredMode = Schema.RequiredMode.REQUIRED)
-        UUID laboratorioId,
+        @Schema(description = "ID público do laboratório ao qual o projeto pertence", example = "lab_5h8k0l4n7o9u1x3y6z8a", requiredMode = Schema.RequiredMode.REQUIRED)
+        String laboratorioId,
 
         @Schema(description = "Link para o repositório externo (ex: GitHub, GitLab)", example = "https://github.com/lab-lsi/nlp-medico", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
         String linkRepositorio,

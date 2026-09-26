@@ -4,15 +4,14 @@ import dev.matheus.cadastroBolsistas.model.Frequencia;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
 @Schema(description = "Registro de frequência com horas apontadas e entregáveis.")
 public record FrequenciaResponse(
-        @Schema(description = "Identificador único da frequência (UUID)", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
-        UUID id,
+        @Schema(description = "Identificador público único da frequência", example = "frq_2e5h7i1k4l6r8u0v3w5x")
+        String id,
 
-        @Schema(description = "ID do bolsista responsável", example = "4fa85f64-5717-4562-b3fc-2c963f66afa6")
-        UUID bolsistaId,
+        @Schema(description = "ID público do bolsista responsável", example = "bol_k8s2M4n9P1q3W5z7A0b2")
+        String bolsistaId,
 
         @Schema(description = "Nome do bolsista", example = "Lucas Oliveira")
         String nomeBolsista,
@@ -37,7 +36,7 @@ public record FrequenciaResponse(
             return null;
         }
         return new FrequenciaResponse(
-                f.getId(), f.getBolsistaId(), f.getNomeBolsista(),
+                f.getPublicId(), f.getBolsistaPublicId(), f.getNomeBolsista(),
                 f.getData(), f.getHorasTrabalhadas(), f.getDescricao(),
                 f.getLinkComprovante(), f.isAtivo());
     }

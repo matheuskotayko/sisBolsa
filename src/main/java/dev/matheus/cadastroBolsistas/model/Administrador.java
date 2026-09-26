@@ -15,13 +15,13 @@ import jakarta.persistence.Table;
 import java.util.UUID;
 
 /*
- * Entidade de perfil para professores coordenadores e orientadores.
+ * Entidade de perfil para administradores do sistema.
  * Utiliza o padrao de composicao 1:1 com Usuario (chave primaria compartilhada via @MapsId)
- * e identificador publico com prefixo prf_.
+ * e identificador publico com prefixo adm_.
  */
 @Entity
-@Table(name = "professor")
-public class Professor {
+@Table(name = "administrador")
+public class Administrador {
 
     @Id
     private UUID id;
@@ -34,32 +34,31 @@ public class Professor {
     @JoinColumn(name = "id")
     private Usuario usuario;
 
-    public Professor() {
-        this.publicId = PublicIdGenerator.generateProfessorId();
+    private String cargo;
+    private String telefone;
+
+    public Administrador() {
+        this.publicId = PublicIdGenerator.generateAdministradorId();
         this.usuario = new Usuario();
-        this.usuario.setTipoUsuario("PROFESSOR");
+        this.usuario.setTipoUsuario("ADMIN");
         this.usuario.setAtivo(true);
     }
 
-    public Professor(UUID id, String nome, String email, String senha, boolean ativo, String fotoUrl) {
+    public Administrador(UUID id, Usuario usuario, String cargo, String telefone) {
         this.id = id;
-        this.publicId = PublicIdGenerator.generateProfessorId();
-        this.usuario = new Usuario(id, nome, email, senha, ativo, "PROFESSOR", fotoUrl, null);
-    }
-
-    public Professor(UUID id, Usuario usuario) {
-        this.id = id;
-        this.publicId = PublicIdGenerator.generateProfessorId();
+        this.publicId = PublicIdGenerator.generateAdministradorId();
         this.usuario = usuario;
         if (this.usuario != null) {
-            this.usuario.setTipoUsuario("PROFESSOR");
+            this.usuario.setTipoUsuario("ADMIN");
         }
+        this.cargo = cargo;
+        this.telefone = telefone;
     }
 
     @PrePersist
     public void prePersist() {
         if (this.publicId == null || this.publicId.isBlank()) {
-            this.publicId = PublicIdGenerator.generateProfessorId();
+            this.publicId = PublicIdGenerator.generateAdministradorId();
         }
     }
 
@@ -76,6 +75,12 @@ public class Professor {
 
     public Usuario getUsuario() { return usuario; }
     public void setUsuario(Usuario usuario) { this.usuario = usuario; }
+
+    public String getCargo() { return cargo; }
+    public void setCargo(String cargo) { this.cargo = cargo; }
+
+    public String getTelefone() { return telefone; }
+    public void setTelefone(String telefone) { this.telefone = telefone; }
 
     // Metodos delegados para facilitar acesso aos dados de identidade
     public String getNome() { return usuario != null ? usuario.getNome() : null; }
@@ -114,21 +119,15 @@ public class Professor {
         usuario.setBio(bio);
     }
 
-    public String getTipoUsuario() { return "PROFESSOR"; }
-    public boolean isAdmin() { return false; }
-    public boolean isProfessor() { return true; }
+    public String getTipoUsuario() { return "ADMIN"; }
+    public boolean isAdmin() { return true; }
+    public boolean isProfessor() { return false; }
     public boolean isBolsista() { return false; }
-
-    public String getNomeLaboratorio() { return usuario != null ? usuario.getNomeLaboratorio() : null; }
-    public void setNomeLaboratorio(String nomeLaboratorio) {
-        garantirUsuario();
-        usuario.setNomeLaboratorio(nomeLaboratorio);
-    }
 
     private void garantirUsuario() {
         if (this.usuario == null) {
             this.usuario = new Usuario();
-            this.usuario.setTipoUsuario("PROFESSOR");
+            this.usuario.setTipoUsuario("ADMIN");
             this.usuario.setAtivo(true);
             if (this.id != null) {
                 this.usuario.setId(this.id);

@@ -1,5 +1,6 @@
 package dev.matheus.cadastroBolsistas.model;
 
+import dev.matheus.cadastroBolsistas.util.PublicIdGenerator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -7,13 +8,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 import java.time.LocalDate;
 import java.util.UUID;
 
 /*
- * registro de horas trabalhadas por um bolsista com id UUID e link de comprovante/entregavel.
+ * registro de horas trabalhadas por um bolsista com id UUID, identificador publico prefixado frq_ e link de comprovante/entregavel.
  */
 @Entity
 @Table(name = "frequencia")
@@ -22,6 +24,9 @@ public class Frequencia {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @Column(name = "public_id", unique = true, nullable = false, updatable = false, length = 36)
+    private String publicId;
 
     @Column(name = "bolsista_id")
     private UUID bolsistaId;
@@ -42,10 +47,13 @@ public class Frequencia {
 
     private boolean ativo;
 
-    public Frequencia() {}
+    public Frequencia() {
+        this.publicId = PublicIdGenerator.generateFrequenciaId();
+    }
 
     public Frequencia(UUID id, UUID bolsistaId, LocalDate data, double horasTrabalhadas, String descricao, boolean ativo) {
         this.id = id;
+        this.publicId = PublicIdGenerator.generateFrequenciaId();
         this.bolsistaId = bolsistaId;
         this.data = data;
         this.horasTrabalhadas = horasTrabalhadas;
@@ -53,8 +61,18 @@ public class Frequencia {
         this.ativo = ativo;
     }
 
+    @PrePersist
+    public void prePersist() {
+        if (this.publicId == null || this.publicId.isBlank()) {
+            this.publicId = PublicIdGenerator.generateFrequenciaId();
+        }
+    }
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
+
+    public String getPublicId() { return publicId; }
+    public void setPublicId(String publicId) { this.publicId = publicId; }
 
     public UUID getBolsistaId() { return bolsistaId; }
     public void setBolsistaId(UUID bolsistaId) { this.bolsistaId = bolsistaId; }
@@ -63,8 +81,17 @@ public class Frequencia {
         return bolsista != null ? bolsista.getNome() : null;
     }
 
-    /* so preenche o objeto em memoria: quem grava a coluna e o bolsistaId (a associacao e insertable = false). */
-    public void setBolsista(Bolsista bolsista) { this.bolsista = bolsista; }
+    public String getBolsistaPublicId() {
+        return bolsista != null ? bolsista.getPublicId() : null;
+    }
+
+    /* preenche o objeto em memoria e ajusta a FK */
+    public void setBolsista(Bolsista bolsista) {
+        this.bolsista = bolsista;
+        if (bolsista != null) {
+            this.bolsistaId = bolsista.getId();
+        }
+    }
 
     public LocalDate getData() { return data; }
     public void setData(LocalDate data) { this.data = data; }

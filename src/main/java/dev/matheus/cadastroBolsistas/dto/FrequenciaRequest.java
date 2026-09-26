@@ -7,7 +7,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
 /*
  * bolsistaId so e respeitado para admin e professor. bolsista comum sempre
@@ -15,8 +14,8 @@ import java.util.UUID;
  */
 @Schema(description = "Dados para apontamento de horas de frequência e atividades realizadas.")
 public record FrequenciaRequest(
-        @Schema(description = "ID do bolsista (apenas para Admin e Professor; Bolsistas sempre registram para si mesmos)", example = "d1111111-1111-1111-1111-111111111111", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-        UUID bolsistaId,
+        @Schema(description = "ID público do bolsista (apenas para Admin e Professor; Bolsistas sempre registram para si mesmos)", example = "bol_k8s2M4n9P1q3W5z7A0b2", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+        String bolsistaId,
 
         @NotNull(message = "Data da frequencia e obrigatoria.")
         @Schema(description = "Data do apontamento de horas", example = "2026-08-29", requiredMode = Schema.RequiredMode.REQUIRED)

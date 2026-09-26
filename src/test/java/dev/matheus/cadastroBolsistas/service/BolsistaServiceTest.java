@@ -47,14 +47,14 @@ class BolsistaServiceTest {
     @InjectMocks
     private BolsistaService bolsistaService;
 
-    private static BolsistaRequest bolsistaRequest(UUID laboratorioId) {
+    private static BolsistaRequest bolsistaRequest(String laboratorioId) {
         return new BolsistaRequest("Lucas", "lucas@teste.com", "senha123", null, "Engenharia",
                 "2024001", null, null, laboratorioId, "BOLSISTA", null, null, null, null, null, null, null);
     }
 
     @Test
     void podeGerenciar_adminSempreRetornaTrue() throws SQLException {
-        Professor admin = new Professor();
+        Usuario admin = new Usuario();
         admin.setId(UUID.randomUUID());
         admin.setTipoUsuario("ADMIN");
 
@@ -70,7 +70,7 @@ class BolsistaServiceTest {
         UUID profId = UUID.randomUUID();
         UUID labId = UUID.randomUUID();
 
-        Professor professor = new Professor();
+        Usuario professor = new Usuario();
         professor.setId(profId);
         professor.setTipoUsuario("PROFESSOR");
 
@@ -93,7 +93,7 @@ class BolsistaServiceTest {
         UUID profId = UUID.randomUUID();
         UUID labId = UUID.randomUUID();
 
-        Professor professor = new Professor();
+        Usuario professor = new Usuario();
         professor.setId(profId);
         professor.setTipoUsuario("PROFESSOR");
 
@@ -113,7 +113,7 @@ class BolsistaServiceTest {
 
     @Test
     void podeGerenciar_professorEBolsistaSemLaboratorio() throws SQLException {
-        Professor professor = new Professor();
+        Usuario professor = new Usuario();
         professor.setId(UUID.randomUUID());
         professor.setTipoUsuario("PROFESSOR");
 
@@ -127,7 +127,7 @@ class BolsistaServiceTest {
 
     @Test
     void podeGerenciar_bolsistaRetornaFalse() throws SQLException {
-        Bolsista bolsistaLogado = new Bolsista();
+        Usuario bolsistaLogado = new Usuario();
         bolsistaLogado.setId(UUID.randomUUID());
         bolsistaLogado.setTipoUsuario("BOLSISTA");
 
@@ -149,7 +149,7 @@ class BolsistaServiceTest {
 
     @Test
     void podeGerenciar_bolsistaAlvoNullRetornaFalse() throws SQLException {
-        Professor professor = new Professor();
+        Usuario professor = new Usuario();
         professor.setId(UUID.randomUUID());
         professor.setTipoUsuario("PROFESSOR");
 
@@ -162,7 +162,7 @@ class BolsistaServiceTest {
         UUID id = UUID.randomUUID();
         when(repository.findById(id)).thenReturn(Optional.empty());
 
-        Professor admin = new Professor();
+        Usuario admin = new Usuario();
         admin.setTipoUsuario("ADMIN");
 
         assertThrows(RecursoNaoEncontradoException.class,
@@ -176,7 +176,7 @@ class BolsistaServiceTest {
         alvo.setId(id);
         when(repository.findById(id)).thenReturn(Optional.of(alvo));
 
-        Bolsista logado = new Bolsista();
+        Usuario logado = new Usuario();
         logado.setId(id);
         logado.setTipoUsuario("BOLSISTA");
 
@@ -191,7 +191,7 @@ class BolsistaServiceTest {
         alvo.setId(id);
         when(repository.findById(id)).thenReturn(Optional.of(alvo));
 
-        Bolsista outroBolsista = new Bolsista();
+        Usuario outroBolsista = new Usuario();
         outroBolsista.setId(UUID.randomUUID());
         outroBolsista.setTipoUsuario("BOLSISTA");
 
@@ -206,7 +206,7 @@ class BolsistaServiceTest {
         alvo.setId(id);
         when(repository.findById(id)).thenReturn(Optional.of(alvo));
 
-        Bolsista logado = new Bolsista();
+        Usuario logado = new Usuario();
         logado.setId(id);
         logado.setTipoUsuario("BOLSISTA");
 
@@ -220,7 +220,7 @@ class BolsistaServiceTest {
         alvo.setId(id);
         when(repository.findById(id)).thenReturn(Optional.of(alvo));
 
-        Bolsista outroBolsista = new Bolsista();
+        Usuario outroBolsista = new Usuario();
         outroBolsista.setId(UUID.randomUUID());
         outroBolsista.setTipoUsuario("BOLSISTA");
 
@@ -235,7 +235,7 @@ class BolsistaServiceTest {
         alvo.setId(id);
         when(repository.findById(id)).thenReturn(Optional.of(alvo));
 
-        Bolsista logado = new Bolsista();
+        Usuario logado = new Usuario();
         logado.setId(id);
         logado.setTipoUsuario("BOLSISTA");
 
@@ -250,7 +250,7 @@ class BolsistaServiceTest {
         alvo.setId(id);
         when(repository.findById(id)).thenReturn(Optional.of(alvo));
 
-        Professor admin = new Professor();
+        Usuario admin = new Usuario();
         admin.setTipoUsuario("ADMIN");
 
         assertSame(alvo, bolsistaService.buscarComPermissaoDeExclusao(id, admin));
@@ -258,7 +258,7 @@ class BolsistaServiceTest {
 
     @Test
     void exigirPodeCadastrarUsuario_bolsista_lancaPermissaoNegada() {
-        Bolsista bolsista = new Bolsista();
+        Usuario bolsista = new Usuario();
         bolsista.setTipoUsuario("BOLSISTA");
 
         assertThrows(PermissaoNegadaException.class, () -> bolsistaService.exigirPodeCadastrarUsuario(bolsista));
@@ -266,7 +266,7 @@ class BolsistaServiceTest {
 
     @Test
     void exigirPodeCadastrarUsuario_professor_naoLancaNada() {
-        Professor professor = new Professor();
+        Usuario professor = new Usuario();
         professor.setTipoUsuario("PROFESSOR");
 
         assertDoesNotThrow(() -> bolsistaService.exigirPodeCadastrarUsuario(professor));
@@ -274,51 +274,10 @@ class BolsistaServiceTest {
 
     @Test
     void exigirPodeExportarUsuarios_bolsista_lancaPermissaoNegada() {
-        Bolsista bolsista = new Bolsista();
+        Usuario bolsista = new Usuario();
         bolsista.setTipoUsuario("BOLSISTA");
 
         assertThrows(PermissaoNegadaException.class, () -> bolsistaService.exigirPodeExportarUsuarios(bolsista));
-    }
-
-    @Test
-    void exigirPodeCriarAdmin_naoAdmin_lancaPermissaoNegada() {
-        Professor professor = new Professor();
-        professor.setTipoUsuario("PROFESSOR");
-
-        assertThrows(PermissaoNegadaException.class, () -> bolsistaService.exigirPodeCriarAdmin(professor));
-        verifyNoInteractions(repository);
-    }
-
-    @Test
-    void exigirPodeCriarAdmin_adminMasLimiteAtingido_lancaLimiteAdmins() {
-        when(repository.countByTipoUsuarioAndAtivoTrue("ADMIN")).thenReturn(3);
-        Professor admin = new Professor();
-        admin.setTipoUsuario("ADMIN");
-
-        assertThrows(LimiteAdminsAtingidoException.class, () -> bolsistaService.exigirPodeCriarAdmin(admin));
-    }
-
-    @Test
-    void exigirPodeCriarAdmin_adminComVaga_naoLancaNada() {
-        when(repository.countByTipoUsuarioAndAtivoTrue("ADMIN")).thenReturn(1);
-        Professor admin = new Professor();
-        admin.setTipoUsuario("ADMIN");
-
-        assertDoesNotThrow(() -> bolsistaService.exigirPodeCriarAdmin(admin));
-    }
-
-    @Test
-    void exigirVagaParaNovoAdmin_semVaga_lancaLimiteAdmins() {
-        when(repository.countByTipoUsuarioAndAtivoTrue("ADMIN")).thenReturn(3);
-
-        assertThrows(LimiteAdminsAtingidoException.class, () -> bolsistaService.exigirVagaParaNovoAdmin());
-    }
-
-    @Test
-    void exigirVagaParaNovoAdmin_comVaga_naoLancaNada() {
-        when(repository.countByTipoUsuarioAndAtivoTrue("ADMIN")).thenReturn(0);
-
-        assertDoesNotThrow(() -> bolsistaService.exigirVagaParaNovoAdmin());
     }
 
     @Test
@@ -357,32 +316,8 @@ class BolsistaServiceTest {
     }
 
     @Test
-    void podeCriarAdmin_abaixoDoLimite_true() {
-        when(repository.countByTipoUsuarioAndAtivoTrue("ADMIN")).thenReturn(2);
-        assertTrue(bolsistaService.podeCriarAdmin());
-    }
-
-    @Test
-    void podeCriarAdmin_noLimite_false() {
-        when(repository.countByTipoUsuarioAndAtivoTrue("ADMIN")).thenReturn(3);
-        assertFalse(bolsistaService.podeCriarAdmin());
-    }
-
-    @Test
-    void criarAdmin_montaBolsistaComDadosFixos() {
-        Bolsista admin = bolsistaService.criarAdmin("Ana Admin", "ana@teste.com", "hashPronto");
-
-        assertEquals("Ana Admin", admin.getNome());
-        assertEquals("ana@teste.com", admin.getEmail());
-        assertEquals("hashPronto", admin.getSenha());
-        assertEquals("ADMIN", admin.getTipoUsuario());
-        assertTrue(admin.isAtivo());
-        verify(repository).save(admin);
-    }
-
-    @Test
     void calcularNovaSenha_semCamposDeSenha_retornaNull() {
-        Bolsista logado = new Bolsista();
+        Usuario logado = new Usuario();
         logado.setSenha("hashAtual");
 
         assertNull(bolsistaService.calcularNovaSenha(logado, "", "", ""));
@@ -391,7 +326,7 @@ class BolsistaServiceTest {
 
     @Test
     void calcularNovaSenha_senhaAtualErrada_lanca() {
-        Bolsista logado = new Bolsista();
+        Usuario logado = new Usuario();
         logado.setSenha("hashAtual");
         when(passwordEncoder.matches("errada", "hashAtual")).thenReturn(false);
 
@@ -401,7 +336,7 @@ class BolsistaServiceTest {
 
     @Test
     void calcularNovaSenha_confirmacaoDiferente_lanca() {
-        Bolsista logado = new Bolsista();
+        Usuario logado = new Usuario();
         logado.setSenha("hashAtual");
         when(passwordEncoder.matches("senha123", "hashAtual")).thenReturn(true);
 
@@ -411,7 +346,7 @@ class BolsistaServiceTest {
 
     @Test
     void calcularNovaSenha_novaSenhaCurta_lanca() {
-        Bolsista logado = new Bolsista();
+        Usuario logado = new Usuario();
         logado.setSenha("hashAtual");
         when(passwordEncoder.matches("senha123", "hashAtual")).thenReturn(true);
 
@@ -421,7 +356,7 @@ class BolsistaServiceTest {
 
     @Test
     void calcularNovaSenha_valida_retornaHashCodificado() {
-        Bolsista logado = new Bolsista();
+        Usuario logado = new Usuario();
         logado.setSenha("hashAtual");
         when(passwordEncoder.matches("senha123", "hashAtual")).thenReturn(true);
         when(passwordEncoder.encode("novaSenha1")).thenReturn("hashNovo");
@@ -431,7 +366,7 @@ class BolsistaServiceTest {
 
     @Test
     void aplicarDadosPerfil_semTrocarSenha_mantemHashAtual() {
-        Bolsista u = new Bolsista();
+        Usuario u = new Usuario();
         u.setSenha("hashAtual");
         PerfilRequest body = new PerfilRequest("Novo Nome", "novo@teste.com", null, null, null, null, null);
 
@@ -444,26 +379,40 @@ class BolsistaServiceTest {
 
     @Test
     void aplicarCamposDeBolsista_semPermissaoNoLaboratorio_lanca() {
+        String labPublicId = "lab_test12345678901234";
         UUID labId = UUID.randomUUID();
-        Usuario logado = new Professor();
+        Laboratorio lab = new Laboratorio();
+        lab.setId(labId);
+        lab.setPublicId(labPublicId);
+        when(laboratorioRepository.findByPublicIdAndAtivoTrue(labPublicId)).thenReturn(Optional.of(lab));
+
+        Usuario logado = new Usuario();
         logado.setId(UUID.randomUUID());
+        logado.setTipoUsuario("PROFESSOR");
         when(laboratorioService.podeGerenciar(logado, labId)).thenReturn(false);
 
         Bolsista b = new Bolsista();
-        BolsistaRequest body = bolsistaRequest(labId);
+        BolsistaRequest body = bolsistaRequest(labPublicId);
 
         assertThrows(PermissaoNegadaException.class, () -> bolsistaService.aplicarCamposDeBolsista(b, body, logado));
     }
 
     @Test
     void aplicarCamposDeBolsista_comPermissao_aplicaCampos() {
+        String labPublicId = "lab_test12345678901234";
         UUID labId = UUID.randomUUID();
-        Usuario logado = new Professor();
+        Laboratorio lab = new Laboratorio();
+        lab.setId(labId);
+        lab.setPublicId(labPublicId);
+        when(laboratorioRepository.findByPublicIdAndAtivoTrue(labPublicId)).thenReturn(Optional.of(lab));
+
+        Usuario logado = new Usuario();
         logado.setId(UUID.randomUUID());
+        logado.setTipoUsuario("PROFESSOR");
         when(laboratorioService.podeGerenciar(logado, labId)).thenReturn(true);
 
         Bolsista b = new Bolsista();
-        BolsistaRequest body = bolsistaRequest(labId);
+        BolsistaRequest body = bolsistaRequest(labPublicId);
 
         bolsistaService.aplicarCamposDeBolsista(b, body, logado);
 
@@ -474,22 +423,22 @@ class BolsistaServiceTest {
 
     @Test
     void filtrarPorTipo_semFiltro_devolveListaIntacta() {
-        ArrayList<Usuario> lista = new ArrayList<>(List.of(new Bolsista(), new Professor()));
+        ArrayList<Bolsista> lista = new ArrayList<>(List.of(new Bolsista(), new Bolsista()));
         assertEquals(2, bolsistaService.filtrarPorTipo(lista, "").size());
     }
 
     @Test
     void filtrarPorTipo_comFiltro_removeQuemNaoBate() {
-        Bolsista bolsista = new Bolsista();
-        bolsista.setTipoUsuario("BOLSISTA");
-        Professor professor = new Professor();
-        professor.setTipoUsuario("PROFESSOR");
-        ArrayList<Usuario> lista = new ArrayList<>(List.of(bolsista, professor));
+        Bolsista b1 = new Bolsista();
+        b1.setTipoUsuario("BOLSISTA");
+        Bolsista b2 = new Bolsista();
+        b2.setTipoUsuario("OUTRO");
+        ArrayList<Bolsista> lista = new ArrayList<>(List.of(b1, b2));
 
-        ArrayList<Usuario> filtrado = bolsistaService.filtrarPorTipo(lista, "professor");
+        ArrayList<Bolsista> filtrado = bolsistaService.filtrarPorTipo(lista, "bolsista");
 
         assertEquals(1, filtrado.size());
-        assertSame(professor, filtrado.get(0));
+        assertSame(b1, filtrado.get(0));
     }
 
     @Test

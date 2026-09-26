@@ -6,46 +6,59 @@ import static org.junit.jupiter.api.Assertions.*;
 class UsuarioTest {
 
     @Test
-    void bolsistaComTipoAdmin_isAdminRetornaTrue() {
-        Bolsista b = new Bolsista();
-        b.setTipoUsuario("ADMIN");
-        assertTrue(b.isAdmin());
+    void usuarioComTipoAdmin_isAdminRetornaTrue() {
+        Usuario u = new Usuario();
+        u.setTipoUsuario("ADMIN");
+        assertTrue(u.isAdmin());
+        assertFalse(u.isBolsista());
+        assertFalse(u.isProfessor());
     }
 
     @Test
-    void bolsistaComTipoBolsista_isBolsistaRetornaTrue() {
+    void usuarioComTipoBolsista_isBolsistaRetornaTrue() {
+        Usuario u = new Usuario();
+        u.setTipoUsuario("BOLSISTA");
+        assertTrue(u.isBolsista());
+        assertFalse(u.isAdmin());
+        assertFalse(u.isProfessor());
+    }
+
+    @Test
+    void usuarioComTipoProfessor_isProfessorRetornaTrue() {
+        Usuario u = new Usuario();
+        u.setTipoUsuario("PROFESSOR");
+        assertTrue(u.isProfessor());
+        assertFalse(u.isAdmin());
+        assertFalse(u.isBolsista());
+    }
+
+    @Test
+    void administradorEntity_isAdminRetornaTrue() {
+        Administrador admin = new Administrador();
+        assertTrue(admin.isAdmin());
+        assertEquals("ADMIN", admin.getTipoUsuario());
+    }
+
+    @Test
+    void bolsistaEntity_isBolsistaRetornaTrue() {
         Bolsista b = new Bolsista();
-        b.setTipoUsuario("BOLSISTA");
         assertTrue(b.isBolsista());
+        assertEquals("BOLSISTA", b.getTipoUsuario());
     }
 
     @Test
-    void bolsistaComTipoBolsista_isAdminRetornaFalse() {
-        Bolsista b = new Bolsista();
-        b.setTipoUsuario("BOLSISTA");
-        assertFalse(b.isAdmin());
-    }
-
-    @Test
-    void professorComTipoProfessor_isProfessorRetornaTrue() {
+    void professorEntity_isProfessorRetornaTrue() {
         Professor p = new Professor();
-        p.setTipoUsuario("PROFESSOR");
         assertTrue(p.isProfessor());
-    }
-
-    @Test
-    void professorComTipoProfessor_isAdminRetornaFalse() {
-        Professor p = new Professor();
-        p.setTipoUsuario("PROFESSOR");
-        assertFalse(p.isAdmin());
+        assertEquals("PROFESSOR", p.getTipoUsuario());
     }
 
     @Test
     void usuario_isAtivoRefleteCampo() {
-        Bolsista b = new Bolsista();
-        b.setAtivo(false);
-        assertFalse(b.isAtivo());
-        b.setAtivo(true);
-        assertTrue(b.isAtivo());
+        Usuario u = new Usuario();
+        u.setAtivo(false);
+        assertFalse(u.isAtivo());
+        u.setAtivo(true);
+        assertTrue(u.isAtivo());
     }
 }
