@@ -2,7 +2,6 @@ package dev.matheus.cadastroBolsistas.service;
 
 import dev.matheus.cadastroBolsistas.dto.BolsistaRequest;
 import dev.matheus.cadastroBolsistas.dto.PerfilRequest;
-import dev.matheus.cadastroBolsistas.exceptions.LimiteAdminsAtingidoException;
 import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
 import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
@@ -13,7 +12,6 @@ import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.repository.BolsistaRepository;
 import dev.matheus.cadastroBolsistas.repository.LaboratorioRepository;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,25 +19,30 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /*
- * regras de negocio de bolsistas com IDs em UUID.
+ * Regras de negócio de bolsistas com suporte a identificadores públicos e UUIDs.
  */
 @Service
 public class BolsistaService {
 
-    @Autowired
-    private BolsistaRepository repository;
+    private final BolsistaRepository repository;
+    private final LaboratorioRepository laboratorioRepository;
+    private final LaboratorioService laboratorioService;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private LaboratorioRepository laboratorioRepository;
-
-    @Autowired
-    private LaboratorioService laboratorioService;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    public BolsistaService(BolsistaRepository repository,
+                           LaboratorioRepository laboratorioRepository,
+                           LaboratorioService laboratorioService,
+                           PasswordEncoder passwordEncoder) {
+        this.repository = repository;
+        this.laboratorioRepository = laboratorioRepository;
+        this.laboratorioService = laboratorioService;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     public boolean podeGerenciar(Usuario usuarioLogado, Bolsista b) {
         if (usuarioLogado == null || b == null) return false;
@@ -65,6 +68,12 @@ public class BolsistaService {
         }
     }
 
+    public void exigirPermissao(Usuario logado, Bolsista b, String acao) {
+        if (!Objects.equals(logado.getId(), b.getId()) && !podeGerenciar(logado, b)) {
+            throw new PermissaoNegadaException("Sem permissao para " + acao + " este usuario.");
+        }
+    }
+
     public boolean inserir(Bolsista b) {
         b.setAtivo(true);
         repository.save(b);
@@ -77,15 +86,22 @@ public class BolsistaService {
 
     public Bolsista buscarPorId(String publicId) {
         if (publicId == null || publicId.isBlank()) return null;
-        return repository.findByPublicIdAndAtivoTrue(publicId).orElse(null);
+        Bolsista b = repository.findByPublicIdAndAtivoTrue(publicId).orElse(null);
+        if (b == null) {
+            try {
+                UUID uuid = UUID.fromString(publicId);
+                return repository.findById(uuid).filter(Bolsista::isAtivo).orElse(null);
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        return b;
     }
 
     public Bolsista buscarPorId(UUID id) {
         if (id == null) return null;
-        return repository.findById(id).orElse(null);
+        return repository.findById(id).filter(Bolsista::isAtivo).orElse(null);
     }
 
-    /* lookup + 404 num so lugar, pra nenhum controller precisar checar null na mao. */
     public Bolsista buscarOuFalhar(String publicId) {
         Bolsista b = buscarPorId(publicId);
         if (b == null) {
@@ -102,41 +118,30 @@ public class BolsistaService {
         return b;
     }
 
-    /* dono do proprio cadastro ou quem gerencia pode ver. */
     public Bolsista buscarComPermissaoDeVisualizacao(String publicId, Usuario logado) {
         Bolsista b = buscarOuFalhar(publicId);
-        if (!Objects.equals(logado.getId(), b.getId()) && !podeGerenciar(logado, b)) {
-            throw new PermissaoNegadaException("Sem permissao para ver este usuario.");
-        }
+        exigirPermissao(logado, b, "ver");
         return b;
     }
 
     public Bolsista buscarComPermissaoDeVisualizacao(UUID id, Usuario logado) {
         Bolsista b = buscarOuFalhar(id);
-        if (!Objects.equals(logado.getId(), id) && !podeGerenciar(logado, b)) {
-            throw new PermissaoNegadaException("Sem permissao para ver este usuario.");
-        }
+        exigirPermissao(logado, b, "ver");
         return b;
     }
 
-    /* dono do proprio cadastro ou quem gerencia pode editar. */
     public Bolsista buscarComPermissaoDeEdicao(String publicId, Usuario logado) {
         Bolsista b = buscarOuFalhar(publicId);
-        if (!Objects.equals(logado.getId(), b.getId()) && !podeGerenciar(logado, b)) {
-            throw new PermissaoNegadaException("Sem permissao para editar este usuario.");
-        }
+        exigirPermissao(logado, b, "editar");
         return b;
     }
 
     public Bolsista buscarComPermissaoDeEdicao(UUID id, Usuario logado) {
         Bolsista b = buscarOuFalhar(id);
-        if (!Objects.equals(logado.getId(), id) && !podeGerenciar(logado, b)) {
-            throw new PermissaoNegadaException("Sem permissao para editar este usuario.");
-        }
+        exigirPermissao(logado, b, "editar");
         return b;
     }
 
-    /* so quem gerencia pode excluir - ao contrario de ver/editar, nao ha excecao de "ver o proprio". */
     public Bolsista buscarComPermissaoDeExclusao(String publicId, Usuario logado) {
         Bolsista b = buscarOuFalhar(publicId);
         if (!podeGerenciar(logado, b)) {
@@ -186,7 +191,6 @@ public class BolsistaService {
         return true;
     }
 
-    /* soft delete: marca ativo = false, nunca apaga a linha */
     @Transactional
     public boolean excluir(String publicId) {
         if (publicId == null || publicId.isBlank()) return false;
@@ -194,7 +198,14 @@ public class BolsistaService {
             b.setAtivo(false);
             repository.save(b);
             return true;
-        }).orElse(false);
+        }).orElseGet(() -> {
+            try {
+                UUID uuid = UUID.fromString(publicId);
+                return excluir(uuid);
+            } catch (IllegalArgumentException e) {
+                return false;
+            }
+        });
     }
 
     @Transactional
@@ -215,11 +226,15 @@ public class BolsistaService {
             return lista;
         }
         if (usuarioLogado.isProfessor()) {
-            ArrayList<Laboratorio> labsCoordenados =
-                    new ArrayList<>(laboratorioRepository.findByCoordenadorIdAndAtivoTrueOrderByNome(usuarioLogado.getId()));
+            List<Laboratorio> labsCoordenados =
+                    laboratorioRepository.findByCoordenadorIdAndAtivoTrueOrderByNome(usuarioLogado.getId());
+            Set<UUID> labIds = labsCoordenados.stream()
+                    .map(Laboratorio::getId)
+                    .collect(Collectors.toSet());
+
             ArrayList<Bolsista> filtrados = new ArrayList<>();
             for (Bolsista b : lista) {
-                if (labsCoordenados.stream().anyMatch(l -> Objects.equals(l.getId(), b.getLaboratorioId()))) {
+                if (b.getLaboratorioId() != null && labIds.contains(b.getLaboratorioId())) {
                     filtrados.add(b);
                 }
             }
@@ -239,11 +254,6 @@ public class BolsistaService {
         return new ArrayList<>();
     }
 
-    /*
-     * nome e email ja sao cobertos por bean validation no BolsistaRequest.
-     * a senha fica de fora de la porque a regra depende do contexto: obrigatoria
-     * na criacao, opcional na edicao (vazio = mantem a senha atual).
-     */
     public void validarSenha(String senha, boolean exigirSenha) {
         if (exigirSenha && (StringUtil.estaVazio(senha) || senha.length() < 6)) {
             throw new IllegalArgumentException("Senha e obrigatoria e precisa ter ao menos 6 caracteres.");
@@ -288,7 +298,6 @@ public class BolsistaService {
         }
     }
 
-    /* dados comuns de perfil (Bolsista ou Professor alterando o proprio cadastro) */
     public void aplicarDadosPerfil(Usuario u, PerfilRequest body, String senhaNova) {
         u.setNome(StringUtil.limpar(body.nome()));
         u.setEmail(StringUtil.limpar(body.email()));
@@ -299,7 +308,6 @@ public class BolsistaService {
         }
     }
 
-    /* retorna a senha ja codificada, ou null se o usuario nao pediu troca de senha */
     public String calcularNovaSenha(Usuario logado, String senhaAtual, String senhaNova, String confirmaSenha) {
         boolean trocando = !StringUtil.estaVazio(senhaAtual) || !StringUtil.estaVazio(senhaNova) || !StringUtil.estaVazio(confirmaSenha);
         if (!trocando) {
@@ -329,7 +337,6 @@ public class BolsistaService {
         return lista;
     }
 
-    /* laboratorios coordenados pelo professor -> ids de todos os bolsistas neles */
     public List<UUID> idsDosBolsistasCoordenadosPor(UUID professorId) {
         return laboratorioService.listarPorCoordenador(professorId).stream()
                 .flatMap(lab -> buscarPorLaboratorio(lab.getId()).stream())

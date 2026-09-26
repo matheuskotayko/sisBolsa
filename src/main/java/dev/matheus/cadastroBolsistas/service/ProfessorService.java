@@ -5,18 +5,23 @@ import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Professor;
 import dev.matheus.cadastroBolsistas.repository.ProfessorRepository;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.UUID;
 
+/*
+ * Regras de negócio de professores coordenadores com suporte a publicId e UUIDs.
+ */
 @Service
 public class ProfessorService {
 
-    @Autowired
-    private ProfessorRepository repository;
+    private final ProfessorRepository repository;
+
+    public ProfessorService(ProfessorRepository repository) {
+        this.repository = repository;
+    }
 
     public boolean inserir(Professor p) {
         repository.save(p);
@@ -41,15 +46,22 @@ public class ProfessorService {
 
     public Professor buscarPorId(String publicId) {
         if (publicId == null || publicId.isBlank()) return null;
-        return repository.findByPublicIdAndAtivoTrue(publicId).orElse(null);
+        Professor p = repository.findByPublicIdAndAtivoTrue(publicId).orElse(null);
+        if (p == null) {
+            try {
+                UUID uuid = UUID.fromString(publicId);
+                return repository.findById(uuid).filter(Professor::isAtivo).orElse(null);
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        return p;
     }
 
     public Professor buscarPorId(UUID id) {
         if (id == null) return null;
-        return repository.findById(id).orElse(null);
+        return repository.findById(id).filter(Professor::isAtivo).orElse(null);
     }
 
-    /* lookup + 404 num so lugar, pra nenhum controller precisar checar null na mao. */
     public Professor buscarOuFalhar(String publicId) {
         Professor p = buscarPorId(publicId);
         if (p == null) {
@@ -71,7 +83,6 @@ public class ProfessorService {
         return true;
     }
 
-    /* soft delete: carrega, marca ativo = false e deixa o JPA fazer o UPDATE. */
     @Transactional
     public boolean excluir(String publicId) {
         if (publicId == null || publicId.isBlank()) return false;
@@ -79,7 +90,14 @@ public class ProfessorService {
             p.setAtivo(false);
             repository.save(p);
             return true;
-        }).orElse(false);
+        }).orElseGet(() -> {
+            try {
+                UUID uuid = UUID.fromString(publicId);
+                return excluir(uuid);
+            } catch (IllegalArgumentException e) {
+                return false;
+            }
+        });
     }
 
     @Transactional
