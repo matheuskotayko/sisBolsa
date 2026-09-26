@@ -1,17 +1,22 @@
 package dev.matheus.cadastroBolsistas.service;
 
+import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Curso;
 import dev.matheus.cadastroBolsistas.repository.CursoRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class CursoService {
 
-    @Autowired
-    private CursoRepository repository;
+    private final CursoRepository repository;
+
+    public CursoService(CursoRepository repository) {
+        this.repository = repository;
+    }
 
     public ArrayList<Curso> listarTodos() {
         return new ArrayList<>(repository.findByAtivoTrueOrderByNome());
@@ -32,15 +37,36 @@ public class CursoService {
         return repository.save(curso);
     }
 
-    public Curso buscarPorId(String publicId) {
-        if (publicId == null || publicId.isBlank()) return null;
-        return repository.findByPublicIdAndAtivoTrue(publicId).orElse(null);
+    public Curso buscarPorId(String idOuPublicId) {
+        if (idOuPublicId == null || idOuPublicId.isBlank()) return null;
+        return repository.findByPublicIdAndAtivoTrue(idOuPublicId)
+                .or(() -> {
+                    try {
+                        return repository.findById(UUID.fromString(idOuPublicId)).filter(Curso::isAtivo);
+                    } catch (IllegalArgumentException e) {
+                        return Optional.empty();
+                    }
+                })
+                .orElse(null);
     }
 
-    public Curso buscarOuFalhar(String publicId) {
-        Curso c = buscarPorId(publicId);
+    public Curso buscarPorId(UUID id) {
+        if (id == null) return null;
+        return repository.findById(id).filter(Curso::isAtivo).orElse(null);
+    }
+
+    public Curso buscarOuFalhar(String idOuPublicId) {
+        Curso c = buscarPorId(idOuPublicId);
         if (c == null) {
-            throw new dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException("Curso nao encontrado.");
+            throw new RecursoNaoEncontradoException("Curso nao encontrado.");
+        }
+        return c;
+    }
+
+    public Curso buscarOuFalhar(UUID id) {
+        Curso c = buscarPorId(id);
+        if (c == null) {
+            throw new RecursoNaoEncontradoException("Curso nao encontrado.");
         }
         return c;
     }

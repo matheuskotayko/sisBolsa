@@ -7,7 +7,6 @@ import dev.matheus.cadastroBolsistas.model.Frequencia;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.repository.Filtros;
 import dev.matheus.cadastroBolsistas.repository.FrequenciaRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -21,35 +20,44 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+/*
+ * Regras de negócio de frequência com suporte a identificadores públicos e UUIDs.
+ */
 @Service
 public class FrequenciaService {
 
     private static final Sort MAIS_RECENTES = Sort.by(Sort.Direction.DESC, "data");
 
-    @Autowired
-    private FrequenciaRepository repository;
+    private final FrequenciaRepository repository;
+    private final BolsistaService bolsistaService;
+    private final LaboratorioService laboratorioService;
 
-    @Autowired
-    private BolsistaService bolsistaService;
-
-    @Autowired
-    private LaboratorioService laboratorioService;
+    public FrequenciaService(FrequenciaRepository repository,
+                             BolsistaService bolsistaService,
+                             LaboratorioService laboratorioService) {
+        this.repository = repository;
+        this.bolsistaService = bolsistaService;
+        this.laboratorioService = laboratorioService;
+    }
 
     public boolean registrar(Frequencia f) {
         f.setAtivo(true);
         repository.save(f);
-        /*
-         * a associacao com o bolsista e so leitura: o save grava pelo bolsistaId e
-         * deixa o objeto nulo ate a entidade ser relida - sem isso a resposta do
-         * POST sai com nomeBolsista null.
-         */
         f.setBolsista(bolsistaService.buscarPorId(f.getBolsistaId()));
         return true;
     }
 
     public Frequencia buscarPorId(String publicId) {
         if (publicId == null || publicId.isBlank()) return null;
-        return repository.findByPublicIdAndAtivoTrue(publicId).orElse(null);
+        Frequencia f = repository.findByPublicIdAndAtivoTrue(publicId).orElse(null);
+        if (f == null) {
+            try {
+                UUID uuid = UUID.fromString(publicId);
+                return repository.findByIdAndAtivoTrue(uuid).orElse(null);
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        return f;
     }
 
     public Frequencia buscarPorId(UUID id) {
@@ -57,7 +65,6 @@ public class FrequenciaService {
         return repository.findByIdAndAtivoTrue(id).orElse(null);
     }
 
-    /* lookup + 404 num so lugar, pra nenhum controller precisar checar null na mao. */
     public Frequencia buscarOuFalhar(String publicId) {
         Frequencia f = buscarPorId(publicId);
         if (f == null) {
@@ -72,6 +79,30 @@ public class FrequenciaService {
             throw new RecursoNaoEncontradoException("Registro de frequencia nao encontrado.");
         }
         return f;
+    }
+
+    public boolean podeAcessar(Usuario logado, Bolsista b) {
+        if (logado == null || b == null) return false;
+        if (logado.isAdmin()) return true;
+        if (Objects.equals(logado.getId(), b.getId())) return true;
+        if (logado.isProfessor()) {
+            return b.getLaboratorioId() != null
+                    && laboratorioService.podeGerenciar(logado, b.getLaboratorioId());
+        }
+        return false;
+    }
+
+    public boolean podeAcessar(Usuario logado, String bolsistaPublicId) {
+        if (bolsistaPublicId == null || bolsistaPublicId.isBlank()) return false;
+        Bolsista b = bolsistaService.buscarPorId(bolsistaPublicId);
+        return podeAcessar(logado, b);
+    }
+
+    public boolean podeAcessar(Usuario logado, UUID bolsistaId) {
+        if (logado == null || bolsistaId == null) return false;
+        if (logado.isAdmin() || Objects.equals(logado.getId(), bolsistaId)) return true;
+        Bolsista b = bolsistaService.buscarPorId(bolsistaId);
+        return podeAcessar(logado, b);
     }
 
     public void exigirAcesso(Usuario logado, String bolsistaPublicId) {
@@ -144,15 +175,15 @@ public class FrequenciaService {
         return new ArrayList<>(repository.findAll(filtro, paginar(limit, offset)).getContent());
     }
 
+    public ArrayList<Frequencia> buscarPorBolsistas(List<UUID> ids, Integer limit, Integer offset) {
+        return buscarPorBolsistas(ids, null, null, limit, offset);
+    }
+
     private Pageable paginar(Integer limit, Integer offset) {
         if (limit != null && limit > 0 && offset != null && offset >= 0) {
             return PageRequest.of(offset / limit, limit, MAIS_RECENTES);
         }
         return Pageable.unpaged(MAIS_RECENTES);
-    }
-
-    public ArrayList<Frequencia> buscarPorBolsistas(List<UUID> ids, Integer limit, Integer offset) {
-        return buscarPorBolsistas(ids, null, null, limit, offset);
     }
 
     public int contarPorBolsistas(List<UUID> ids, LocalDate dataInicio, LocalDate dataFim) {
@@ -172,7 +203,6 @@ public class FrequenciaService {
         return contarFrequencias(bolsistaId, null, null);
     }
 
-    /* soft delete: carrega, marca ativo = false e deixa o JPA fazer o UPDATE. */
     @Transactional
     public boolean excluir(String publicId) {
         if (publicId == null || publicId.isBlank()) return false;
@@ -180,7 +210,14 @@ public class FrequenciaService {
             f.setAtivo(false);
             repository.save(f);
             return true;
-        }).orElse(false);
+        }).orElseGet(() -> {
+            try {
+                UUID uuid = UUID.fromString(publicId);
+                return excluir(uuid);
+            } catch (IllegalArgumentException e) {
+                return false;
+            }
+        });
     }
 
     @Transactional
@@ -191,28 +228,6 @@ public class FrequenciaService {
             repository.save(f);
             return true;
         }).orElse(false);
-    }
-
-    public boolean podeAcessar(Usuario logado, String bolsistaPublicId) {
-        if (bolsistaPublicId == null || bolsistaPublicId.isBlank()) return false;
-        Bolsista b = bolsistaService.buscarPorId(bolsistaPublicId);
-        return b != null && podeAcessar(logado, b.getId());
-    }
-
-    /* admin ve tudo; usuario ve o proprio; professor ve quem esta no laboratorio que coordena */
-    public boolean podeAcessar(Usuario logado, UUID bolsistaId) {
-        if (logado.isAdmin()) {
-            return true;
-        }
-        if (Objects.equals(logado.getId(), bolsistaId)) {
-            return true;
-        }
-        if (logado.isProfessor()) {
-            Bolsista b = bolsistaService.buscarPorId(bolsistaId);
-            return b != null && b.getLaboratorioId() != null
-                    && laboratorioService.podeGerenciar(logado, b.getLaboratorioId());
-        }
-        return false;
     }
 
     public Bolsista resolverBolsistaAlvo(Usuario logado, String bolsistaPublicId) {

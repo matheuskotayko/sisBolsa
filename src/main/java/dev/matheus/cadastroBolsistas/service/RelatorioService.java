@@ -1,7 +1,6 @@
 package dev.matheus.cadastroBolsistas.service;
 
 import dev.matheus.cadastroBolsistas.repository.RelatorioRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,8 +12,11 @@ import java.util.List;
 @Service
 public class RelatorioService {
 
-    @Autowired
-    private RelatorioRepository repository;
+    private final RelatorioRepository repository;
+
+    public RelatorioService(RelatorioRepository repository) {
+        this.repository = repository;
+    }
 
     public List<RelatorioRepository.HorasBolsista> getHorasBolsistasMesCorrente() {
         return repository.horasBolsistasMesCorrente();

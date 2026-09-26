@@ -10,7 +10,6 @@ import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.repository.AdministradorRepository;
 import dev.matheus.cadastroBolsistas.repository.UsuarioRepository;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -25,14 +25,17 @@ public class AdministradorService {
 
     public static final int LIMITE_ADMINS = 3;
 
-    @Autowired
-    private AdministradorRepository repository;
+    private final AdministradorRepository repository;
+    private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    public AdministradorService(AdministradorRepository repository,
+                                UsuarioRepository usuarioRepository,
+                                PasswordEncoder passwordEncoder) {
+        this.repository = repository;
+        this.usuarioRepository = usuarioRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     public int contarAdmins() {
         return repository.countAtivos();
@@ -64,15 +67,25 @@ public class AdministradorService {
                 .toList();
     }
 
-    public Administrador buscarPorId(String publicId) {
-        if (publicId == null || publicId.isBlank()) {
-            throw new RecursoNaoEncontradoException("Administrador nao encontrado com id: " + publicId);
+    public Administrador buscarPorId(String idOuPublicId) {
+        if (idOuPublicId == null || idOuPublicId.isBlank()) {
+            throw new RecursoNaoEncontradoException("Administrador nao encontrado com id: " + idOuPublicId);
         }
-        return repository.findByPublicIdAndAtivoTrue(publicId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Administrador nao encontrado com id: " + publicId));
+        return repository.findByPublicIdAndAtivoTrue(idOuPublicId)
+                .or(() -> {
+                    try {
+                        return repository.findById(UUID.fromString(idOuPublicId)).filter(Administrador::isAtivo);
+                    } catch (IllegalArgumentException e) {
+                        return Optional.empty();
+                    }
+                })
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Administrador nao encontrado com id: " + idOuPublicId));
     }
 
     public Administrador buscarPorId(UUID id) {
+        if (id == null) {
+            throw new RecursoNaoEncontradoException("Administrador nao encontrado com id: null");
+        }
         return repository.findById(id)
                 .filter(Administrador::isAtivo)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Administrador nao encontrado com id: " + id));
@@ -87,20 +100,20 @@ public class AdministradorService {
     @Transactional
     public Administrador criarAdminAutocadastro(String nome, String email, String senhaHash) {
         exigirVagaParaNovoAdmin();
-        if (usuarioRepository.existsByEmail(email)) {
+        String emailLimpo = StringUtil.limpar(email);
+        if (usuarioRepository.existsByEmail(emailLimpo)) {
             throw new DataIntegrityViolationException("duplicate key value violates unique constraint uk_usuario_email");
         }
 
-        Usuario u = new Usuario();
-        u.setNome(StringUtil.limpar(nome));
-        u.setEmail(StringUtil.limpar(email));
-        u.setSenha(senhaHash);
-        u.setTipoUsuario("ADMIN");
-        u.setAtivo(true);
-
-        Administrador admin = new Administrador();
-        admin.setUsuario(u);
-        admin.setCargo("Administrador Geral");
+        Administrador admin = construirAdministrador(
+                nome,
+                emailLimpo,
+                senhaHash,
+                null,
+                null,
+                "Administrador Geral",
+                null
+        );
 
         return repository.save(admin);
     }
@@ -151,14 +164,12 @@ public class AdministradorService {
 
     @Transactional
     public void desativar(String publicId, Usuario logado) {
-        Administrador admin = buscarPorId(publicId);
-        executarDesativacao(admin, logado);
+        executarDesativacao(buscarPorId(publicId), logado);
     }
 
     @Transactional
     public void desativar(UUID id, Usuario logado) {
-        Administrador admin = buscarPorId(id);
-        executarDesativacao(admin, logado);
+        executarDesativacao(buscarPorId(id), logado);
     }
 
     private void executarDesativacao(Administrador admin, Usuario logado) {
@@ -184,20 +195,34 @@ public class AdministradorService {
             throw new IllegalArgumentException("Senha e obrigatoria e precisa ter ao menos 6 caracteres.");
         }
 
+        Administrador admin = construirAdministrador(
+                body.nome(),
+                email,
+                passwordEncoder.encode(body.senha()),
+                body.fotoUrl(),
+                body.bio(),
+                body.cargo(),
+                body.telefone()
+        );
+
+        return repository.save(admin);
+    }
+
+    private Administrador construirAdministrador(String nome, String email, String senhaHash,
+                                                String fotoUrl, String bio, String cargo, String telefone) {
         Usuario u = new Usuario();
-        u.setNome(StringUtil.limpar(body.nome()));
+        u.setNome(StringUtil.limpar(nome));
         u.setEmail(email);
-        u.setSenha(passwordEncoder.encode(body.senha()));
+        u.setSenha(senhaHash);
         u.setTipoUsuario("ADMIN");
         u.setAtivo(true);
-        u.setFotoUrl(body.fotoUrl());
-        u.setBio(body.bio());
+        u.setFotoUrl(fotoUrl);
+        u.setBio(bio);
 
         Administrador admin = new Administrador();
         admin.setUsuario(u);
-        admin.setCargo(body.cargo() != null ? body.cargo() : "Administrador Geral");
-        admin.setTelefone(body.telefone());
-
-        return repository.save(admin);
+        admin.setCargo(cargo != null && !cargo.isBlank() ? cargo : "Administrador Geral");
+        admin.setTelefone(telefone);
+        return admin;
     }
 }
