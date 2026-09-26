@@ -1,13 +1,27 @@
 {
   "info": {
     "name": "SisBolsa API - Casos Negativos",
-    "description": "Colecao escrita a mao (nao regenerada do OpenAPI) demonstrando os casos de erro da API: cada exceção de domínio (RecursoNaoEncontradoException, PermissaoNegadaException, LimiteAdminsAtingidoException, CredenciaisInvalidasException, ContaBloqueadaException), a validação de Bean Validation (JSR 380) e um IllegalArgumentException de regra de negócio, cada um com o status HTTP e a mensagem de erro reais retornados pelo ApiExceptionHandler.\n\nRode a pasta inteira em ordem (Collection Runner) com a aplicação de pé em localhost:8080 e o seed de apresentação intacto. A pasta '409' cria 2 administradores extras para forçar o limite e os remove ao final (soft delete) - não deixa resíduo no banco.\n\nAs pastas 8, 9 e 10 completam a matriz de erros: o 409 do UNIQUE do banco (DataIntegrityViolationException, nao excecao de dominio) e os dois casos respondidos pelo proprio Spring Security, antes de qualquer controller - 403 por falta de papel em /relatorios/** e 401 por ausencia de token. Nas pastas 5 e 6 os mesmos status vem do dominio, com outra mensagem.",
+    "description": "Colecao escrita a mao (nao regenerada do OpenAPI) demonstrando os casos de erro da API: cada exceção de domínio (RecursoNaoEncontradoException, PermissaoNegadaException, LimiteAdminsAtingidoException, CredenciaisInvalidasException, ContaBloqueadaException), a validação de Bean Validation (JSR 380) e um IllegalArgumentException de regra de negócio, cada um com o status HTTP e a mensagem de erro reais retornados pelo ApiExceptionHandler.\n\nRode a pasta inteira em ordem (Collection Runner) com a aplicação de pé em localhost:8080 e o seed de apresentação intacto. A pasta '409' cria 2 administradores extras para forçar o limite e os remove ao final (soft delete) via DELETE /api/v1/administrador/{id} - não deixa resíduo no banco.\n\nAs pastas 8, 9 e 10 completam a matriz de erros: o 409 do UNIQUE do banco (DataIntegrityViolationException, nao excecao de dominio) e os dois casos respondidos pelo proprio Spring Security, antes de qualquer controller - 403 por falta de papel em /api/v1/relatorio/** e 401 por ausencia de token. Nas pastas 5 e 6 os mesmos status vem do dominio, com outra mensagem.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
   },
   "variable": [
     {
       "key": "baseUrl",
       "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "token",
+      "value": ""
     },
     {
       "key": "adminExtra1Id",
@@ -51,7 +65,7 @@
                 "login"
               ]
             },
-            "description": "Autentica como admin do seed de apresentacao. O cookie JWT httpOnly fica salvo no cookie jar do Postman para as proximas requisicoes.",
+            "description": "Autentica como admin do seed de apresentacao. O token JWT retornado no header X-Auth-Token e salvo na variavel 'token' da colecao para autenticar todas as requisicoes seguintes via Bearer Token.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"admin@sisbolsa.com\",\n  \"senha\": \"12345678\"\n}"
@@ -63,7 +77,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('login ok (200)', function () { pm.response.to.have.status(200); });"
+                  "pm.test('login ok (200)', function () { pm.response.to.have.status(200); });",
+                  "const token = pm.response.headers.get('X-Auth-Token');",
+                  "if (token) {",
+                  "    pm.collectionVariables.set('token', token);",
+                  "}"
                 ]
               }
             }
@@ -73,7 +91,7 @@
     },
     {
       "name": "1. 404 - RecursoNaoEncontradoException",
-      "description": "Recurso valido na forma (UUID) mas inexistente no banco.",
+      "description": "Recurso valido na forma (public_id) mas inexistente no banco.",
       "item": [
         {
           "name": "GET projeto inexistente",
@@ -81,16 +99,16 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/projetos/00000000-0000-0000-0000-000000000000",
+              "raw": "{{baseUrl}}/projeto/prj_00000000000000000000",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "projetos",
-                "00000000-0000-0000-0000-000000000000"
+                "projeto",
+                "prj_00000000000000000000"
               ]
             },
-            "description": "UUID valido mas que nao existe no banco. Deve cair no exigirProjeto() do controller, que agora lanca RecursoNaoEncontradoException em vez de ResponseStatusException generico."
+            "description": "ID publico valido no formato (prj_...) mas que nao existe no banco. Deve cair no buscarOuFalhar() do controller, que lanca RecursoNaoEncontradoException."
           },
           "event": [
             {
@@ -348,16 +366,16 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/bolsistas/{{adminExtra1Id}}",
+              "raw": "{{baseUrl}}/administrador/{{adminExtra1Id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "bolsistas",
+                "administrador",
                 "{{adminExtra1Id}}"
               ]
             },
-            "description": "Soft delete (ativo=false) do admin criado no setup - contarAdmins() so conta ativos, entao isso libera o limite de volta pra 1. Requer sessao de admin (feita no 0. Setup)."
+            "description": "Soft delete (ativo=false) do admin criado no setup via DELETE /api/v1/administrador/{id} - contarAdmins() so conta ativos, entao isso libera o limite de volta pra 1. Requer token de admin (obtido no 0. Setup)."
           },
           "event": [
             {
@@ -377,16 +395,16 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/bolsistas/{{adminExtra2Id}}",
+              "raw": "{{baseUrl}}/administrador/{{adminExtra2Id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "bolsistas",
+                "administrador",
                 "{{adminExtra2Id}}"
               ]
             },
-            "description": ""
+            "description": "Soft delete (ativo=false) do 2o admin criado no setup via DELETE /api/v1/administrador/{id}."
           },
           "event": [
             {
@@ -426,7 +444,7 @@
                 "login"
               ]
             },
-            "description": "Troca a sessao do cookie jar de admin para bolsista. A partir daqui as chamadas seguintes autenticam como bolsista.",
+            "description": "Autentica como bolsista do seed de apresentacao e atualiza a variavel de colecao 'token'. A partir daqui as chamadas seguintes autenticam como bolsista.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"diego.almeida@aluno.sisbolsa.com\",\n  \"senha\": \"12345678\"\n}"
@@ -438,7 +456,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('login ok (200)', function () { pm.response.to.have.status(200); });"
+                  "pm.test('login ok (200)', function () { pm.response.to.have.status(200); });",
+                  "const token = pm.response.headers.get('X-Auth-Token');",
+                  "if (token) {",
+                  "    pm.collectionVariables.set('token', token);",
+                  "}"
                 ]
               }
             }
@@ -455,15 +477,15 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/bolsistas",
+              "raw": "{{baseUrl}}/bolsista",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "bolsistas"
+                "bolsista"
               ]
             },
-            "description": "UsuarioApiController.criar bloqueia bolsista antes de qualquer outra checagem (usuarioLogado.exigir(!logado.isBolsista(), ...)) - PermissaoNegadaException.",
+            "description": "BolsistaController.criar bloqueia bolsista antes de qualquer outra checagem (bolsistaService.exigirPodeCadastrarUsuario(logado)) - PermissaoNegadaException.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"nome\": \"Nao Deveria Existir\",\n  \"email\": \"nao.deveria@sisbolsa.com\",\n  \"senha\": \"123456\",\n  \"tipoUsuario\": \"BOLSISTA\"\n}"
@@ -481,7 +503,11 @@
                   "    method: 'POST',",
                   "    header: { 'Content-Type': 'application/json' },",
                   "    body: { mode: 'raw', raw: JSON.stringify({ email: 'diego.almeida@aluno.sisbolsa.com', senha: '12345678' }) }",
-                  "}, function (err, res) {});"
+                  "}, function (err, res) {",
+                  "    if (res && res.headers.get('X-Auth-Token')) {",
+                  "        pm.collectionVariables.set('token', res.headers.get('X-Auth-Token'));",
+                  "    }",
+                  "});"
                 ]
               }
             },
@@ -734,7 +760,7 @@
                 "cadastro-admin"
               ]
             },
-            "description": "Usa o e-mail do admin do seed. Passa pela Bean Validation e pela checagem de vagas de admin, chega no INSERT e esbarra no UNIQUE de bolsista.email. Rode com menos de 3 admins ativos, senao o erro vira o da pasta 4 (limite atingido) antes de tocar o banco."
+            "description": "Usa o e-mail do admin do seed. Passa pela Bean Validation e pela checagem de vagas de admin, chega no INSERT e esbarra no UNIQUE de usuario.email. Rode com menos de 3 admins ativos, senao o erro vira o da pasta 4 (limite atingido) antes de tocar o banco."
           },
           "event": [
             {
@@ -756,7 +782,7 @@
     },
     {
       "name": "9. 403 - Acesso negado (Spring Security)",
-      "description": "Segundo 403 da API, de origem diferente do da pasta 5. Aqui quem barra e o accessDeniedHandler do SecurityConfig, na regra hasRole(\"ADMIN\") de /api/v1/relatorios/**: a requisicao nem chega no controller. Mensagem \"Acesso negado.\", contra a mensagem de dominio da pasta 5, que vem do service.",
+      "description": "Segundo 403 da API, de origem diferente do da pasta 5. Aqui quem barra e o accessDeniedHandler do SecurityConfig, na regra hasRole(\"ADMIN\") de /api/v1/relatorio/**: a requisicao nem chega no controller. Mensagem \"Acesso negado.\", contra a mensagem de dominio da pasta 5, que vem do service.",
       "item": [
         {
           "name": "Bolsista tenta abrir relatorio",
@@ -764,12 +790,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/relatorios/resumo",
+              "raw": "{{baseUrl}}/relatorio/resumo",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "relatorios",
+                "relatorio",
                 "resumo"
               ]
             },
@@ -787,7 +813,11 @@
                   "    method: 'POST',",
                   "    header: { 'Content-Type': 'application/json' },",
                   "    body: { mode: 'raw', raw: JSON.stringify({ email: 'diego.almeida@aluno.sisbolsa.com', senha: '12345678' }) }",
-                  "}, function (err, res) {});"
+                  "}, function (err, res) {",
+                  "    if (res && res.headers.get('X-Auth-Token')) {",
+                  "        pm.collectionVariables.set('token', res.headers.get('X-Auth-Token'));",
+                  "    }",
+                  "});"
                 ]
               }
             },
@@ -810,24 +840,27 @@
     },
     {
       "name": "10. 401 - Nao autenticado (sem token)",
-      "description": "Segundo 401 da API. O da pasta 6 e credencial errada, lancado pelo controller de login; este e ausencia de token, respondido pelo authenticationEntryPoint do SecurityConfig antes de qualquer controller.\n\nChama por 127.0.0.1 em vez de localhost de proposito: cookie e escopado por dominio, entao o cookie jar do Postman nao manda o token de localhost para o IP. Efeito identico ao de nao estar logado, sem precisar limpar cookie na mao.",
+      "description": "Segundo 401 da API. O da pasta 6 e credencial errada, lancado pelo controller de login; este e ausencia de token, respondido pelo authenticationEntryPoint do SecurityConfig antes de qualquer controller.",
       "item": [
         {
-          "name": "GET /auth/me sem cookie de sessao",
+          "name": "GET /auth/me sem token de autenticacao",
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrlSemCookie}}/auth/me",
+              "raw": "{{baseUrl}}/auth/me",
               "host": [
-                "{{baseUrlSemCookie}}"
+                "{{baseUrl}}"
               ],
               "path": [
                 "auth",
                 "me"
               ]
             },
-            "description": "Endpoint que exige autenticacao. Sem o cookie JWT a cadeia de filtros recusa antes do controller."
+            "description": "Endpoint que exige autenticacao. Sem o token Bearer JWT a cadeia de filtros do Spring Security recusa antes de qualquer controller com status 401."
           },
           "event": [
             {

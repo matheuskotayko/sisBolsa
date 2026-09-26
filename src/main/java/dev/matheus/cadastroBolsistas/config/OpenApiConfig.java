@@ -19,7 +19,7 @@ import java.util.List;
 @Configuration
 public class OpenApiConfig {
 
-    private static final String BEARER_TOKEN = "bearerToken";
+    private static final String BEARER_AUTH = "bearerAuth";
 
     @Bean
     public OpenAPI sisBolsaOpenApi() {
@@ -29,7 +29,10 @@ public class OpenApiConfig {
                         .version("1.0.0")
                         .description("""
                                 ### Visão Geral
-                                API RESTful para gerenciamento completo de bolsistas, professores, laboratórios de pesquisa, projetos acadêmicos, e controle de frequência/horas.
+                                API RESTful para gerenciamento completo de bolsistas, professores coordenadores, administradores, laboratórios de pesquisa, projetos acadêmicos e controle de frequência/horas.
+
+                                ### Identificadores Públicos (Public IDs)
+                                A API utiliza identificadores públicos opacos e seguros no formato `prefixo_hashBase62` (ex: `adm_...`, `prf_...`, `bol_...`, `lab_...`, `prj_...`, `cur_...`, `frq_...`, `usr_...`) para desacoplar as chaves primárias internas e prevenir enumeração de recursos e exposição de IDs de banco de dados. Todas as rotas de busca, atualização, exclusão e vínculos utilizam exclusivamente estes IDs públicos.
 
                                 ### Autenticação e Segurança
                                 - **Autenticação Bearer JWT:** Para autenticar, utilize `POST /api/v1/auth/login`. A resposta contém o token no header `X-Auth-Token`. Use em requisições subsequentes: `Authorization: Bearer <token>`.
@@ -47,20 +50,21 @@ public class OpenApiConfig {
                                 .url("https://opensource.org/licenses/MIT")))
                 .tags(List.of(
                         new Tag().name("Autenticação").description("Login, logout, verificação de sessão (/me), perfil e fluxo de recuperação de senha."),
-                        new Tag().name("Bolsistas").description("Cadastro, consulta paginada, edição de vigência/bolsas e soft-delete de bolsistas e administradores."),
-                        new Tag().name("Professores").description("Cadastro, consulta e soft-delete de professores coordenadores (restrito a Administradores)."),
-                        new Tag().name("Cursos").description("Lista de cursos disponíveis para vínculo de bolsistas, com cadastro restrito a Administradores."),
-                        new Tag().name("Laboratórios").description("Gestão de laboratórios de pesquisa, vinculação de coordenadores e controle de ocupação."),
-                        new Tag().name("Projetos").description("Gestão de projetos de pesquisa, vinculação de membros e anexação de entregáveis/repositórios."),
+                        new Tag().name("Administrador").description("Gestão de perfis e contas administrativas do sistema (teto máximo de 3 administradores ativos)."),
+                        new Tag().name("Bolsista").description("Cadastro, consulta paginada, edição de vigência/bolsas e soft-delete de bolsistas."),
+                        new Tag().name("Professor").description("Cadastro, consulta e soft-delete de professores coordenadores (restrito a Administradores)."),
+                        new Tag().name("Laboratório").description("Gestão de laboratórios de pesquisa, vinculação de coordenadores e controle de ocupação."),
+                        new Tag().name("Projeto").description("Gestão de projetos de pesquisa, vinculação de membros e anexação de entregáveis/repositórios."),
+                        new Tag().name("Curso").description("Lista de cursos disponíveis para vínculo de bolsistas, com cadastro restrito a Administradores."),
                         new Tag().name("Frequência & Horas").description("Apontamento de horas trabalhadas, resumo mensal, exportação em CSV e emissão de comprovantes em PDF."),
-                        new Tag().name("Relatórios & Estatísticas").description("Métricas de ocupação, carga horária mensal, projetos ativos e exportação CSV gerencial.")
+                        new Tag().name("Relatório & Estatísticas").description("Métricas consolidadas de ocupação, carga horária mensal e projetos ativos (exclusivo para perfil ADMIN).")
                 ))
-                .components(new Components().addSecuritySchemes(BEARER_TOKEN,
+                .components(new Components().addSecuritySchemes(BEARER_AUTH,
                         new SecurityScheme()
                                 .type(SecurityScheme.Type.HTTP)
                                 .scheme("bearer")
                                 .bearerFormat("JWT")
                                 .description("Token JWT obtido via POST /api/v1/auth/login (retornado no header X-Auth-Token). Use como: Authorization: Bearer <token>")))
-                .addSecurityItem(new SecurityRequirement().addList(BEARER_TOKEN));
+                .addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH));
     }
 }
