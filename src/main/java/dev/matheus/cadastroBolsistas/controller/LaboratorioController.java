@@ -28,12 +28,11 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
-import java.util.UUID;
 
-@Tag(name = "Laboratórios", description = "Gerenciamento de laboratórios de pesquisa, equipe alocada, capacidade e cálculo de ocupação.")
+@Tag(name = "Laboratório", description = "Gerenciamento de laboratórios de pesquisa, equipe alocada, capacidade e cálculo de ocupação.")
 @RestController
-@RequestMapping("/api/v1/laboratorios")
-public class LaboratorioApiController {
+@RequestMapping("/api/v1/laboratorio")
+public class LaboratorioController {
 
     private static final int TAMANHO_PADRAO = 10;
     private static final int TAMANHO_MAXIMO = 200;
@@ -43,8 +42,8 @@ public class LaboratorioApiController {
     private final ProjetoService projetoService;
     private final UsuarioLogado usuarioLogado;
 
-    public LaboratorioApiController(LaboratorioService laboratorioService, BolsistaService bolsistaService,
-                                    ProjetoService projetoService, UsuarioLogado usuarioLogado) {
+    public LaboratorioController(LaboratorioService laboratorioService, BolsistaService bolsistaService,
+                                 ProjetoService projetoService, UsuarioLogado usuarioLogado) {
         this.laboratorioService = laboratorioService;
         this.bolsistaService = bolsistaService;
         this.projetoService = projetoService;
@@ -74,7 +73,7 @@ public class LaboratorioApiController {
             @ApiResponse(responseCode = "404", description = "Laboratório não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public EntityModel<LaboratorioResponse> buscar(@Parameter(description = "ID do laboratório (UUID)", required = true, example = "c1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
+    public EntityModel<LaboratorioResponse> buscar(@Parameter(description = "ID público do laboratório (ex: lab_...)", required = true, example = "lab_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
         usuarioLogado.obrigatorio();
         return comLinks(comOcupacao(laboratorioService.buscarOuFalhar(id)));
     }
@@ -85,7 +84,7 @@ public class LaboratorioApiController {
             @ApiResponse(responseCode = "404", description = "Laboratório não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}/bolsistas")
-    public List<UsuarioResponse> bolsistas(@Parameter(description = "ID do laboratório (UUID)", required = true, example = "c1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
+    public List<UsuarioResponse> bolsistas(@Parameter(description = "ID público do laboratório (ex: lab_...)", required = true, example = "lab_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
         usuarioLogado.obrigatorio();
         laboratorioService.buscarOuFalhar(id);
         return bolsistaService.buscarPorLaboratorio(id).stream().map(UsuarioResponse::de).toList();
@@ -97,7 +96,7 @@ public class LaboratorioApiController {
             @ApiResponse(responseCode = "404", description = "Laboratório não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}/projetos")
-    public List<ProjetoResponse> projetos(@Parameter(description = "ID do laboratório (UUID)", required = true, example = "c1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
+    public List<ProjetoResponse> projetos(@Parameter(description = "ID público do laboratório (ex: lab_...)", required = true, example = "lab_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
         usuarioLogado.obrigatorio();
         laboratorioService.buscarOuFalhar(id);
         return projetoService.listarPorLaboratorio(id).stream()
@@ -118,7 +117,7 @@ public class LaboratorioApiController {
         Laboratorio lab = new Laboratorio();
         laboratorioService.aplicar(lab, body);
         laboratorioService.cadastrar(lab);
-        URI uri = uriBuilder.replacePath("/api/v1/laboratorios/{id}").buildAndExpand(lab.getId()).toUri();
+        URI uri = uriBuilder.replacePath("/api/v1/laboratorio/{id}").buildAndExpand(lab.getPublicId()).toUri();
         return ResponseEntity.created(uri).body(comLinks(comOcupacao(lab)));
     }
 
@@ -130,7 +129,7 @@ public class LaboratorioApiController {
             @ApiResponse(responseCode = "404", description = "Laboratório não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PutMapping("/{id}")
-    public EntityModel<LaboratorioResponse> atualizar(@Parameter(description = "ID do laboratório (UUID)", required = true, example = "c1111111-1111-1111-1111-111111111111") @PathVariable UUID id,
+    public EntityModel<LaboratorioResponse> atualizar(@Parameter(description = "ID público do laboratório (ex: lab_...)", required = true, example = "lab_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
                                          @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do laboratório", required = true)
                                          @Valid @RequestBody LaboratorioRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
@@ -149,7 +148,7 @@ public class LaboratorioApiController {
             @ApiResponse(responseCode = "404", description = "Laboratório não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@Parameter(description = "ID do laboratório (UUID)", required = true, example = "c1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
+    public ResponseEntity<Void> excluir(@Parameter(description = "ID público do laboratório (ex: lab_...)", required = true, example = "lab_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
         Usuario logado = usuarioLogado.obrigatorio();
         laboratorioService.buscarExigindoGerencia(id, logado);
         laboratorioService.excluir(id);
@@ -162,11 +161,11 @@ public class LaboratorioApiController {
 
     private EntityModel<LaboratorioResponse> comLinks(LaboratorioResponse resp) {
         EntityModel<LaboratorioResponse> modelo = EntityModel.of(resp,
-                Link.of("/api/v1/laboratorios/" + resp.id()).withSelfRel(),
-                Link.of("/api/v1/laboratorios/" + resp.id() + "/bolsistas").withRel("bolsistas"),
-                Link.of("/api/v1/laboratorios/" + resp.id() + "/projetos").withRel("projetos"));
+                Link.of("/api/v1/laboratorio/" + resp.id()).withSelfRel(),
+                Link.of("/api/v1/laboratorio/" + resp.id() + "/bolsistas").withRel("bolsistas"),
+                Link.of("/api/v1/laboratorio/" + resp.id() + "/projetos").withRel("projetos"));
         if (resp.coordenadorId() != null) {
-            modelo.add(Link.of("/api/v1/professores/" + resp.coordenadorId()).withRel("coordenador"));
+            modelo.add(Link.of("/api/v1/professor/" + resp.coordenadorId()).withRel("coordenador"));
         }
         return modelo;
     }

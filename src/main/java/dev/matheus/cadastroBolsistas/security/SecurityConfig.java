@@ -47,10 +47,11 @@ public class SecurityConfig {
                  * no proprio cadastro) continua no service, porque um matcher de url
                  * nao sabe de quem e a linha que esta sendo editada.
                  */
-                .requestMatchers("/api/v1/relatorios/**").hasRole("ADMIN")
-                .requestMatchers("/api/v1/professores/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/v1/cursos").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/v1/laboratorios").hasRole("ADMIN")
+                .requestMatchers("/api/v1/administrador/**").hasRole("ADMIN")
+                .requestMatchers("/api/v1/relatorio/**").hasRole("ADMIN")
+                .requestMatchers("/api/v1/professor/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/curso").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/laboratorio").hasRole("ADMIN")
                 .anyRequest().authenticated())
             .formLogin(form -> form.disable())
             .httpBasic(basic -> basic.disable())

@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.hateoas.EntityModel;
@@ -27,16 +28,12 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.UUID;
 
-/*
- * so admin mexe em professor - criar/editar/excluir e ate listar. quem barra e
- * a regra hasRole("ADMIN") de /api/v1/professores/** no SecurityConfig.
- */
-@Tag(name = "Professores", description = "Gestão de professores coordenadores (restrito a Administradores).")
+@Tag(name = "Professor", description = "Gestão de professores coordenadores (restrito a Administradores).")
 @RestController
-@RequestMapping("/api/v1/professores")
-public class ProfessorApiController {
+@RequestMapping("/api/v1/professor")
+@SecurityRequirement(name = "bearerAuth")
+public class ProfessorController {
 
     private static final int TAMANHO_PADRAO = 10;
     private static final int TAMANHO_MAXIMO = 200;
@@ -46,8 +43,8 @@ public class ProfessorApiController {
     private final LaboratorioService laboratorioService;
     private final PasswordEncoder passwordEncoder;
 
-    public ProfessorApiController(ProfessorService professorService, BolsistaService bolsistaService,
-                                  LaboratorioService laboratorioService, PasswordEncoder passwordEncoder) {
+    public ProfessorController(ProfessorService professorService, BolsistaService bolsistaService,
+                               LaboratorioService laboratorioService, PasswordEncoder passwordEncoder) {
         this.professorService = professorService;
         this.bolsistaService = bolsistaService;
         this.laboratorioService = laboratorioService;
@@ -63,28 +60,38 @@ public class ProfessorApiController {
     public PaginaResponse<UsuarioResponse> listar(
             @Parameter(description = "Número da página", example = "1") @RequestParam(defaultValue = "1") int pagina,
             @Parameter(description = "Quantidade de itens por página", example = "10") @RequestParam(required = false) Integer tamanho,
-            @Parameter(description = "Filtro de busca textual por nome", example = "Roberto") @RequestParam(required = false) String buscaNome) {
-        ArrayList<Professor> lista = StringUtil.estaVazio(buscaNome)
-                ? professorService.listarTodos()
-                : professorService.buscarPorNome(buscaNome);
-        laboratorioService.preencherLabsDosProfessores(new ArrayList<>(lista));
+            @Parameter(description = "Filtro de busca textual por nome", example = "Carlos") @RequestParam(required = false) String buscaNome) {
+
+        ArrayList<Professor> lista;
+        if (!StringUtil.estaVazio(buscaNome)) {
+            lista = new ArrayList<>(professorService.buscarPorNome(buscaNome));
+        } else {
+            lista = new ArrayList<>(professorService.listarTodos());
+        }
+
+        for (Professor p : lista) {
+            laboratorioService.listarPorCoordenador(p.getId()).stream().findFirst()
+                    .ifPresent(lab -> p.setNomeLaboratorio(lab.getNome()));
+        }
 
         return PaginacaoUtil.paginar(lista, pagina, tamanho, TAMANHO_PADRAO, TAMANHO_MAXIMO, UsuarioResponse::de);
     }
 
-    @Operation(summary = "Buscar professor por ID", description = "Recupera as informações detalhadas de um professor coordenador (restrito a Administradores).")
+    @Operation(summary = "Buscar professor por ID", description = "Recupera as informações detalhadas de um professor coordenador pelo seu identificador público (ex: prf_...).")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Dados do professor", content = @Content(schema = @Schema(implementation = UsuarioResponse.class))),
             @ApiResponse(responseCode = "403", description = "Acesso restrito a administradores", content = @Content(schema = @Schema(implementation = ErroResponse.class))),
             @ApiResponse(responseCode = "404", description = "Professor não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public EntityModel<UsuarioResponse> buscar(@Parameter(description = "ID do professor (UUID)", required = true, example = "b1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
+    public EntityModel<UsuarioResponse> buscar(@Parameter(description = "ID público do professor (ex: prf_...)", required = true, example = "prf_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
         Professor p = professorService.buscarOuFalhar(id);
+        laboratorioService.listarPorCoordenador(p.getId()).stream().findFirst()
+                .ifPresent(lab -> p.setNomeLaboratorio(lab.getNome()));
         return comLinks(UsuarioResponse.de(p));
     }
 
-    @Operation(summary = "Cadastrar novo professor", description = "Cria um novo professor coordenador (restrito a Administradores).")
+    @Operation(summary = "Cadastrar novo professor", description = "Cria um novo professor coordenador no sistema (restrito a Administradores).")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Professor cadastrado com sucesso", content = @Content(schema = @Schema(implementation = UsuarioResponse.class))),
             @ApiResponse(responseCode = "400", description = "Dados cadastrais inválidos", content = @Content(schema = @Schema(implementation = ErroResponse.class))),
@@ -100,7 +107,7 @@ public class ProfessorApiController {
         professorService.aplicarComuns(p, body);
         p.setSenha(passwordEncoder.encode(body.senha()));
         professorService.inserir(p);
-        URI uri = uriBuilder.replacePath("/api/v1/professores/{id}").buildAndExpand(p.getId()).toUri();
+        URI uri = uriBuilder.replacePath("/api/v1/professor/{id}").buildAndExpand(p.getPublicId()).toUri();
         return ResponseEntity.created(uri).body(comLinks(UsuarioResponse.de(p)));
     }
 
@@ -112,7 +119,7 @@ public class ProfessorApiController {
             @ApiResponse(responseCode = "404", description = "Professor não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PutMapping("/{id}")
-    public EntityModel<UsuarioResponse> atualizar(@Parameter(description = "ID do professor a atualizar", required = true, example = "b1111111-1111-1111-1111-111111111111") @PathVariable UUID id,
+    public EntityModel<UsuarioResponse> atualizar(@Parameter(description = "ID público do professor a atualizar", required = true, example = "prf_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
                                      @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do professor", required = true)
                                      @Valid @RequestBody ProfessorRequest body) {
         bolsistaService.validarSenha(body.senha(), false);
@@ -133,13 +140,13 @@ public class ProfessorApiController {
             @ApiResponse(responseCode = "404", description = "Professor não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@Parameter(description = "ID do professor a desativar", required = true, example = "b1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
+    public ResponseEntity<Void> excluir(@Parameter(description = "ID público do professor a desativar", required = true, example = "prf_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
         professorService.buscarOuFalhar(id);
         professorService.excluir(id);
         return ResponseEntity.noContent().build();
     }
 
     private EntityModel<UsuarioResponse> comLinks(UsuarioResponse resp) {
-        return EntityModel.of(resp, Link.of("/api/v1/professores/" + resp.id()).withSelfRel());
+        return EntityModel.of(resp, Link.of("/api/v1/professor/" + resp.id()).withSelfRel());
     }
 }

@@ -43,8 +43,8 @@ import java.util.UUID;
 
 @Tag(name = "Frequência & Horas", description = "Controle de apontamento de horas, relatórios de produtividade, exportação CSV e emissão de comprovantes em PDF.")
 @RestController
-@RequestMapping("/api/v1/frequencias")
-public class FrequenciaApiController {
+@RequestMapping("/api/v1/frequencia")
+public class FrequenciaController {
 
     private static final int TAMANHO_PAGINA = 10;
 
@@ -55,10 +55,10 @@ public class FrequenciaApiController {
     private final ComprovanteFrequenciaPdfService comprovantePdfService;
     private final ProfessorService professorService;
 
-    public FrequenciaApiController(FrequenciaService frequenciaService, BolsistaService bolsistaService,
-                                   LaboratorioService laboratorioService, UsuarioLogado usuarioLogado,
-                                   ComprovanteFrequenciaPdfService comprovantePdfService,
-                                   ProfessorService professorService) {
+    public FrequenciaController(FrequenciaService frequenciaService, BolsistaService bolsistaService,
+                                LaboratorioService laboratorioService, UsuarioLogado usuarioLogado,
+                                ComprovanteFrequenciaPdfService comprovantePdfService,
+                                ProfessorService professorService) {
         this.frequenciaService = frequenciaService;
         this.bolsistaService = bolsistaService;
         this.laboratorioService = laboratorioService;
@@ -75,11 +75,16 @@ public class FrequenciaApiController {
     @GetMapping
     public PaginaResponse<FrequenciaResponse> listar(
             @Parameter(description = "Número da página", example = "1") @RequestParam(defaultValue = "1") int pagina,
-            @Parameter(description = "ID do bolsista (UUID)", example = "d1111111-1111-1111-1111-111111111111") @RequestParam(required = false) UUID bolsistaId,
+            @Parameter(description = "ID público do bolsista (ex: bol_...)", example = "bol_a1b2c3d4e5f6g7h8i9j0") @RequestParam(required = false) String bolsistaId,
             @Parameter(description = "Data de início do intervalo") @RequestParam(required = false) LocalDate dataInicio,
             @Parameter(description = "Data de término do intervalo") @RequestParam(required = false) LocalDate dataFim) {
         Usuario logado = usuarioLogado.obrigatorio();
-        UUID filtro = logado.isBolsista() ? logado.getId() : bolsistaId;
+        UUID filtro = null;
+        if (logado.isBolsista()) {
+            filtro = logado.getId();
+        } else if (bolsistaId != null && !bolsistaId.isBlank()) {
+            filtro = bolsistaService.buscarOuFalhar(bolsistaId).getId();
+        }
 
         if (filtro != null) {
             frequenciaService.exigirAcesso(logado, filtro);
@@ -109,10 +114,16 @@ public class FrequenciaApiController {
             @ApiResponse(responseCode = "200", description = "Resumo de horas calculado")
     })
     @GetMapping("/resumo")
-    public Map<String, Double> resumo(@Parameter(description = "ID do bolsista (UUID)", example = "d1111111-1111-1111-1111-111111111111") @RequestParam(required = false) UUID bolsistaId) {
+    public Map<String, Double> resumo(@Parameter(description = "ID público do bolsista (ex: bol_...)", example = "bol_a1b2c3d4e5f6g7h8i9j0") @RequestParam(required = false) String bolsistaId) {
         Usuario logado = usuarioLogado.obrigatorio();
-        UUID alvo = logado.isBolsista() ? logado.getId()
-                 : (bolsistaId != null ? bolsistaId : logado.getId());
+        UUID alvo;
+        if (logado.isBolsista()) {
+            alvo = logado.getId();
+        } else if (bolsistaId != null && !bolsistaId.isBlank()) {
+            alvo = bolsistaService.buscarOuFalhar(bolsistaId).getId();
+        } else {
+            alvo = logado.getId();
+        }
         frequenciaService.exigirAcesso(logado, alvo);
 
         List<Frequencia> todas = frequenciaService.listarPorBolsista(alvo);
@@ -132,11 +143,16 @@ public class FrequenciaApiController {
     })
     @GetMapping("/exportar")
     public ResponseEntity<byte[]> exportar(
-            @Parameter(description = "ID do bolsista", example = "d1111111-1111-1111-1111-111111111111") @RequestParam(required = false) UUID bolsistaId,
+            @Parameter(description = "ID público do bolsista (ex: bol_...)", example = "bol_a1b2c3d4e5f6g7h8i9j0") @RequestParam(required = false) String bolsistaId,
             @Parameter(description = "Data inicial") @RequestParam(required = false) LocalDate dataInicio,
             @Parameter(description = "Data final") @RequestParam(required = false) LocalDate dataFim) {
         Usuario logado = usuarioLogado.obrigatorio();
-        UUID filtro = logado.isBolsista() ? logado.getId() : bolsistaId;
+        UUID filtro = null;
+        if (logado.isBolsista()) {
+            filtro = logado.getId();
+        } else if (bolsistaId != null && !bolsistaId.isBlank()) {
+            filtro = bolsistaService.buscarOuFalhar(bolsistaId).getId();
+        }
         if (filtro != null) {
             frequenciaService.exigirAcesso(logado, filtro);
         }
@@ -148,7 +164,7 @@ public class FrequenciaApiController {
         StringBuilder sb = new StringBuilder("ID,Bolsista,Data,Horas Trabalhadas,Descricao,LinkComprovante\n");
         for (Frequencia f : lista) {
             sb.append(String.join(",",
-                    String.valueOf(f.getId()),
+                    f.getPublicId(),
                     CsvUtil.escapar(f.getNomeBolsista()),
                     f.getData() != null ? f.getData().toString() : "",
                     String.valueOf(f.getHorasTrabalhadas()),
@@ -166,13 +182,12 @@ public class FrequenciaApiController {
     })
     @GetMapping("/comprovante-pdf")
     public ResponseEntity<byte[]> comprovantePdf(
-            @Parameter(description = "ID do bolsista", example = "d1111111-1111-1111-1111-111111111111") @RequestParam(required = false) UUID bolsistaId,
+            @Parameter(description = "ID público do bolsista (ex: bol_...)", example = "bol_a1b2c3d4e5f6g7h8i9j0") @RequestParam(required = false) String bolsistaId,
             @Parameter(description = "Data inicial de referência") @RequestParam(required = false) LocalDate dataInicio,
             @Parameter(description = "Data final de referência") @RequestParam(required = false) LocalDate dataFim) {
         Usuario logado = usuarioLogado.obrigatorio();
-        UUID alvo = frequenciaService.resolverBolsistaAlvo(logado, bolsistaId);
-        frequenciaService.exigirAcesso(logado, alvo);
-        Bolsista b = bolsistaService.buscarOuFalhar(alvo);
+        Bolsista b = frequenciaService.resolverBolsistaAlvo(logado, bolsistaId);
+        frequenciaService.exigirAcesso(logado, b.getId());
 
         Laboratorio lab = b.getLaboratorioId() != null ? laboratorioService.buscarPorId(b.getLaboratorioId()) : null;
         Professor coord = (lab != null && lab.getCoordenadorId() != null) ? professorService.buscarPorId(lab.getCoordenadorId()) : null;
@@ -180,23 +195,23 @@ public class FrequenciaApiController {
         LocalDate inicio = dataInicio != null ? dataInicio : LocalDate.now().withDayOfMonth(1);
         LocalDate fim = dataFim != null ? dataFim : LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
 
-        List<Frequencia> frequencias = frequenciaService.buscarFrequencias(alvo, inicio, fim, null, null);
+        List<Frequencia> frequencias = frequenciaService.buscarFrequencias(b.getId(), inicio, fim, null, null);
 
         try {
             byte[] pdfBytes = comprovantePdfService.gerarComprovante(b, lab, coord, frequencias, inicio, fim);
-            return ArquivoDownloadUtil.pdf("comprovante_frequencia_" + Objects.toString(b.getMatricula(), b.getId().toString()) + ".pdf", pdfBytes);
+            return ArquivoDownloadUtil.pdf("comprovante_frequencia_" + Objects.toString(b.getMatricula(), b.getPublicId()) + ".pdf", pdfBytes);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Erro ao gerar PDF do comprovante: " + e.getMessage());
         }
     }
 
-    @Operation(summary = "Buscar frequência por ID", description = "Retorna um apontamento de frequência individual pelo identificador UUID.")
+    @Operation(summary = "Buscar frequência por ID", description = "Retorna um apontamento de frequência individual pelo identificador público (ex: frq_...).")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Dados da frequência", content = @Content(schema = @Schema(implementation = FrequenciaResponse.class))),
             @ApiResponse(responseCode = "404", description = "Frequência não encontrada", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public EntityModel<FrequenciaResponse> buscar(@Parameter(description = "ID da frequência (UUID)", required = true, example = "f1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
+    public EntityModel<FrequenciaResponse> buscar(@Parameter(description = "ID público da frequência (ex: frq_...)", required = true, example = "frq_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
         Usuario logado = usuarioLogado.obrigatorio();
         Frequencia f = frequenciaService.buscarComPermissao(id, logado);
         return comLinks(FrequenciaResponse.de(f));
@@ -214,17 +229,17 @@ public class FrequenciaApiController {
             UriComponentsBuilder uriBuilder) {
         Usuario logado = usuarioLogado.obrigatorio();
 
-        UUID alvo = frequenciaService.resolverBolsistaAlvo(logado, body.bolsistaId());
-        frequenciaService.exigirAcesso(logado, alvo);
+        Bolsista alvo = frequenciaService.resolverBolsistaAlvo(logado, body.bolsistaId());
+        frequenciaService.exigirAcesso(logado, alvo.getId());
 
         Frequencia f = new Frequencia();
-        f.setBolsistaId(alvo);
+        f.setBolsista(alvo);
         f.setData(body.data());
         f.setHorasTrabalhadas(body.horasTrabalhadas());
         f.setDescricao(StringUtil.limpar(body.descricao()));
         f.setLinkComprovante(StringUtil.limpar(body.linkComprovante()));
         frequenciaService.registrar(f);
-        URI uri = uriBuilder.replacePath("/api/v1/frequencias/{id}").buildAndExpand(f.getId()).toUri();
+        URI uri = uriBuilder.replacePath("/api/v1/frequencia/{id}").buildAndExpand(f.getPublicId()).toUri();
         return ResponseEntity.created(uri).body(comLinks(FrequenciaResponse.de(f)));
     }
 
@@ -236,7 +251,7 @@ public class FrequenciaApiController {
     })
     @PutMapping("/{id}")
     public EntityModel<FrequenciaResponse> atualizar(
-            @Parameter(description = "ID da frequência (UUID)", required = true, example = "f1111111-1111-1111-1111-111111111111") @PathVariable UUID id,
+            @Parameter(description = "ID público da frequência (ex: frq_...)", required = true, example = "frq_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados da frequência", required = true)
             @Valid @RequestBody FrequenciaRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
@@ -256,7 +271,7 @@ public class FrequenciaApiController {
             @ApiResponse(responseCode = "404", description = "Frequência não encontrada", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@Parameter(description = "ID da frequência (UUID)", required = true, example = "f1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
+    public ResponseEntity<Void> excluir(@Parameter(description = "ID público da frequência (ex: frq_...)", required = true, example = "frq_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
         Usuario logado = usuarioLogado.obrigatorio();
         frequenciaService.buscarComPermissao(id, logado);
         frequenciaService.excluir(id);
@@ -265,7 +280,7 @@ public class FrequenciaApiController {
 
     private EntityModel<FrequenciaResponse> comLinks(FrequenciaResponse resp) {
         return EntityModel.of(resp,
-                Link.of("/api/v1/frequencias/" + resp.id()).withSelfRel(),
-                Link.of("/api/v1/bolsistas/" + resp.bolsistaId()).withRel("bolsista"));
+                Link.of("/api/v1/frequencia/" + resp.id()).withSelfRel(),
+                Link.of("/api/v1/bolsista/" + resp.bolsistaId()).withRel("bolsista"));
     }
 }

@@ -21,20 +21,20 @@ import java.util.Map;
 
 /*
  * relatorios sao so para admin: quem barra e a regra hasRole("ADMIN") de
- * /api/v1/relatorios/** no SecurityConfig.
+ * /api/v1/relatorio/** no SecurityConfig.
  */
-@Tag(name = "Relatórios & Estatísticas", description = "Métricas consolidadas do sistema e indicadores de desempenho (exclusivo para perfil ADMIN).")
+@Tag(name = "Relatório & Estatísticas", description = "Métricas consolidadas do sistema e indicadores de desempenho (exclusivo para perfil ADMIN).")
 @RestController
-@RequestMapping("/api/v1/relatorios")
-public class RelatorioApiController {
+@RequestMapping("/api/v1/relatorio")
+public class RelatorioController {
 
     private final RelatorioService relatorioService;
     private final BolsistaService bolsistaService;
     private final LaboratorioService laboratorioService;
     private final ProjetoService projetoService;
 
-    public RelatorioApiController(RelatorioService relatorioService, BolsistaService bolsistaService,
-                                  LaboratorioService laboratorioService, ProjetoService projetoService) {
+    public RelatorioController(RelatorioService relatorioService, BolsistaService bolsistaService,
+                               LaboratorioService laboratorioService, ProjetoService projetoService) {
         this.relatorioService = relatorioService;
         this.bolsistaService = bolsistaService;
         this.laboratorioService = laboratorioService;

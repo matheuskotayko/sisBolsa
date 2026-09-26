@@ -10,13 +10,17 @@ import dev.matheus.cadastroBolsistas.dto.UsuarioResponse;
 import dev.matheus.cadastroBolsistas.exceptions.ContaBloqueadaException;
 import dev.matheus.cadastroBolsistas.exceptions.CredenciaisInvalidasException;
 import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
+import dev.matheus.cadastroBolsistas.model.Administrador;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Professor;
 import dev.matheus.cadastroBolsistas.model.Usuario;
+import dev.matheus.cadastroBolsistas.repository.AdministradorRepository;
+import dev.matheus.cadastroBolsistas.repository.UsuarioRepository;
+import dev.matheus.cadastroBolsistas.service.AdministradorService;
+import dev.matheus.cadastroBolsistas.service.BolsistaService;
 import dev.matheus.cadastroBolsistas.service.JwtService;
 import dev.matheus.cadastroBolsistas.service.LoginService;
 import dev.matheus.cadastroBolsistas.service.PasswordResetService;
-import dev.matheus.cadastroBolsistas.service.BolsistaService;
 import dev.matheus.cadastroBolsistas.service.ProfessorService;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,25 +41,37 @@ import java.util.Map;
 @Tag(name = "Autenticação", description = "Endpoints para autenticação com Bearer token JWT, perfil e recuperação de senha.")
 @RestController
 @RequestMapping("/api/v1/auth")
-public class AuthApiController {
+public class AuthController {
 
     private final LoginService loginService;
     private final JwtService jwtService;
     private final UsuarioLogado usuarioLogado;
     private final BolsistaService bolsistaService;
     private final ProfessorService professorService;
+    private final AdministradorService administradorService;
+    private final AdministradorRepository administradorRepository;
+    private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final PasswordResetService passwordResetService;
 
-    public AuthApiController(LoginService loginService, JwtService jwtService, UsuarioLogado usuarioLogado,
-                             BolsistaService bolsistaService, ProfessorService professorService,
-                             PasswordEncoder passwordEncoder,
-                             PasswordResetService passwordResetService) {
+    public AuthController(LoginService loginService,
+                          JwtService jwtService,
+                          UsuarioLogado usuarioLogado,
+                          BolsistaService bolsistaService,
+                          ProfessorService professorService,
+                          AdministradorService administradorService,
+                          AdministradorRepository administradorRepository,
+                          UsuarioRepository usuarioRepository,
+                          PasswordEncoder passwordEncoder,
+                          PasswordResetService passwordResetService) {
         this.loginService = loginService;
         this.jwtService = jwtService;
         this.usuarioLogado = usuarioLogado;
         this.bolsistaService = bolsistaService;
         this.professorService = professorService;
+        this.administradorService = administradorService;
+        this.administradorRepository = administradorRepository;
+        this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.passwordResetService = passwordResetService;
     }
@@ -68,7 +84,7 @@ public class AuthApiController {
     })
     @PostMapping("/login")
     public ResponseEntity<UsuarioResponse> login(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Credenciais de e-mail e senha", required = true)
-                                 @RequestBody LoginRequest body) {
+                                                 @RequestBody LoginRequest body) {
         String email = body.email() != null ? body.email().trim() : "";
 
         if (loginService.isBloqueado(email)) {
@@ -133,20 +149,25 @@ public class AuthApiController {
         Usuario logado = usuarioLogado.obrigatorio();
         String senhaNova = bolsistaService.calcularNovaSenha(logado, body.senhaAtual(), body.senha(), body.confirmaSenha());
 
-        Usuario atualizado;
-        if (logado.isProfessor()) {
+        UsuarioResponse response;
+        if (logado.isAdmin()) {
+            Administrador a = administradorService.buscarPorId(logado.getId());
+            bolsistaService.aplicarDadosPerfil(a.getUsuario(), body, senhaNova);
+            administradorRepository.save(a);
+            response = UsuarioResponse.de(a.getUsuario());
+        } else if (logado.isProfessor()) {
             Professor p = professorService.buscarOuFalhar(logado.getId());
-            bolsistaService.aplicarDadosPerfil(p, body, senhaNova);
+            bolsistaService.aplicarDadosPerfil(p.getUsuario(), body, senhaNova);
             professorService.atualizar(p);
-            atualizado = p;
+            response = UsuarioResponse.de(p);
         } else {
             Bolsista b = bolsistaService.buscarOuFalhar(logado.getId());
-            bolsistaService.aplicarDadosPerfil(b, body, senhaNova);
+            bolsistaService.aplicarDadosPerfil(b.getUsuario(), body, senhaNova);
             bolsistaService.atualizar(b);
-            atualizado = b;
+            response = UsuarioResponse.de(b);
         }
 
-        return UsuarioResponse.de(atualizado);
+        return response;
     }
 
     @Operation(summary = "Cadastro inicial de Administrador", description = "Permite a criação pública de uma conta de Administrador caso o limite de 3 vagas não tenha sido atingido.")
@@ -167,13 +188,12 @@ public class AuthApiController {
         if (!senha.equals(confirma)) {
             throw new IllegalArgumentException("As senhas nao coincidem.");
         }
-        bolsistaService.exigirVagaParaNovoAdmin();
+        administradorService.exigirVagaParaNovoAdmin();
 
-        Bolsista admin = bolsistaService.criarAdmin(nome, email, passwordEncoder.encode(senha));
+        Administrador admin = administradorService.criarAdminAutocadastro(nome, email, passwordEncoder.encode(senha));
 
-        /* admin cadastrado aqui vira um Bolsista com tipoUsuario=ADMIN, o recurso mora em /api/v1/bolsistas */
-        URI uri = uriBuilder.replacePath("/api/v1/bolsistas/{id}").buildAndExpand(admin.getId()).toUri();
-        return ResponseEntity.created(uri).body(UsuarioResponse.de(admin));
+        URI uri = uriBuilder.replacePath("/api/v1/administrador/{id}").buildAndExpand(admin.getPublicId()).toUri();
+        return ResponseEntity.created(uri).body(UsuarioResponse.de(admin.getUsuario()));
     }
 
     @Operation(summary = "Solicitar código de recuperação de senha", description = "Gera um código temporário de 6 dígitos válido por 15 minutos para o e-mail cadastrado.")
@@ -228,19 +248,8 @@ public class AuthApiController {
         }
 
         String hash = passwordEncoder.encode(novaSenha);
-        if (u.isProfessor()) {
-            Professor p = professorService.buscarPorId(u.getId());
-            if (p != null) {
-                p.setSenha(hash);
-                professorService.atualizar(p);
-            }
-        } else {
-            Bolsista b = bolsistaService.buscarPorId(u.getId());
-            if (b != null) {
-                b.setSenha(hash);
-                bolsistaService.atualizar(b);
-            }
-        }
+        u.setSenha(hash);
+        usuarioRepository.save(u);
 
         passwordResetService.invalidarCodigo(email);
 

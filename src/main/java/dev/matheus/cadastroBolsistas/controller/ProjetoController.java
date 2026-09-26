@@ -26,12 +26,11 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
-import java.util.UUID;
 
-@Tag(name = "Projetos", description = "Gerenciamento de projetos de pesquisa, alocação de pesquisadores e entregáveis (repositórios, documentação).")
+@Tag(name = "Projeto", description = "Gerenciamento de projetos de pesquisa, alocação de pesquisadores e entregáveis (repositórios, documentação).")
 @RestController
-@RequestMapping("/api/v1/projetos")
-public class ProjetoApiController {
+@RequestMapping("/api/v1/projeto")
+public class ProjetoController {
 
     private static final int TAMANHO_PADRAO = 10;
     private static final int TAMANHO_MAXIMO = 200;
@@ -40,8 +39,8 @@ public class ProjetoApiController {
     private final BolsistaService bolsistaService;
     private final UsuarioLogado usuarioLogado;
 
-    public ProjetoApiController(ProjetoService projetoService, BolsistaService bolsistaService,
-                                UsuarioLogado usuarioLogado) {
+    public ProjetoController(ProjetoService projetoService, BolsistaService bolsistaService,
+                             UsuarioLogado usuarioLogado) {
         this.projetoService = projetoService;
         this.bolsistaService = bolsistaService;
         this.usuarioLogado = usuarioLogado;
@@ -57,22 +56,22 @@ public class ProjetoApiController {
             @Parameter(description = "Número da página", example = "1") @RequestParam(defaultValue = "1") int pagina,
             @Parameter(description = "Quantidade de itens por página", example = "10") @RequestParam(required = false) Integer tamanho,
             @Parameter(description = "Filtro por nome do projeto", example = "Sistema") @RequestParam(required = false) String buscaNome,
-            @Parameter(description = "Filtro por ID do laboratório (UUID)", example = "c1111111-1111-1111-1111-111111111111") @RequestParam(required = false) UUID labId) {
+            @Parameter(description = "Filtro por ID do laboratório", example = "lab_a1b2c3d4e5f6g7h8i9j0") @RequestParam(required = false) String labId) {
         usuarioLogado.obrigatorio();
         List<Projeto> lista = projetoService.buscarProjetos(buscaNome, labId);
         return PaginacaoUtil.paginar(lista, pagina, tamanho, TAMANHO_PADRAO, TAMANHO_MAXIMO, this::comMembros);
     }
 
-    @Operation(summary = "Buscar projeto por ID", description = "Retorna os detalhes de um projeto de pesquisa pelo seu identificador UUID.")
+    @Operation(summary = "Buscar projeto por ID", description = "Retorna os detalhes de um projeto de pesquisa pelo seu identificador público (ex: prj_...).")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Dados do projeto", content = @Content(schema = @Schema(implementation = ProjetoResponse.class))),
             @ApiResponse(responseCode = "404", description = "Projeto não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public EntityModel<ProjetoResponse> buscar(@Parameter(description = "ID do projeto (UUID)", required = true, example = "e1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
+    public EntityModel<ProjetoResponse> buscar(@Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
         usuarioLogado.obrigatorio();
         Projeto p = projetoService.buscarOuFalhar(id);
-        return comLinks(comMembros(p), p.getLaboratorioId());
+        return comLinks(comMembros(p), p.getLaboratorioPublicId());
     }
 
     @Operation(summary = "Listar membros de um projeto", description = "Retorna a lista de bolsistas e pesquisadores vinculados à equipe do projeto.")
@@ -81,7 +80,7 @@ public class ProjetoApiController {
             @ApiResponse(responseCode = "404", description = "Projeto não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}/membros")
-    public List<UsuarioResponse> membros(@Parameter(description = "ID do projeto (UUID)", required = true, example = "e1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
+    public List<UsuarioResponse> membros(@Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
         usuarioLogado.obrigatorio();
         projetoService.buscarOuFalhar(id);
         return bolsistaService.buscarPorProjeto(id).stream().map(UsuarioResponse::de).toList();
@@ -102,8 +101,8 @@ public class ProjetoApiController {
         Projeto p = new Projeto();
         projetoService.aplicar(p, body);
         projetoService.cadastrar(p, logado);
-        URI uri = uriBuilder.replacePath("/api/v1/projetos/{id}").buildAndExpand(p.getId()).toUri();
-        return ResponseEntity.created(uri).body(comLinks(ProjetoResponse.de(p), p.getLaboratorioId()));
+        URI uri = uriBuilder.replacePath("/api/v1/projeto/{id}").buildAndExpand(p.getPublicId()).toUri();
+        return ResponseEntity.created(uri).body(comLinks(ProjetoResponse.de(p), p.getLaboratorioPublicId()));
     }
 
     @Operation(summary = "Atualizar projeto", description = "Atualiza o título, descrição, links externos de entregáveis ou laboratório de lotação do projeto.")
@@ -114,7 +113,7 @@ public class ProjetoApiController {
             @ApiResponse(responseCode = "404", description = "Projeto não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PutMapping("/{id}")
-    public EntityModel<ProjetoResponse> atualizar(@Parameter(description = "ID do projeto (UUID)", required = true, example = "e1111111-1111-1111-1111-111111111111") @PathVariable UUID id,
+    public EntityModel<ProjetoResponse> atualizar(@Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
                                      @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do projeto", required = true)
                                      @Valid @RequestBody ProjetoRequest body) {
         Usuario logado = usuarioLogado.obrigatorio();
@@ -124,7 +123,7 @@ public class ProjetoApiController {
         projetoService.aplicar(p, body);
         p.setAtivo(true);
         projetoService.atualizar(p);
-        return comLinks(ProjetoResponse.de(p), p.getLaboratorioId());
+        return comLinks(ProjetoResponse.de(p), p.getLaboratorioPublicId());
     }
 
     @Operation(summary = "Desativar projeto (Soft Delete)", description = "Desativa o projeto mantendo o histórico de vínculos.")
@@ -134,7 +133,7 @@ public class ProjetoApiController {
             @ApiResponse(responseCode = "404", description = "Projeto não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@Parameter(description = "ID do projeto (UUID)", required = true, example = "e1111111-1111-1111-1111-111111111111") @PathVariable UUID id) {
+    public ResponseEntity<Void> excluir(@Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
         Usuario logado = usuarioLogado.obrigatorio();
         projetoService.buscarExigindoGerencia(id, logado);
         projetoService.excluir(id);
@@ -149,9 +148,8 @@ public class ProjetoApiController {
     })
     @PostMapping("/{id}/membros/{bolsistaId}")
     public ResponseEntity<Void> vincular(
-            /* exemplo: Diego (lab de IA) no projeto do lab de software - vinculo que o seed ainda nao tem */
-            @Parameter(description = "ID do projeto (UUID)", required = true, example = "e1111111-1111-1111-1111-111111111111") @PathVariable UUID id,
-            @Parameter(description = "ID do bolsista a vincular (UUID)", required = true, example = "d3333333-3333-3333-3333-333333333333") @PathVariable UUID bolsistaId) {
+            @Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
+            @Parameter(description = "ID público do bolsista a vincular (ex: bol_...)", required = true, example = "bol_a1b2c3d4e5f6g7h8i9j0") @PathVariable String bolsistaId) {
         Usuario logado = usuarioLogado.obrigatorio();
         projetoService.buscarExigindoGerencia(id, logado);
         bolsistaService.buscarOuFalhar(bolsistaId);
@@ -167,8 +165,8 @@ public class ProjetoApiController {
     })
     @DeleteMapping("/{id}/membros/{bolsistaId}")
     public ResponseEntity<Void> desvincular(
-            @Parameter(description = "ID do projeto (UUID)", required = true, example = "e1111111-1111-1111-1111-111111111111") @PathVariable UUID id,
-            @Parameter(description = "ID do bolsista a desvincular (UUID)", required = true, example = "d1111111-1111-1111-1111-111111111111") @PathVariable UUID bolsistaId) {
+            @Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
+            @Parameter(description = "ID público do bolsista a desvincular (ex: bol_...)", required = true, example = "bol_a1b2c3d4e5f6g7h8i9j0") @PathVariable String bolsistaId) {
         Usuario logado = usuarioLogado.obrigatorio();
         projetoService.buscarExigindoGerencia(id, logado);
         projetoService.desvincularBolsista(bolsistaId, id);
@@ -179,12 +177,12 @@ public class ProjetoApiController {
         return ProjetoResponse.de(p, projetoService.contarMembros(p.getId()));
     }
 
-    private EntityModel<ProjetoResponse> comLinks(ProjetoResponse resp, UUID laboratorioId) {
+    private EntityModel<ProjetoResponse> comLinks(ProjetoResponse resp, String laboratorioId) {
         EntityModel<ProjetoResponse> modelo = EntityModel.of(resp,
-                Link.of("/api/v1/projetos/" + resp.id()).withSelfRel(),
-                Link.of("/api/v1/projetos/" + resp.id() + "/membros").withRel("membros"));
+                Link.of("/api/v1/projeto/" + resp.id()).withSelfRel(),
+                Link.of("/api/v1/projeto/" + resp.id() + "/membros").withRel("membros"));
         if (laboratorioId != null) {
-            modelo.add(Link.of("/api/v1/laboratorios/" + laboratorioId).withRel("laboratorio"));
+            modelo.add(Link.of("/api/v1/laboratorio/" + laboratorioId).withRel("laboratorio"));
         }
         return modelo;
     }

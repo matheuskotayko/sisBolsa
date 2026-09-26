@@ -24,15 +24,15 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.net.URI;
 import java.util.List;
 
-@Tag(name = "Cursos", description = "Lista de cursos disponíveis para vínculo de bolsistas.")
+@Tag(name = "Curso", description = "Lista de cursos disponíveis para vínculo de bolsistas.")
 @RestController
-@RequestMapping("/api/v1/cursos")
-public class CursoApiController {
+@RequestMapping("/api/v1/curso")
+public class CursoController {
 
     private final CursoService cursoService;
     private final UsuarioLogado usuarioLogado;
 
-    public CursoApiController(CursoService cursoService, UsuarioLogado usuarioLogado) {
+    public CursoController(CursoService cursoService, UsuarioLogado usuarioLogado) {
         this.cursoService = cursoService;
         this.usuarioLogado = usuarioLogado;
     }
@@ -60,7 +60,7 @@ public class CursoApiController {
                                                 UriComponentsBuilder uriBuilder) {
         String nome = StringUtil.limpar(body.nome());
         Curso curso = cursoService.cadastrar(nome);
-        URI uri = uriBuilder.replacePath("/api/v1/cursos").build().toUri();
+        URI uri = uriBuilder.replacePath("/api/v1/curso").build().toUri();
         return ResponseEntity.created(uri).body(CursoResponse.de(curso));
     }
 }
