@@ -73,29 +73,29 @@ public class FrequenciaController {
             @ApiResponse(responseCode = "401", description = "Não autenticado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping
-    public PaginaResponse<FrequenciaResponse> listar(
+    public ResponseEntity<PaginaResponse<FrequenciaResponse>> listar(
             @Parameter(description = "Número da página", example = "1") @RequestParam(defaultValue = "1") int pagina,
             @Parameter(description = "ID público do bolsista (ex: bol_...)", example = "bol_a1b2c3d4e5f6g7h8i9j0") @RequestParam(required = false) String bolsistaId,
             @Parameter(description = "Data de início do intervalo") @RequestParam(required = false) LocalDate dataInicio,
             @Parameter(description = "Data de término do intervalo") @RequestParam(required = false) LocalDate dataFim) {
-        Usuario logado = usuarioLogado.obrigatorio();
+        Usuario usuario = usuarioLogado.obrigatorio();
         UUID filtro = null;
-        if (logado.isBolsista()) {
-            filtro = logado.getId();
+        if (usuario.isBolsista()) {
+            filtro = usuario.getId();
         } else if (bolsistaId != null && !bolsistaId.isBlank()) {
             filtro = bolsistaService.buscarOuFalhar(bolsistaId).getId();
         }
 
         if (filtro != null) {
-            frequenciaService.exigirAcesso(logado, filtro);
+            frequenciaService.exigirAcesso(usuario, filtro);
         }
 
         int total;
         List<Frequencia> pagina1;
         int atual;
 
-        if (filtro == null && logado.isProfessor()) {
-            List<UUID> ids = bolsistaService.idsDosBolsistasCoordenadosPor(logado.getId());
+        if (filtro == null && usuario.isProfessor()) {
+            List<UUID> ids = bolsistaService.idsDosBolsistasCoordenadosPor(usuario.getId());
             total = frequenciaService.contarPorBolsistas(ids, dataInicio, dataFim);
             atual = PaginacaoUtil.paginaValida(pagina, PaginacaoUtil.totalPaginas(total, TAMANHO_PAGINA));
             pagina1 = frequenciaService.buscarPorBolsistas(ids, dataInicio, dataFim, TAMANHO_PAGINA, (atual - 1) * TAMANHO_PAGINA);
@@ -106,7 +106,7 @@ public class FrequenciaController {
         }
 
         int totalPaginas = PaginacaoUtil.totalPaginas(total, TAMANHO_PAGINA);
-        return new PaginaResponse<>(pagina1.stream().map(FrequenciaResponse::de).toList(), atual, totalPaginas, total);
+        return ResponseEntity.ok(new PaginaResponse<>(pagina1.stream().map(FrequenciaResponse::de).toList(), atual, totalPaginas, total));
     }
 
     @Operation(summary = "Resumo mensal de horas", description = "Calcula o total de horas trabalhadas no mês vigente e o histórico total acumulado do bolsista.")
@@ -114,17 +114,18 @@ public class FrequenciaController {
             @ApiResponse(responseCode = "200", description = "Resumo de horas calculado")
     })
     @GetMapping("/resumo")
-    public Map<String, Double> resumo(@Parameter(description = "ID público do bolsista (ex: bol_...)", example = "bol_a1b2c3d4e5f6g7h8i9j0") @RequestParam(required = false) String bolsistaId) {
-        Usuario logado = usuarioLogado.obrigatorio();
+    public ResponseEntity<Map<String, Double>> resumo(
+            @Parameter(description = "ID público do bolsista (ex: bol_...)", example = "bol_a1b2c3d4e5f6g7h8i9j0") @RequestParam(required = false) String bolsistaId) {
+        Usuario usuario = usuarioLogado.obrigatorio();
         UUID alvo;
-        if (logado.isBolsista()) {
-            alvo = logado.getId();
+        if (usuario.isBolsista()) {
+            alvo = usuario.getId();
         } else if (bolsistaId != null && !bolsistaId.isBlank()) {
             alvo = bolsistaService.buscarOuFalhar(bolsistaId).getId();
         } else {
-            alvo = logado.getId();
+            alvo = usuario.getId();
         }
-        frequenciaService.exigirAcesso(logado, alvo);
+        frequenciaService.exigirAcesso(usuario, alvo);
 
         List<Frequencia> todas = frequenciaService.listarPorBolsista(alvo);
         LocalDate hoje = LocalDate.now();
@@ -134,7 +135,7 @@ public class FrequenciaController {
                         && f.getData().getYear() == hoje.getYear())
                 .mapToDouble(Frequencia::getHorasTrabalhadas).sum();
         double total = todas.stream().mapToDouble(Frequencia::getHorasTrabalhadas).sum();
-        return Map.of("horasMes", mes, "horasTotal", total);
+        return ResponseEntity.ok(Map.of("horasMes", mes, "horasTotal", total));
     }
 
     @Operation(summary = "Exportar frequências em CSV", description = "Gera um arquivo CSV contendo os apontamentos de frequência filtrados por intervalo de datas.")
@@ -146,19 +147,19 @@ public class FrequenciaController {
             @Parameter(description = "ID público do bolsista (ex: bol_...)", example = "bol_a1b2c3d4e5f6g7h8i9j0") @RequestParam(required = false) String bolsistaId,
             @Parameter(description = "Data inicial") @RequestParam(required = false) LocalDate dataInicio,
             @Parameter(description = "Data final") @RequestParam(required = false) LocalDate dataFim) {
-        Usuario logado = usuarioLogado.obrigatorio();
+        Usuario usuario = usuarioLogado.obrigatorio();
         UUID filtro = null;
-        if (logado.isBolsista()) {
-            filtro = logado.getId();
+        if (usuario.isBolsista()) {
+            filtro = usuario.getId();
         } else if (bolsistaId != null && !bolsistaId.isBlank()) {
             filtro = bolsistaService.buscarOuFalhar(bolsistaId).getId();
         }
         if (filtro != null) {
-            frequenciaService.exigirAcesso(logado, filtro);
+            frequenciaService.exigirAcesso(usuario, filtro);
         }
 
-        List<Frequencia> lista = (filtro == null && logado.isProfessor())
-                ? frequenciaService.buscarPorBolsistas(bolsistaService.idsDosBolsistasCoordenadosPor(logado.getId()), dataInicio, dataFim, null, null)
+        List<Frequencia> lista = (filtro == null && usuario.isProfessor())
+                ? frequenciaService.buscarPorBolsistas(bolsistaService.idsDosBolsistasCoordenadosPor(usuario.getId()), dataInicio, dataFim, null, null)
                 : frequenciaService.buscarFrequencias(filtro, dataInicio, dataFim, null, null);
 
         StringBuilder sb = new StringBuilder("ID,Bolsista,Data,Horas Trabalhadas,Descricao,LinkComprovante\n");
@@ -185,9 +186,9 @@ public class FrequenciaController {
             @Parameter(description = "ID público do bolsista (ex: bol_...)", example = "bol_a1b2c3d4e5f6g7h8i9j0") @RequestParam(required = false) String bolsistaId,
             @Parameter(description = "Data inicial de referência") @RequestParam(required = false) LocalDate dataInicio,
             @Parameter(description = "Data final de referência") @RequestParam(required = false) LocalDate dataFim) {
-        Usuario logado = usuarioLogado.obrigatorio();
-        Bolsista b = frequenciaService.resolverBolsistaAlvo(logado, bolsistaId);
-        frequenciaService.exigirAcesso(logado, b.getId());
+        Usuario usuario = usuarioLogado.obrigatorio();
+        Bolsista b = frequenciaService.resolverBolsistaAlvo(usuario, bolsistaId);
+        frequenciaService.exigirAcesso(usuario, b.getId());
 
         Laboratorio lab = b.getLaboratorioId() != null ? laboratorioService.buscarPorId(b.getLaboratorioId()) : null;
         Professor coord = (lab != null && lab.getCoordenadorId() != null) ? professorService.buscarPorId(lab.getCoordenadorId()) : null;
@@ -211,10 +212,11 @@ public class FrequenciaController {
             @ApiResponse(responseCode = "404", description = "Frequência não encontrada", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public EntityModel<FrequenciaResponse> buscar(@Parameter(description = "ID público da frequência (ex: frq_...)", required = true, example = "frq_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
-        Usuario logado = usuarioLogado.obrigatorio();
-        Frequencia f = frequenciaService.buscarComPermissao(id, logado);
-        return comLinks(FrequenciaResponse.de(f));
+    public ResponseEntity<EntityModel<FrequenciaResponse>> buscar(
+            @Parameter(description = "ID público da frequência (ex: frq_...)", required = true, example = "frq_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
+        Usuario usuario = usuarioLogado.obrigatorio();
+        Frequencia f = frequenciaService.buscarComPermissao(id, usuario);
+        return ResponseEntity.ok(comLinks(FrequenciaResponse.de(f)));
     }
 
     @Operation(summary = "Registrar novo apontamento de frequência", description = "Aponta horas trabalhadas e descrição das atividades realizadas.")
@@ -227,10 +229,10 @@ public class FrequenciaController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do apontamento de horas", required = true)
             @Valid @RequestBody FrequenciaRequest body,
             UriComponentsBuilder uriBuilder) {
-        Usuario logado = usuarioLogado.obrigatorio();
+        Usuario usuario = usuarioLogado.obrigatorio();
 
-        Bolsista alvo = frequenciaService.resolverBolsistaAlvo(logado, body.bolsistaId());
-        frequenciaService.exigirAcesso(logado, alvo.getId());
+        Bolsista alvo = frequenciaService.resolverBolsistaAlvo(usuario, body.bolsistaId());
+        frequenciaService.exigirAcesso(usuario, alvo.getId());
 
         Frequencia f = new Frequencia();
         f.setBolsista(alvo);
@@ -250,19 +252,19 @@ public class FrequenciaController {
             @ApiResponse(responseCode = "404", description = "Frequência não encontrada", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PutMapping("/{id}")
-    public EntityModel<FrequenciaResponse> atualizar(
+    public ResponseEntity<EntityModel<FrequenciaResponse>> atualizar(
             @Parameter(description = "ID público da frequência (ex: frq_...)", required = true, example = "frq_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados da frequência", required = true)
             @Valid @RequestBody FrequenciaRequest body) {
-        Usuario logado = usuarioLogado.obrigatorio();
-        Frequencia f = frequenciaService.buscarComPermissao(id, logado);
+        Usuario usuario = usuarioLogado.obrigatorio();
+        Frequencia f = frequenciaService.buscarComPermissao(id, usuario);
 
         f.setData(body.data());
         f.setHorasTrabalhadas(body.horasTrabalhadas());
         f.setDescricao(StringUtil.limpar(body.descricao()));
         f.setLinkComprovante(StringUtil.limpar(body.linkComprovante()));
         frequenciaService.atualizar(f);
-        return comLinks(FrequenciaResponse.de(f));
+        return ResponseEntity.ok(comLinks(FrequenciaResponse.de(f)));
     }
 
     @Operation(summary = "Desativar frequência (Soft Delete)", description = "Desativa um registro de apontamento de horas.")
@@ -271,9 +273,10 @@ public class FrequenciaController {
             @ApiResponse(responseCode = "404", description = "Frequência não encontrada", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@Parameter(description = "ID público da frequência (ex: frq_...)", required = true, example = "frq_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
-        Usuario logado = usuarioLogado.obrigatorio();
-        frequenciaService.buscarComPermissao(id, logado);
+    public ResponseEntity<Void> excluir(
+            @Parameter(description = "ID público da frequência (ex: frq_...)", required = true, example = "frq_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
+        Usuario usuario = usuarioLogado.obrigatorio();
+        frequenciaService.buscarComPermissao(id, usuario);
         frequenciaService.excluir(id);
         return ResponseEntity.noContent().build();
     }

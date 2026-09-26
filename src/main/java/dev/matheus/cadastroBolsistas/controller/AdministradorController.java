@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,10 +26,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/administrador")
+@PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Administrador", description = "Gestão de perfis e contas administrativas do sistema.")
 @SecurityRequirement(name = "bearerAuth")
 public class AdministradorController {
@@ -63,8 +64,8 @@ public class AdministradorController {
     @ApiResponse(responseCode = "403", description = "Acesso negado.", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     @PostMapping
     public ResponseEntity<AdministradorResponse> criar(@Valid @RequestBody AdministradorRequest body) {
-        Usuario logado = usuarioLogado.obrigatorio();
-        AdministradorResponse criado = service.criar(body, logado);
+        Usuario usuario = usuarioLogado.obrigatorio();
+        AdministradorResponse criado = service.criar(body, usuario);
         return ResponseEntity.status(HttpStatus.CREATED).body(criado);
     }
 
@@ -72,9 +73,10 @@ public class AdministradorController {
     @ApiResponse(responseCode = "200", description = "Administrador atualizado com sucesso.")
     @ApiResponse(responseCode = "404", description = "Administrador não encontrado.", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     @PutMapping("/{id}")
-    public ResponseEntity<AdministradorResponse> atualizar(@PathVariable String id, @Valid @RequestBody AdministradorRequest body) {
-        Usuario logado = usuarioLogado.obrigatorio();
-        AdministradorResponse atualizado = service.atualizar(id, body, logado);
+    public ResponseEntity<AdministradorResponse> atualizar(@PathVariable String id,
+                                                           @Valid @RequestBody AdministradorRequest body) {
+        Usuario usuario = usuarioLogado.obrigatorio();
+        AdministradorResponse atualizado = service.atualizar(id, body, usuario);
         return ResponseEntity.ok(atualizado);
     }
 
@@ -83,8 +85,8 @@ public class AdministradorController {
     @ApiResponse(responseCode = "400", description = "Não é permitido desativar o único administrador ativo.", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> desativar(@PathVariable String id) {
-        Usuario logado = usuarioLogado.obrigatorio();
-        service.desativar(id, logado);
+        Usuario usuario = usuarioLogado.obrigatorio();
+        service.desativar(id, usuario);
         return ResponseEntity.noContent().build();
     }
 }

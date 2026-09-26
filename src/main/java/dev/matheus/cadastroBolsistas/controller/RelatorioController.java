@@ -12,6 +12,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,13 +21,10 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Map;
 
-/*
- * relatorios sao so para admin: quem barra e a regra hasRole("ADMIN") de
- * /api/v1/relatorio/** no SecurityConfig.
- */
 @Tag(name = "Relatório & Estatísticas", description = "Métricas consolidadas do sistema e indicadores de desempenho (exclusivo para perfil ADMIN).")
 @RestController
 @RequestMapping("/api/v1/relatorio")
+@PreAuthorize("hasRole('ADMIN')")
 public class RelatorioController {
 
     private final RelatorioService relatorioService;
@@ -47,11 +46,11 @@ public class RelatorioController {
             @ApiResponse(responseCode = "403", description = "Acesso negado para perfis não administradores", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/resumo")
-    public Map<String, Object> resumo() {
-        return Map.of(
+    public ResponseEntity<Map<String, Object>> resumo() {
+        return ResponseEntity.ok(Map.of(
                 "totalBolsistas", bolsistaService.listarTodos().size(),
                 "totalLaboratorios", laboratorioService.listarTodos().size(),
-                "totalProjetos", projetoService.listarTodos().size());
+                "totalProjetos", projetoService.listarTodos().size()));
     }
 
     @Operation(summary = "Relatório de horas apontadas no mês", description = "Agrupa o total de horas trabalhadas por cada bolsista no mês corrente.")
@@ -60,8 +59,8 @@ public class RelatorioController {
             @ApiResponse(responseCode = "403", description = "Acesso restrito ao perfil ADMIN", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/horas-mes")
-    public List<RelatorioRepository.HorasBolsista> horasDoMes() {
-        return relatorioService.getHorasBolsistasMesCorrente();
+    public ResponseEntity<List<RelatorioRepository.HorasBolsista>> horasDoMes() {
+        return ResponseEntity.ok(relatorioService.getHorasBolsistasMesCorrente());
     }
 
     @Operation(summary = "Relatório de projetos por laboratório", description = "Distribuição da quantidade de projetos ativos alocados em cada laboratório.")
@@ -70,8 +69,8 @@ public class RelatorioController {
             @ApiResponse(responseCode = "403", description = "Acesso restrito ao perfil ADMIN", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/projetos-por-laboratorio")
-    public List<RelatorioRepository.ProjetosPorLaboratorio> projetosPorLaboratorio() {
-        return relatorioService.getProjetosAtivosPorLaboratorio();
+    public ResponseEntity<List<RelatorioRepository.ProjetosPorLaboratorio>> projetosPorLaboratorio() {
+        return ResponseEntity.ok(relatorioService.getProjetosAtivosPorLaboratorio());
     }
 
     @Operation(summary = "Distribuição de bolsistas por cargo", description = "Contagem da distribuição de bolsistas por categoria e cargo de atuação.")
@@ -80,8 +79,8 @@ public class RelatorioController {
             @ApiResponse(responseCode = "403", description = "Acesso restrito ao perfil ADMIN", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/bolsistas-por-cargo")
-    public List<RelatorioRepository.BolsistasPorCargo> bolsistasPorCargo() {
-        return relatorioService.getBolsistasPorCargo();
+    public ResponseEntity<List<RelatorioRepository.BolsistasPorCargo>> bolsistasPorCargo() {
+        return ResponseEntity.ok(relatorioService.getBolsistasPorCargo());
     }
 
     @Operation(summary = "Taxa de ocupação de laboratórios", description = "Cálculo detalhado da ocupação e lotação percentual de cada laboratório em relação à capacidade física instalada.")
@@ -90,8 +89,7 @@ public class RelatorioController {
             @ApiResponse(responseCode = "403", description = "Acesso restrito ao perfil ADMIN", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/ocupacao")
-    public List<RelatorioRepository.OcupacaoLaboratorio> ocupacao() {
-        return relatorioService.getLaboratoriosOcupacao();
+    public ResponseEntity<List<RelatorioRepository.OcupacaoLaboratorio>> ocupacao() {
+        return ResponseEntity.ok(relatorioService.getLaboratoriosOcupacao());
     }
-
 }

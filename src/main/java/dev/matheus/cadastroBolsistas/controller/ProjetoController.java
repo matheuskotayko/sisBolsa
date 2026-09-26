@@ -21,6 +21,7 @@ import jakarta.validation.Valid;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -52,26 +53,27 @@ public class ProjetoController {
             @ApiResponse(responseCode = "401", description = "Não autenticado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping
-    public PaginaResponse<ProjetoResponse> listar(
+    public ResponseEntity<PaginaResponse<ProjetoResponse>> listar(
             @Parameter(description = "Número da página", example = "1") @RequestParam(defaultValue = "1") int pagina,
             @Parameter(description = "Quantidade de itens por página", example = "10") @RequestParam(required = false) Integer tamanho,
             @Parameter(description = "Filtro por nome do projeto", example = "Sistema") @RequestParam(required = false) String buscaNome,
             @Parameter(description = "Filtro por ID do laboratório", example = "lab_a1b2c3d4e5f6g7h8i9j0") @RequestParam(required = false) String labId) {
         usuarioLogado.obrigatorio();
         List<Projeto> lista = projetoService.buscarProjetos(buscaNome, labId);
-        return PaginacaoUtil.paginar(lista, pagina, tamanho, TAMANHO_PADRAO, TAMANHO_MAXIMO, this::comMembros);
+        return ResponseEntity.ok(PaginacaoUtil.paginar(lista, pagina, tamanho, TAMANHO_PADRAO, TAMANHO_MAXIMO, this::comMembros));
     }
 
-    @Operation(summary = "Buscar projeto por ID", description = "Retorna os detalhes de um projeto de pesquisa pelo seu identificador público (ex: prj_...).")
+    @Operation(summary = "Buscar projeto por ID", description = "Recupera os detalhes completos do projeto pelo seu identificador público (ex: prj_...).")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Dados do projeto", content = @Content(schema = @Schema(implementation = ProjetoResponse.class))),
+            @ApiResponse(responseCode = "200", description = "Detalhes do projeto", content = @Content(schema = @Schema(implementation = ProjetoResponse.class))),
             @ApiResponse(responseCode = "404", description = "Projeto não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public EntityModel<ProjetoResponse> buscar(@Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
+    public ResponseEntity<EntityModel<ProjetoResponse>> buscar(
+            @Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
         usuarioLogado.obrigatorio();
         Projeto p = projetoService.buscarOuFalhar(id);
-        return comLinks(comMembros(p), p.getLaboratorioPublicId());
+        return ResponseEntity.ok(comLinks(comMembros(p), p.getLaboratorioPublicId()));
     }
 
     @Operation(summary = "Listar membros de um projeto", description = "Retorna a lista de bolsistas e pesquisadores vinculados à equipe do projeto.")
@@ -80,10 +82,11 @@ public class ProjetoController {
             @ApiResponse(responseCode = "404", description = "Projeto não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}/membros")
-    public List<UsuarioResponse> membros(@Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
+    public ResponseEntity<List<UsuarioResponse>> membros(
+            @Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
         usuarioLogado.obrigatorio();
         projetoService.buscarOuFalhar(id);
-        return bolsistaService.buscarPorProjeto(id).stream().map(UsuarioResponse::de).toList();
+        return ResponseEntity.ok(bolsistaService.buscarPorProjeto(id).stream().map(UsuarioResponse::de).toList());
     }
 
     @Operation(summary = "Criar novo projeto", description = "Cadastra um novo projeto vinculado a um laboratório sob gestão do usuário autenticado.")
@@ -93,14 +96,16 @@ public class ProjetoController {
             @ApiResponse(responseCode = "403", description = "Sem permissão para criar projeto no laboratório", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PostMapping
-    public ResponseEntity<EntityModel<ProjetoResponse>> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do projeto", required = true)
-                                                 @Valid @RequestBody ProjetoRequest body,
-                                                 UriComponentsBuilder uriBuilder) {
-        Usuario logado = usuarioLogado.obrigatorio();
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESSOR')")
+    public ResponseEntity<EntityModel<ProjetoResponse>> criar(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do projeto", required = true)
+            @Valid @RequestBody ProjetoRequest body,
+            UriComponentsBuilder uriBuilder) {
+        Usuario usuario = usuarioLogado.obrigatorio();
 
         Projeto p = new Projeto();
         projetoService.aplicar(p, body);
-        projetoService.cadastrar(p, logado);
+        projetoService.cadastrar(p, usuario);
         URI uri = uriBuilder.replacePath("/api/v1/projeto/{id}").buildAndExpand(p.getPublicId()).toUri();
         return ResponseEntity.created(uri).body(comLinks(ProjetoResponse.de(p), p.getLaboratorioPublicId()));
     }
@@ -113,17 +118,19 @@ public class ProjetoController {
             @ApiResponse(responseCode = "404", description = "Projeto não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PutMapping("/{id}")
-    public EntityModel<ProjetoResponse> atualizar(@Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
-                                     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do projeto", required = true)
-                                     @Valid @RequestBody ProjetoRequest body) {
-        Usuario logado = usuarioLogado.obrigatorio();
-        Projeto p = projetoService.buscarExigindoGerencia(id, logado);
-        projetoService.exigirPodeMoverPara(logado, body.laboratorioId());
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESSOR')")
+    public ResponseEntity<EntityModel<ProjetoResponse>> atualizar(
+            @Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do projeto", required = true)
+            @Valid @RequestBody ProjetoRequest body) {
+        Usuario usuario = usuarioLogado.obrigatorio();
+        Projeto p = projetoService.buscarExigindoGerencia(id, usuario);
+        projetoService.exigirPodeMoverPara(usuario, body.laboratorioId());
 
         projetoService.aplicar(p, body);
         p.setAtivo(true);
         projetoService.atualizar(p);
-        return comLinks(ProjetoResponse.de(p), p.getLaboratorioPublicId());
+        return ResponseEntity.ok(comLinks(ProjetoResponse.de(p), p.getLaboratorioPublicId()));
     }
 
     @Operation(summary = "Desativar projeto (Soft Delete)", description = "Desativa o projeto mantendo o histórico de vínculos.")
@@ -133,9 +140,11 @@ public class ProjetoController {
             @ApiResponse(responseCode = "404", description = "Projeto não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
-        Usuario logado = usuarioLogado.obrigatorio();
-        projetoService.buscarExigindoGerencia(id, logado);
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESSOR')")
+    public ResponseEntity<Void> excluir(
+            @Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
+        Usuario usuario = usuarioLogado.obrigatorio();
+        projetoService.buscarExigindoGerencia(id, usuario);
         projetoService.excluir(id);
         return ResponseEntity.noContent().build();
     }
@@ -147,11 +156,12 @@ public class ProjetoController {
             @ApiResponse(responseCode = "404", description = "Projeto ou Bolsista não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PostMapping("/{id}/membros/{bolsistaId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESSOR')")
     public ResponseEntity<Void> vincular(
             @Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
             @Parameter(description = "ID público do bolsista a vincular (ex: bol_...)", required = true, example = "bol_a1b2c3d4e5f6g7h8i9j0") @PathVariable String bolsistaId) {
-        Usuario logado = usuarioLogado.obrigatorio();
-        projetoService.buscarExigindoGerencia(id, logado);
+        Usuario usuario = usuarioLogado.obrigatorio();
+        projetoService.buscarExigindoGerencia(id, usuario);
         bolsistaService.buscarOuFalhar(bolsistaId);
         projetoService.vincularBolsista(bolsistaId, id);
         return ResponseEntity.noContent().build();
@@ -164,11 +174,12 @@ public class ProjetoController {
             @ApiResponse(responseCode = "404", description = "Projeto não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @DeleteMapping("/{id}/membros/{bolsistaId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESSOR')")
     public ResponseEntity<Void> desvincular(
             @Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
             @Parameter(description = "ID público do bolsista a desvincular (ex: bol_...)", required = true, example = "bol_a1b2c3d4e5f6g7h8i9j0") @PathVariable String bolsistaId) {
-        Usuario logado = usuarioLogado.obrigatorio();
-        projetoService.buscarExigindoGerencia(id, logado);
+        Usuario usuario = usuarioLogado.obrigatorio();
+        projetoService.buscarExigindoGerencia(id, usuario);
         projetoService.desvincularBolsista(bolsistaId, id);
         return ResponseEntity.noContent().build();
     }

@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -43,9 +44,9 @@ public class CursoController {
             @ApiResponse(responseCode = "401", description = "Não autenticado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping
-    public List<CursoResponse> listar() {
+    public ResponseEntity<List<CursoResponse>> listar() {
         usuarioLogado.obrigatorio();
-        return cursoService.listarTodos().stream().map(CursoResponse::de).toList();
+        return ResponseEntity.ok(cursoService.listarTodos().stream().map(CursoResponse::de).toList());
     }
 
     @Operation(summary = "Cadastrar novo curso", description = "Adiciona um novo curso à lista disponível (restrito a Administradores).")
@@ -55,6 +56,7 @@ public class CursoController {
             @ApiResponse(responseCode = "403", description = "Sem permissão de administrador", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CursoResponse> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do curso", required = true)
                                                 @Valid @RequestBody CursoRequest body,
                                                 UriComponentsBuilder uriBuilder) {

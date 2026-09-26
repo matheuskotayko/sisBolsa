@@ -22,6 +22,7 @@ import jakarta.validation.Valid;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 @Tag(name = "Professor", description = "Gestão de professores coordenadores (restrito a Administradores).")
 @RestController
 @RequestMapping("/api/v1/professor")
+@PreAuthorize("hasRole('ADMIN')")
 @SecurityRequirement(name = "bearerAuth")
 public class ProfessorController {
 
@@ -57,7 +59,7 @@ public class ProfessorController {
             @ApiResponse(responseCode = "403", description = "Acesso restrito a administradores", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping
-    public PaginaResponse<UsuarioResponse> listar(
+    public ResponseEntity<PaginaResponse<UsuarioResponse>> listar(
             @Parameter(description = "Número da página", example = "1") @RequestParam(defaultValue = "1") int pagina,
             @Parameter(description = "Quantidade de itens por página", example = "10") @RequestParam(required = false) Integer tamanho,
             @Parameter(description = "Filtro de busca textual por nome", example = "Carlos") @RequestParam(required = false) String buscaNome) {
@@ -74,7 +76,7 @@ public class ProfessorController {
                     .ifPresent(lab -> p.setNomeLaboratorio(lab.getNome()));
         }
 
-        return PaginacaoUtil.paginar(lista, pagina, tamanho, TAMANHO_PADRAO, TAMANHO_MAXIMO, UsuarioResponse::de);
+        return ResponseEntity.ok(PaginacaoUtil.paginar(lista, pagina, tamanho, TAMANHO_PADRAO, TAMANHO_MAXIMO, UsuarioResponse::de));
     }
 
     @Operation(summary = "Buscar professor por ID", description = "Recupera as informações detalhadas de um professor coordenador pelo seu identificador público (ex: prf_...).")
@@ -84,11 +86,11 @@ public class ProfessorController {
             @ApiResponse(responseCode = "404", description = "Professor não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public EntityModel<UsuarioResponse> buscar(@Parameter(description = "ID público do professor (ex: prf_...)", required = true, example = "prf_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
+    public ResponseEntity<EntityModel<UsuarioResponse>> buscar(@Parameter(description = "ID público do professor (ex: prf_...)", required = true, example = "prf_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
         Professor p = professorService.buscarOuFalhar(id);
         laboratorioService.listarPorCoordenador(p.getId()).stream().findFirst()
                 .ifPresent(lab -> p.setNomeLaboratorio(lab.getNome()));
-        return comLinks(UsuarioResponse.de(p));
+        return ResponseEntity.ok(comLinks(UsuarioResponse.de(p)));
     }
 
     @Operation(summary = "Cadastrar novo professor", description = "Cria um novo professor coordenador no sistema (restrito a Administradores).")
@@ -119,7 +121,7 @@ public class ProfessorController {
             @ApiResponse(responseCode = "404", description = "Professor não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PutMapping("/{id}")
-    public EntityModel<UsuarioResponse> atualizar(@Parameter(description = "ID público do professor a atualizar", required = true, example = "prf_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
+    public ResponseEntity<EntityModel<UsuarioResponse>> atualizar(@Parameter(description = "ID público do professor a atualizar", required = true, example = "prf_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
                                      @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do professor", required = true)
                                      @Valid @RequestBody ProfessorRequest body) {
         bolsistaService.validarSenha(body.senha(), false);
@@ -130,7 +132,7 @@ public class ProfessorController {
             p.setSenha(passwordEncoder.encode(body.senha()));
         }
         professorService.atualizar(p);
-        return comLinks(UsuarioResponse.de(p));
+        return ResponseEntity.ok(comLinks(UsuarioResponse.de(p)));
     }
 
     @Operation(summary = "Desativar professor (Soft Delete)", description = "Desativa um professor coordenador (restrito a Administradores).")
