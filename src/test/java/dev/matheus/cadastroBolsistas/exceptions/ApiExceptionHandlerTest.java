@@ -39,4 +39,13 @@ class ApiExceptionHandlerTest {
         assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(resposta.getBody().mensagem()).isEqualTo("Um dos IDs informados (ex: laboratorio) nao existe.");
     }
+
+    @Test
+    void acessoNegadoRetorna403ComMensagemPadrao() {
+        ResponseEntity<ErroResponse> resposta =
+                handler.acessoNegado(new org.springframework.security.access.AccessDeniedException("Access Denied"));
+
+        assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(resposta.getBody().mensagem()).isEqualTo("Acesso negado.");
+    }
 }

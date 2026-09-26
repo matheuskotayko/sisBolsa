@@ -5,6 +5,7 @@ import dev.matheus.cadastroBolsistas.dto.ErroValidacaoCampo;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -28,6 +29,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler(PermissaoNegadaException.class)
     public ResponseEntity<ErroResponse> permissaoNegada(PermissaoNegadaException e) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponse(e.getMessage()));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErroResponse> acessoNegado(AccessDeniedException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponse("Acesso negado."));
     }
 
     @ExceptionHandler(LimiteAdminsAtingidoException.class)
