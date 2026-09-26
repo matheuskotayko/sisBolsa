@@ -11,7 +11,6 @@ import dev.matheus.cadastroBolsistas.repository.BolsistaRepository;
 import dev.matheus.cadastroBolsistas.repository.Filtros;
 import dev.matheus.cadastroBolsistas.repository.ProjetoRepository;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,19 +19,22 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 /*
- * regras de negocio de projetos com IDs em UUID.
+ * Regras de negócio de projetos de pesquisa com identificadores públicos e UUIDs.
  */
 @Service
 public class ProjetoService {
 
-    @Autowired
-    private ProjetoRepository repository;
+    private final ProjetoRepository repository;
+    private final LaboratorioService laboratorioService;
+    private final BolsistaRepository bolsistaRepository;
 
-    @Autowired
-    private LaboratorioService laboratorioService;
-
-    @Autowired
-    private BolsistaRepository bolsistaRepository;
+    public ProjetoService(ProjetoRepository repository,
+                          LaboratorioService laboratorioService,
+                          BolsistaRepository bolsistaRepository) {
+        this.repository = repository;
+        this.laboratorioService = laboratorioService;
+        this.bolsistaRepository = bolsistaRepository;
+    }
 
     public boolean cadastrar(Projeto p, Usuario logado) {
         if (!laboratorioService.podeGerenciar(logado, p.getLaboratorioId())) {
@@ -43,7 +45,6 @@ public class ProjetoService {
         return true;
     }
 
-    /* lookup + 404 (incluindo desativado) num so lugar, pra nenhum controller precisar checar null na mao. */
     public Projeto buscarOuFalhar(String publicId) {
         Projeto p = buscarPorId(publicId);
         if (p == null || !p.isAtivo()) {
@@ -60,7 +61,6 @@ public class ProjetoService {
         return p;
     }
 
-    /* so quem gerencia o laboratorio do projeto pode editar/excluir/(des)vincular membros. */
     public Projeto buscarExigindoGerencia(String publicId, Usuario logado) {
         Projeto p = buscarOuFalhar(publicId);
         if (!laboratorioService.podeGerenciar(logado, p.getLaboratorioId())) {
@@ -115,7 +115,15 @@ public class ProjetoService {
 
     public Projeto buscarPorId(String publicId) {
         if (publicId == null || publicId.isBlank()) return null;
-        return repository.findByPublicIdAndAtivoTrue(publicId).orElse(null);
+        Projeto p = repository.findByPublicIdAndAtivoTrue(publicId).orElse(null);
+        if (p == null) {
+            try {
+                UUID uuid = UUID.fromString(publicId);
+                return repository.findById(uuid).filter(Projeto::isAtivo).orElse(null);
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        return p;
     }
 
     public Projeto buscarPorId(UUID id) {
@@ -150,7 +158,6 @@ public class ProjetoService {
         p.setLinkDocumentacao(StringUtil.limpar(body.linkDocumentacao()));
     }
 
-    /* soft delete: carrega, marca ativo = false e deixa o JPA fazer o UPDATE. */
     @Transactional
     public boolean excluir(String publicId) {
         if (publicId == null || publicId.isBlank()) return false;
@@ -158,7 +165,14 @@ public class ProjetoService {
             p.setAtivo(false);
             repository.save(p);
             return true;
-        }).orElse(false);
+        }).orElseGet(() -> {
+            try {
+                UUID uuid = UUID.fromString(publicId);
+                return excluir(uuid);
+            } catch (IllegalArgumentException e) {
+                return false;
+            }
+        });
     }
 
     @Transactional
@@ -171,11 +185,6 @@ public class ProjetoService {
         }).orElse(false);
     }
 
-    /*
-     * vinculo e desvinculo sao so alteracoes na colecao do lado dono; o Hibernate
-     * traduz em INSERT/DELETE na bolsista_projeto no fim da transacao. o Set ja
-     * torna o vinculo idempotente, no lugar do antigo ON CONFLICT DO NOTHING.
-     */
     @Transactional
     public boolean vincularBolsista(String bolsistaPublicId, String projetoPublicId) {
         return alterarVinculo(bolsistaPublicId, projetoPublicId, true);
@@ -183,7 +192,8 @@ public class ProjetoService {
 
     @Transactional
     public boolean vincularBolsista(UUID bolsistaId, UUID projetoId) {
-        return alterarVinculo(bolsistaId, projetoId, true);
+        if (bolsistaId == null || projetoId == null) return false;
+        return alterarVinculo(bolsistaId.toString(), projetoId.toString(), true);
     }
 
     @Transactional
@@ -193,27 +203,21 @@ public class ProjetoService {
 
     @Transactional
     public boolean desvincularBolsista(UUID bolsistaId, UUID projetoId) {
-        return alterarVinculo(bolsistaId, projetoId, false);
-    }
-
-    private boolean alterarVinculo(String bolsistaPublicId, String projetoPublicId, boolean vincular) {
-        if (bolsistaPublicId == null || projetoPublicId == null) return false;
-        Projeto projeto = repository.findByPublicIdAndAtivoTrue(projetoPublicId).orElse(null);
-        Bolsista bolsista = bolsistaRepository.findByPublicIdAndAtivoTrue(bolsistaPublicId).orElse(null);
-        if (projeto == null || bolsista == null) return false;
-        if (vincular) {
-            projeto.getBolsistas().add(bolsista);
-        } else {
-            projeto.getBolsistas().remove(bolsista);
-        }
-        repository.save(projeto);
-        return true;
-    }
-
-    private boolean alterarVinculo(UUID bolsistaId, UUID projetoId, boolean vincular) {
         if (bolsistaId == null || projetoId == null) return false;
-        Projeto projeto = repository.findById(projetoId).orElse(null);
-        Bolsista bolsista = bolsistaRepository.findById(bolsistaId).orElse(null);
+        return alterarVinculo(bolsistaId.toString(), projetoId.toString(), false);
+    }
+
+    private boolean alterarVinculo(String bolsistaIdOuPublicId, String projetoIdOuPublicId, boolean vincular) {
+        if (bolsistaIdOuPublicId == null || projetoIdOuPublicId == null) return false;
+        Projeto projeto = buscarPorId(projetoIdOuPublicId);
+        Bolsista bolsista = bolsistaRepository.findByPublicIdAndAtivoTrue(bolsistaIdOuPublicId)
+                .orElseGet(() -> {
+                    try {
+                        return bolsistaRepository.findById(UUID.fromString(bolsistaIdOuPublicId)).filter(Bolsista::isAtivo).orElse(null);
+                    } catch (IllegalArgumentException e) {
+                        return null;
+                    }
+                });
         if (projeto == null || bolsista == null) return false;
         if (vincular) {
             projeto.getBolsistas().add(bolsista);

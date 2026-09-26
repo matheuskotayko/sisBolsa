@@ -12,7 +12,6 @@ import dev.matheus.cadastroBolsistas.repository.LaboratorioRepository;
 import dev.matheus.cadastroBolsistas.repository.ProfessorRepository;
 import dev.matheus.cadastroBolsistas.repository.ProjetoRepository;
 import dev.matheus.cadastroBolsistas.util.StringUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,51 +22,57 @@ import java.util.Objects;
 import java.util.UUID;
 
 /*
- * regras de negocio de laboratorios com IDs em UUID.
+ * Regras de negócio de laboratórios com suporte a identificadores públicos e UUIDs.
  */
 @Service
 public class LaboratorioService {
 
-    @Autowired
-    private LaboratorioRepository repository;
+    private final LaboratorioRepository repository;
+    private final ProjetoRepository projetoRepository;
+    private final BolsistaRepository bolsistaRepository;
+    private final ProfessorRepository professorRepository;
 
-    @Autowired
-    private ProjetoRepository projetoRepository;
+    public LaboratorioService(LaboratorioRepository repository,
+                              ProjetoRepository projetoRepository,
+                              BolsistaRepository bolsistaRepository,
+                              ProfessorRepository professorRepository) {
+        this.repository = repository;
+        this.projetoRepository = projetoRepository;
+        this.bolsistaRepository = bolsistaRepository;
+        this.professorRepository = professorRepository;
+    }
 
-    @Autowired
-    private BolsistaRepository bolsistaRepository;
-
-    @Autowired
-    private ProfessorRepository professorRepository;
+    public boolean podeGerenciar(Usuario usuarioLogado, Laboratorio lab) {
+        if (usuarioLogado == null || lab == null) return false;
+        if (usuarioLogado.isAdmin()) return true;
+        if (usuarioLogado.isProfessor()) {
+            return Objects.equals(lab.getCoordenadorId(), usuarioLogado.getId());
+        }
+        return false;
+    }
 
     public boolean podeGerenciar(Usuario usuarioLogado, String labPublicId) {
         if (usuarioLogado == null || labPublicId == null || labPublicId.isBlank()) return false;
         if (usuarioLogado.isAdmin()) return true;
-        if (usuarioLogado.isProfessor()) {
-            Laboratorio lab = repository.findByPublicId(labPublicId).orElse(null);
-            return lab != null && Objects.equals(lab.getCoordenadorId(), usuarioLogado.getId());
-        }
-        return false;
+        if (!usuarioLogado.isProfessor()) return false;
+        Laboratorio lab = repository.findByPublicId(labPublicId).orElse(null);
+        return podeGerenciar(usuarioLogado, lab);
     }
 
     public boolean podeGerenciar(Usuario usuarioLogado, UUID labId) {
         if (usuarioLogado == null || labId == null) return false;
         if (usuarioLogado.isAdmin()) return true;
-        if (usuarioLogado.isProfessor()) {
-            Laboratorio lab = repository.findById(labId).orElse(null);
-            return lab != null && Objects.equals(lab.getCoordenadorId(), usuarioLogado.getId());
-        }
-        return false;
+        if (!usuarioLogado.isProfessor()) return false;
+        Laboratorio lab = repository.findById(labId).orElse(null);
+        return podeGerenciar(usuarioLogado, lab);
     }
 
-    /* quem barra nao-admin e o SecurityConfig, na regra POST /api/v1/laboratorios. */
     public boolean cadastrar(Laboratorio lab) {
         lab.setAtivo(true);
         repository.save(lab);
         return true;
     }
 
-    /* lookup + 404 (incluindo desativado) num so lugar, pra nenhum controller precisar checar null na mao. */
     public Laboratorio buscarOuFalhar(String publicId) {
         Laboratorio lab = buscarPorId(publicId);
         if (lab == null || !lab.isAtivo()) {
@@ -84,10 +89,9 @@ public class LaboratorioService {
         return lab;
     }
 
-    /* so quem gerencia (admin ou o professor coordenador) pode editar/excluir. */
     public Laboratorio buscarExigindoGerencia(String publicId, Usuario logado) {
         Laboratorio lab = buscarOuFalhar(publicId);
-        if (!podeGerenciar(logado, publicId)) {
+        if (!podeGerenciar(logado, lab)) {
             throw new PermissaoNegadaException("Sem permissao para gerenciar este laboratorio.");
         }
         return lab;
@@ -95,7 +99,7 @@ public class LaboratorioService {
 
     public Laboratorio buscarExigindoGerencia(UUID id, Usuario logado) {
         Laboratorio lab = buscarOuFalhar(id);
-        if (!podeGerenciar(logado, id)) {
+        if (!podeGerenciar(logado, lab)) {
             throw new PermissaoNegadaException("Sem permissao para gerenciar este laboratorio.");
         }
         return lab;
@@ -118,8 +122,15 @@ public class LaboratorioService {
     public Laboratorio buscarPorId(String publicId) {
         if (publicId == null || publicId.isBlank()) return null;
         Laboratorio lab = repository.findByPublicIdAndAtivoTrue(publicId).orElse(null);
+        if (lab == null) {
+            try {
+                UUID uuid = UUID.fromString(publicId);
+                lab = repository.findById(uuid).filter(Laboratorio::isAtivo).orElse(null);
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
         if (lab != null) {
-            lab.setProjetos(new ArrayList<>(projetoRepository.findByLaboratorio_PublicIdAndAtivoTrueOrderByNome(publicId)));
+            lab.setProjetos(new ArrayList<>(projetoRepository.findByLaboratorio_PublicIdAndAtivoTrueOrderByNome(lab.getPublicId())));
         }
         return lab;
     }
@@ -138,7 +149,6 @@ public class LaboratorioService {
         return true;
     }
 
-    /* soft delete: carrega, marca ativo = false e deixa o JPA fazer o UPDATE. */
     @Transactional
     public boolean excluir(String publicId) {
         if (publicId == null || publicId.isBlank()) return false;
@@ -146,7 +156,14 @@ public class LaboratorioService {
             lab.setAtivo(false);
             repository.save(lab);
             return true;
-        }).orElse(false);
+        }).orElseGet(() -> {
+            try {
+                UUID uuid = UUID.fromString(publicId);
+                return excluir(uuid);
+            } catch (IllegalArgumentException e) {
+                return false;
+            }
+        });
     }
 
     @Transactional
@@ -159,24 +176,24 @@ public class LaboratorioService {
         }).orElse(false);
     }
 
+    public boolean temVaga(Laboratorio lab) {
+        return lab != null && contarBolsistasNoLaboratorio(lab.getId()) < lab.getCapacidade();
+    }
+
     public boolean temVaga(String publicId) {
-        if (publicId == null || publicId.isBlank()) return false;
-        Laboratorio lab = repository.findByPublicId(publicId).orElse(null);
-        if (lab == null) return false;
-        return contarBolsistasNoLaboratorio(lab.getId()) < lab.getCapacidade();
+        return temVaga(buscarPorId(publicId));
     }
 
     public boolean temVaga(UUID labId) {
-        if (labId == null) return false;
-        Laboratorio lab = repository.findById(labId).orElse(null);
-        if (lab == null) return false;
-        return contarBolsistasNoLaboratorio(labId) < lab.getCapacidade();
+        return temVaga(buscarPorId(labId));
+    }
+
+    public int contarBolsistasNoLaboratorio(Laboratorio lab) {
+        return lab != null && lab.getId() != null ? contarBolsistasNoLaboratorio(lab.getId()) : 0;
     }
 
     public int contarBolsistasNoLaboratorio(String publicId) {
-        if (publicId == null || publicId.isBlank()) return 0;
-        Laboratorio lab = repository.findByPublicId(publicId).orElse(null);
-        return lab != null ? contarBolsistasNoLaboratorio(lab.getId()) : 0;
+        return contarBolsistasNoLaboratorio(buscarPorId(publicId));
     }
 
     public int contarBolsistasNoLaboratorio(UUID labId) {
@@ -200,7 +217,6 @@ public class LaboratorioService {
         }
     }
 
-    /* professor coordena poucos laboratorios - filtra em memoria em vez de virar mais uma query no banco */
     public List<Laboratorio> filtrarPorTermo(List<Laboratorio> labs, String buscaNome) {
         if (StringUtil.estaVazio(buscaNome)) {
             return labs;
