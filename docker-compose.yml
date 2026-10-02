@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:15
+    container_name: cadastro_bolsistas_db
+    environment:
+      POSTGRES_DB: cadastroBolsista
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+    ports:
+      # exposto para conseguir inspecionar o banco de fora do compose
+      - "5436:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # sem isso a aplicacao sobe antes do banco aceitar conexao e o flyway falha
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cadastroBolsista"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: cadastro_bolsistas_app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # dentro da rede do compose o banco atende pelo nome do servico, na porta interna
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: cadastroBolsista
+      DB_USER: postgres
+      DB_PASSWORD: 1234
+      # em producao isso vem de fora, nunca versionado
+      JWT_SECRET: troque-esse-segredo-em-producao-precisa-ter-pelo-menos-32-bytes
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:

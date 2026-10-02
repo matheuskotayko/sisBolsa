@@ -1,0 +1,16 @@
+package dev.matheus.cadastroBolsistas.dto;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+
+@Schema(description = "Dados para cadastro de um novo curso.")
+public record CursoRequest(
+        @NotBlank(message = "Nome do curso e obrigatorio.")
+        @Schema(description = "Nome do curso", example = "Engenharia de Computação", requiredMode = Schema.RequiredMode.REQUIRED)
+        String nome) {
+
+    /** Normaliza o nome com trim, garantindo consistência antes da Bean Validation. */
+    public CursoRequest {
+        nome = nome != null ? nome.trim() : null;
+    }
+}
