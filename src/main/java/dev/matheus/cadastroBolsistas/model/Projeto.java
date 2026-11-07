@@ -1,5 +1,8 @@
 package dev.matheus.cadastroBolsistas.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import dev.matheus.cadastroBolsistas.util.PublicIdGenerator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,6 +23,8 @@ import java.util.UUID;
 /*
  * projeto vinculado a um laboratorio com id UUID e identificador publico prefixado prj_.
  */
+@Getter
+@Setter
 @Entity
 @Table(name = "projeto")
 public class Projeto {
@@ -80,28 +85,6 @@ public class Projeto {
         }
     }
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-
-    public String getPublicId() { return publicId; }
-    public void setPublicId(String publicId) { this.publicId = publicId; }
-
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
-
-    public String getDescricao() { return descricao; }
-    public void setDescricao(String descricao) { this.descricao = descricao; }
-
-    public String getLinkRepositorio() { return linkRepositorio; }
-    public void setLinkRepositorio(String linkRepositorio) { this.linkRepositorio = linkRepositorio; }
-
-    public String getLinkDocumentacao() { return linkDocumentacao; }
-    public void setLinkDocumentacao(String linkDocumentacao) { this.linkDocumentacao = linkDocumentacao; }
-
-    public UUID getLaboratorioId() { return laboratorioId; }
-    public void setLaboratorioId(UUID laboratorioId) { this.laboratorioId = laboratorioId; }
-
-    public Laboratorio getLaboratorio() { return laboratorio; }
     public void setLaboratorio(Laboratorio laboratorio) {
         this.laboratorio = laboratorio;
         if (laboratorio != null) {
@@ -117,8 +100,4 @@ public class Projeto {
         return laboratorio != null ? laboratorio.getNome() : null;
     }
 
-    public boolean isAtivo() { return ativo; }
-    public void setAtivo(boolean ativo) { this.ativo = ativo; }
-
-    public Set<Bolsista> getBolsistas() { return bolsistas; }
 }

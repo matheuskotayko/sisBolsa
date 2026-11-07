@@ -1,5 +1,8 @@
 package dev.matheus.cadastroBolsistas.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import dev.matheus.cadastroBolsistas.util.PublicIdGenerator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,6 +20,8 @@ import java.util.UUID;
 /*
  * registro de horas trabalhadas por um bolsista com id UUID, identificador publico prefixado frq_ e link de comprovante/entregavel.
  */
+@Getter
+@Setter
 @Entity
 @Table(name = "frequencia")
 public class Frequencia {
@@ -68,15 +73,6 @@ public class Frequencia {
         }
     }
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-
-    public String getPublicId() { return publicId; }
-    public void setPublicId(String publicId) { this.publicId = publicId; }
-
-    public UUID getBolsistaId() { return bolsistaId; }
-    public void setBolsistaId(UUID bolsistaId) { this.bolsistaId = bolsistaId; }
-
     public String getNomeBolsista() {
         return bolsista != null ? bolsista.getNome() : null;
     }
@@ -93,18 +89,4 @@ public class Frequencia {
         }
     }
 
-    public LocalDate getData() { return data; }
-    public void setData(LocalDate data) { this.data = data; }
-
-    public double getHorasTrabalhadas() { return horasTrabalhadas; }
-    public void setHorasTrabalhadas(double horasTrabalhadas) { this.horasTrabalhadas = horasTrabalhadas; }
-
-    public String getDescricao() { return descricao; }
-    public void setDescricao(String descricao) { this.descricao = descricao; }
-
-    public String getLinkComprovante() { return linkComprovante; }
-    public void setLinkComprovante(String linkComprovante) { this.linkComprovante = linkComprovante; }
-
-    public boolean isAtivo() { return ativo; }
-    public void setAtivo(boolean ativo) { this.ativo = ativo; }
 }

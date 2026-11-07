@@ -1,5 +1,8 @@
 package dev.matheus.cadastroBolsistas.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import dev.matheus.cadastroBolsistas.util.PublicIdGenerator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -18,6 +21,8 @@ import java.util.UUID;
 /*
  * laboratorio de pesquisa com id UUID e identificador publico prefixado lab_.
  */
+@Getter
+@Setter
 @Entity
 @Table(name = "laboratorio")
 public class Laboratorio {
@@ -74,37 +79,12 @@ public class Laboratorio {
         }
     }
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-
-    public String getPublicId() { return publicId; }
-    public void setPublicId(String publicId) { this.publicId = publicId; }
-
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
-
-    public String getAreaPesquisa() { return areaPesquisa; }
-    public void setAreaPesquisa(String areaPesquisa) { this.areaPesquisa = areaPesquisa; }
-
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-
-    public int getCapacidade() { return capacidade; }
-    public void setCapacidade(int capacidade) { this.capacidade = capacidade; }
-
-    public UUID getCoordenadorId() { return coordenadorId; }
-    public void setCoordenadorId(UUID coordenadorId) { this.coordenadorId = coordenadorId; }
-
     public String getCoordenador() {
         return coordenadorProfessor != null ? coordenadorProfessor.getNome() : null;
     }
 
     public String getCoordenadorPublicId() {
         return coordenadorProfessor != null ? coordenadorProfessor.getPublicId() : null;
-    }
-
-    public Professor getCoordenadorProfessor() {
-        return coordenadorProfessor;
     }
 
     public void setCoordenadorProfessor(Professor coordenadorProfessor) {
@@ -114,12 +94,4 @@ public class Laboratorio {
         }
     }
 
-    public boolean isAtivo() { return ativo; }
-    public void setAtivo(boolean ativo) { this.ativo = ativo; }
-
-    public ArrayList<Projeto> getProjetos() { return projetos; }
-    public void setProjetos(ArrayList<Projeto> projetos) { this.projetos = projetos; }
-
-    public int getTotalBolsistas() { return totalBolsistas; }
-    public void setTotalBolsistas(int totalBolsistas) { this.totalBolsistas = totalBolsistas; }
 }

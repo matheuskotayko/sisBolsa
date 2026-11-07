@@ -1,5 +1,8 @@
 package dev.matheus.cadastroBolsistas.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import dev.matheus.cadastroBolsistas.util.PublicIdGenerator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,6 +19,8 @@ import java.util.UUID;
  * adicionar novos em tempo de execucao (por isso e entidade, nao enum).
  * Identificador publico prefixado cur_.
  */
+@Getter
+@Setter
 @Entity
 @Table(name = "curso")
 public class Curso {
@@ -42,15 +47,4 @@ public class Curso {
         }
     }
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-
-    public String getPublicId() { return publicId; }
-    public void setPublicId(String publicId) { this.publicId = publicId; }
-
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
-
-    public boolean isAtivo() { return ativo; }
-    public void setAtivo(boolean ativo) { this.ativo = ativo; }
 }

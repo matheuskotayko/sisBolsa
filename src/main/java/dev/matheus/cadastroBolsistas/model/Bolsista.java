@@ -1,4 +1,6 @@
 package dev.matheus.cadastroBolsistas.model;
+import lombok.Getter;
+import lombok.Setter;
 
 import dev.matheus.cadastroBolsistas.util.PublicIdGenerator;
 import jakarta.persistence.CascadeType;
@@ -27,6 +29,8 @@ import java.util.UUID;
  * Utiliza o padrao de composicao 1:1 com Usuario (chave primaria compartilhada via @MapsId)
  * e identificador publico prefixado bol_.
  */
+@Getter
+@Setter
 @Entity
 @Table(name = "bolsista")
 public class Bolsista {
@@ -115,7 +119,6 @@ public class Bolsista {
         }
     }
 
-    public UUID getId() { return id; }
     public void setId(UUID id) {
         this.id = id;
         if (this.usuario != null) {
@@ -123,31 +126,6 @@ public class Bolsista {
         }
     }
 
-    public String getPublicId() { return publicId; }
-    public void setPublicId(String publicId) { this.publicId = publicId; }
-
-    public Usuario getUsuario() { return usuario; }
-    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
-
-    public LocalDate getDataNascimento() { return dataNascimento; }
-    public void setDataNascimento(LocalDate dataNascimento) { this.dataNascimento = dataNascimento; }
-
-    public String getCurso() { return curso; }
-    public void setCurso(String curso) { this.curso = curso; }
-
-    public String getMatricula() { return matricula; }
-    public void setMatricula(String matricula) { this.matricula = matricula; }
-
-    public String getCpf() { return cpf; }
-    public void setCpf(String cpf) { this.cpf = cpf; }
-
-    public String getTelefone() { return telefone; }
-    public void setTelefone(String telefone) { this.telefone = telefone; }
-
-    public UUID getLaboratorioId() { return laboratorioId; }
-    public void setLaboratorioId(UUID laboratorioId) { this.laboratorioId = laboratorioId; }
-
-    public Laboratorio getLaboratorio() { return laboratorio; }
     public void setLaboratorio(Laboratorio laboratorio) {
         this.laboratorio = laboratorio;
         if (laboratorio != null) {
@@ -158,23 +136,6 @@ public class Bolsista {
     public String getLaboratorioPublicId() {
         return laboratorio != null ? laboratorio.getPublicId() : null;
     }
-
-    public Cargo getCargo() { return cargo; }
-    public void setCargo(Cargo cargo) { this.cargo = cargo; }
-
-    public ModalidadeBolsa getModalidadeBolsa() { return modalidadeBolsa; }
-    public void setModalidadeBolsa(ModalidadeBolsa modalidadeBolsa) { this.modalidadeBolsa = modalidadeBolsa; }
-
-    public Double getValorBolsa() { return valorBolsa; }
-    public void setValorBolsa(Double valorBolsa) { this.valorBolsa = valorBolsa; }
-
-    public LocalDate getDataInicioBolsa() { return dataInicioBolsa; }
-    public void setDataInicioBolsa(LocalDate dataInicioBolsa) { this.dataInicioBolsa = dataInicioBolsa; }
-
-    public LocalDate getDataFimBolsa() { return dataFimBolsa; }
-    public void setDataFimBolsa(LocalDate dataFimBolsa) { this.dataFimBolsa = dataFimBolsa; }
-
-    public Set<Projeto> getProjetos() { return projetos; }
 
     public boolean isBolsaVencida() {
         return dataFimBolsa != null && dataFimBolsa.isBefore(LocalDate.now());

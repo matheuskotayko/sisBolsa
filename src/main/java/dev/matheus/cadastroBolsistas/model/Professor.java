@@ -1,5 +1,8 @@
 package dev.matheus.cadastroBolsistas.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import dev.matheus.cadastroBolsistas.util.PublicIdGenerator;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -19,6 +22,8 @@ import java.util.UUID;
  * Utiliza o padrao de composicao 1:1 com Usuario (chave primaria compartilhada via @MapsId)
  * e identificador publico com prefixo prf_.
  */
+@Getter
+@Setter
 @Entity
 @Table(name = "professor")
 public class Professor {
@@ -63,19 +68,12 @@ public class Professor {
         }
     }
 
-    public UUID getId() { return id; }
     public void setId(UUID id) {
         this.id = id;
         if (this.usuario != null) {
             this.usuario.setId(id);
         }
     }
-
-    public String getPublicId() { return publicId; }
-    public void setPublicId(String publicId) { this.publicId = publicId; }
-
-    public Usuario getUsuario() { return usuario; }
-    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
 
     // Metodos delegados para facilitar acesso aos dados de identidade
     public String getNome() { return usuario != null ? usuario.getNome() : null; }

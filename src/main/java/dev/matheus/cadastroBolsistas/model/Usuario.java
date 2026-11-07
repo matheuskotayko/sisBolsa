@@ -1,5 +1,8 @@
 package dev.matheus.cadastroBolsistas.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import dev.matheus.cadastroBolsistas.util.PublicIdGenerator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,6 +19,8 @@ import java.util.UUID;
  * Entidade concreta de usuario responsavel por identidade e credenciais (ADMIN, BOLSISTA ou PROFESSOR).
  * Chave primaria do tipo UUID e identificador publico seguro.
  */
+@Getter
+@Setter
 @Entity
 @Table(name = "usuario")
 public class Usuario {
@@ -66,33 +71,6 @@ public class Usuario {
         }
     }
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-
-    public String getPublicId() { return publicId; }
-    public void setPublicId(String publicId) { this.publicId = publicId; }
-
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
-    public String getSenha() { return senha; }
-    public void setSenha(String senha) { this.senha = senha; }
-
-    public boolean isAtivo() { return ativo; }
-    public void setAtivo(boolean ativo) { this.ativo = ativo; }
-
-    public String getTipoUsuario() { return tipoUsuario; }
-    public void setTipoUsuario(String tipoUsuario) { this.tipoUsuario = tipoUsuario; }
-
-    public String getFotoUrl() { return fotoUrl; }
-    public void setFotoUrl(String fotoUrl) { this.fotoUrl = fotoUrl; }
-
-    public String getNomeLaboratorio() { return nomeLaboratorio; }
-    public void setNomeLaboratorio(String nomeLaboratorio) { this.nomeLaboratorio = nomeLaboratorio; }
-
     public boolean isAdmin() {
         return "ADMIN".equalsIgnoreCase(this.tipoUsuario);
     }
@@ -105,6 +83,4 @@ public class Usuario {
         return "PROFESSOR".equalsIgnoreCase(this.tipoUsuario);
     }
 
-    public String getBio() { return bio; }
-    public void setBio(String bio) { this.bio = bio; }
 }
