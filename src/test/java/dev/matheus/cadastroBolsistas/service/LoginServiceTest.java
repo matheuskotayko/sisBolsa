@@ -1,5 +1,7 @@
 package dev.matheus.cadastroBolsistas.service;
 
+import dev.matheus.cadastroBolsistas.exceptions.ContaBloqueadaException;
+import dev.matheus.cadastroBolsistas.exceptions.CredenciaisInvalidasException;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.repository.UsuarioRepository;
 import org.junit.jupiter.api.Test;
@@ -72,6 +74,48 @@ class LoginServiceTest {
         Usuario encontrado = service.buscarPorEmail("admin@sisbolsa.com");
         assertNotNull(encontrado);
         assertEquals("admin@sisbolsa.com", encontrado.getEmail());
+    }
+
+    private void cadastrar(String email, String senhaCerta) {
+        Usuario u = new Usuario();
+        u.setEmail(email);
+        u.setSenha("hash");
+        when(usuarioRepository.findByEmailAndAtivoTrue(email)).thenReturn(Optional.of(u));
+        when(passwordEncoder.matches(anyString(), eq("hash"))).thenAnswer(i -> senhaCerta.equals(i.getArgument(0)));
+    }
+
+    @Test
+    void entrar_comSenhaCorreta_devolveUsuarioEZeraTentativas() {
+        cadastrar("a@a.com", "certa");
+        service.registrarFalha("a@a.com");
+
+        assertEquals("a@a.com", service.entrar("a@a.com", "certa").getEmail());
+        assertEquals(5, service.getTentativasRestantes("a@a.com"));
+    }
+
+    @Test
+    void entrar_comSenhaErrada_avisaQuantasTentativasRestam() {
+        cadastrar("a@a.com", "certa");
+        for (int i = 0; i < 2; i++) {
+            assertThrows(CredenciaisInvalidasException.class, () -> service.entrar("a@a.com", "errada"));
+        }
+
+        CredenciaisInvalidasException ex = assertThrows(CredenciaisInvalidasException.class,
+                () -> service.entrar("a@a.com", "errada"));
+        assertTrue(ex.getReason().contains("Restam 2 tentativa(s)"));
+    }
+
+    @Test
+    void entrar_naQuintaFalha_bloqueiaEDepoisRecusaMesmoComSenhaCerta() {
+        cadastrar("a@a.com", "certa");
+        for (int i = 0; i < 4; i++) {
+            assertThrows(CredenciaisInvalidasException.class, () -> service.entrar("a@a.com", "errada"));
+        }
+
+        ContaBloqueadaException quinta = assertThrows(ContaBloqueadaException.class,
+                () -> service.entrar("a@a.com", "errada"));
+        assertTrue(quinta.getReason().contains("5 minutos"));
+        assertThrows(ContaBloqueadaException.class, () -> service.entrar("a@a.com", "certa"));
     }
 
     @Test

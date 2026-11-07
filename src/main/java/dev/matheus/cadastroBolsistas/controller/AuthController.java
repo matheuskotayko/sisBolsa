@@ -9,8 +9,6 @@ import dev.matheus.cadastroBolsistas.dto.response.MensagemResponse;
 import dev.matheus.cadastroBolsistas.dto.request.PerfilRequest;
 import dev.matheus.cadastroBolsistas.dto.request.RedefinirSenhaRequest;
 import dev.matheus.cadastroBolsistas.dto.response.UsuarioResponse;
-import dev.matheus.cadastroBolsistas.exceptions.ContaBloqueadaException;
-import dev.matheus.cadastroBolsistas.exceptions.CredenciaisInvalidasException;
 import dev.matheus.cadastroBolsistas.model.Administrador;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Professor;
@@ -72,31 +70,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<UsuarioResponse> login(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Credenciais de e-mail e senha", required = true)
                                                  @Valid @RequestBody LoginRequest body) {
-        String email = body.email();
-
-        if (loginService.isBloqueado(email)) {
-            long segundos = loginService.getSegundosRestantesBloqueio(email);
-            long minutos = Math.max(1, (segundos + 59) / 60);
-            throw new ContaBloqueadaException(
-                    "Muitas tentativas incorretas. Conta bloqueada temporariamente por " + minutos + " minuto(s).");
-        }
-
-        Usuario usuario = loginService.autenticar(email, body.senha());
-
-        if (usuario == null) {
-            loginService.registrarFalha(email);
-            int restantes = loginService.getTentativasRestantes(email);
-
-            if (loginService.isBloqueado(email)) {
-                throw new ContaBloqueadaException(
-                        "Limite de 5 tentativas consecutivas excedido. Conta bloqueada temporariamente por 5 minutos.");
-            }
-
-            String aviso = (restantes <= 2 && restantes > 0) ? " Restam " + restantes + " tentativa(s) antes do bloqueio temporário." : "";
-            throw new CredenciaisInvalidasException("E-mail ou senha incorretos." + aviso);
-        }
-
-        loginService.registrarSucesso(email);
+        Usuario usuario = loginService.entrar(body.email(), body.senha());
         String token = jwtService.gerarToken(usuario.getEmail(), usuario.getTipoUsuario());
         return ResponseEntity.ok()
                 .header("X-Auth-Token", token)

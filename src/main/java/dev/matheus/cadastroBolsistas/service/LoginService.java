@@ -1,5 +1,7 @@
 package dev.matheus.cadastroBolsistas.service;
 
+import dev.matheus.cadastroBolsistas.exceptions.ContaBloqueadaException;
+import dev.matheus.cadastroBolsistas.exceptions.CredenciaisInvalidasException;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.repository.UsuarioRepository;
 import java.time.Instant;
@@ -19,6 +21,33 @@ public class LoginService {
                         PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
+    }
+
+    /**
+     * login com bloqueio temporario por excesso de tentativas. so devolve usuario valido;
+     * conta bloqueada vira ContaBloqueadaException (429) e credencial errada CredenciaisInvalidasException (401).
+     */
+    public Usuario entrar(String email, String senha) {
+        if (isBloqueado(email)) {
+            long minutos = Math.max(1, (getSegundosRestantesBloqueio(email) + 59) / 60);
+            throw new ContaBloqueadaException(
+                    "Muitas tentativas incorretas. Conta bloqueada temporariamente por " + minutos + " minuto(s).");
+        }
+        Usuario usuario = autenticar(email, senha);
+        if (usuario == null) {
+            registrarFalha(email);
+            if (isBloqueado(email)) {
+                throw new ContaBloqueadaException("Limite de " + MAX_TENTATIVAS
+                        + " tentativas consecutivas excedido. Conta bloqueada temporariamente por "
+                        + DURACAO_BLOQUEIO_SEGUNDOS / 60 + " minutos.");
+            }
+            int restantes = getTentativasRestantes(email);
+            String aviso = (restantes <= 2 && restantes > 0)
+                    ? " Restam " + restantes + " tentativa(s) antes do bloqueio temporário." : "";
+            throw new CredenciaisInvalidasException("E-mail ou senha incorretos." + aviso);
+        }
+        registrarSucesso(email);
+        return usuario;
     }
 
     public Usuario autenticar(String email, String senha) {
@@ -83,7 +112,7 @@ public static final int MAX_TENTATIVAS = 5;
 
     private final Map<String, TentativaInfo> cache = new ConcurrentHashMap<>();
 
-    public boolean isBloqueado(String chave) {
+    boolean isBloqueado(String chave) {
         if (chave == null || chave.isBlank()) return false;
         chave = chave.toLowerCase().trim();
         TentativaInfo info = cache.get(chave);
@@ -101,7 +130,7 @@ public static final int MAX_TENTATIVAS = 5;
         return false;
     }
 
-    public void registrarFalha(String chave) {
+    void registrarFalha(String chave) {
         if (chave == null || chave.isBlank()) return;
         chave = chave.toLowerCase().trim();
 
@@ -127,19 +156,19 @@ public static final int MAX_TENTATIVAS = 5;
         });
     }
 
-    public void registrarSucesso(String chave) {
+    void registrarSucesso(String chave) {
         if (chave == null || chave.isBlank()) return;
         cache.remove(chave.toLowerCase().trim());
     }
 
-    public int getTentativasRestantes(String chave) {
+    int getTentativasRestantes(String chave) {
         if (chave == null || chave.isBlank()) return MAX_TENTATIVAS;
         TentativaInfo info = cache.get(chave.toLowerCase().trim());
         if (info == null) return MAX_TENTATIVAS;
         return Math.max(0, MAX_TENTATIVAS - info.tentativas);
     }
 
-    public long getSegundosRestantesBloqueio(String chave) {
+    long getSegundosRestantesBloqueio(String chave) {
         if (chave == null || chave.isBlank()) return 0;
         TentativaInfo info = cache.get(chave.toLowerCase().trim());
         if (info == null || info.expiracaoBloqueio == null) return 0;

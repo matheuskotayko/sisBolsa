@@ -2,6 +2,8 @@ package dev.matheus.cadastroBolsistas.controller;
 
 import dev.matheus.cadastroBolsistas.exceptions.LimiteAdminsAtingidoException;
 import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
+import dev.matheus.cadastroBolsistas.exceptions.ContaBloqueadaException;
+import dev.matheus.cadastroBolsistas.exceptions.CredenciaisInvalidasException;
 import dev.matheus.cadastroBolsistas.model.Administrador;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Professor;
@@ -124,7 +126,7 @@ class AuthControllerTest {
 
     @Test
     void login_comCredenciaisValidas_retornaTokenNoHeader() throws Exception {
-        when(loginService.autenticar("thiago@teste.com", "12345678")).thenReturn(usuarioLogado);
+        when(loginService.entrar("thiago@teste.com", "12345678")).thenReturn(usuarioLogado);
         when(jwtService.gerarToken("thiago@teste.com", "BOLSISTA")).thenReturn("token-fake");
 
         mockMvc.perform(post("/api/v1/auth/login")
@@ -137,8 +139,7 @@ class AuthControllerTest {
 
     @Test
     void login_quandoContaBloqueadaPorRateLimiting_retorna429() throws Exception {
-        when(loginService.isBloqueado("bloqueado@teste.com")).thenReturn(true);
-        when(loginService.getSegundosRestantesBloqueio("bloqueado@teste.com")).thenReturn(300L);
+        when(loginService.entrar("bloqueado@teste.com", "qualquer")).thenThrow(new ContaBloqueadaException("bloqueada"));
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -151,7 +152,7 @@ class AuthControllerTest {
         Usuario u = new Usuario();
         u.setEmail("thiago@teste.com");
         u.setSenha("hash-secreto");
-        when(loginService.autenticar(any(), any())).thenReturn(u);
+        when(loginService.entrar(any(), any())).thenReturn(u);
         when(jwtService.gerarToken(any(), any())).thenReturn("t");
 
         mockMvc.perform(post("/api/v1/auth/login")
@@ -163,7 +164,7 @@ class AuthControllerTest {
 
     @Test
     void login_comCredenciaisInvalidas_retorna401() throws Exception {
-        when(loginService.autenticar(any(), any())).thenReturn(null);
+        when(loginService.entrar(any(), any())).thenThrow(new CredenciaisInvalidasException("incorretos"));
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -200,7 +201,7 @@ class AuthControllerTest {
         Usuario u = new Usuario();
         u.setEmail("thiago@teste.com");
         u.setTipoUsuario("BOLSISTA");
-        when(loginService.autenticar("thiago@teste.com", "12345678")).thenReturn(u);
+        when(loginService.entrar("thiago@teste.com", "12345678")).thenReturn(u);
         when(jwtService.gerarToken("thiago@teste.com", "BOLSISTA")).thenReturn("token-fake");
 
         mockMvc.perform(post("/api/v1/auth/login")
@@ -208,7 +209,7 @@ class AuthControllerTest {
                         .content(json("email", "   thiago@teste.com   ", "senha", "12345678")))
                 .andExpect(status().isOk());
 
-        verify(loginService).autenticar("thiago@teste.com", "12345678");
+        verify(loginService).entrar("thiago@teste.com", "12345678");
     }
 
     @Test
