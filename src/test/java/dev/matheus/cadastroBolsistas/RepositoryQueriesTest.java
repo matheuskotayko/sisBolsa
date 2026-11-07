@@ -1,9 +1,9 @@
 package dev.matheus.cadastroBolsistas;
 
-import dev.matheus.cadastroBolsistas.administrador.AdministradorRepository;
-import dev.matheus.cadastroBolsistas.bolsista.BolsistaRepository;
-import dev.matheus.cadastroBolsistas.common.Filtros;
-import dev.matheus.cadastroBolsistas.professor.ProfessorRepository;
+import dev.matheus.cadastroBolsistas.repository.AdministradorRepository;
+import dev.matheus.cadastroBolsistas.repository.BolsistaRepository;
+import dev.matheus.cadastroBolsistas.repository.Filtros;
+import dev.matheus.cadastroBolsistas.repository.ProfessorRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
