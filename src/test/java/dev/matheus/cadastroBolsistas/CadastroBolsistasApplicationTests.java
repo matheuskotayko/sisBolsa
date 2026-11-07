@@ -16,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * a suite nao sobe banco. duas coisas sao necessarias para isso:
  *
  * - flyway desligado, senao ele tenta migrar no startup;
+ * - ddl-auto none, senao o validate do application.yml abre conexao para conferir o schema;
  * - dialect declarado na mao, senao o hibernate abre conexao so para descobrir
  *   qual e o dialect a partir da metadata do jdbc.
  *
@@ -24,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest(properties = {
         "spring.flyway.enabled=false",
+        "spring.jpa.hibernate.ddl-auto=none",
         "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect"
 })
 @AutoConfigureMockMvc
