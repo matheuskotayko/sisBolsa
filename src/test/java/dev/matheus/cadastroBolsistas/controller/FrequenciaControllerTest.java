@@ -136,7 +136,7 @@ class FrequenciaControllerTest {
         String publicId = "frq_abc123456789012345678";
         Frequencia f = frequenciaFake(publicId, "bol_xyz789");
 
-        when(frequenciaService.buscarComPermissao(eq(publicId), any(Usuario.class))).thenReturn(f);
+        when(frequenciaService.atualizar(eq(publicId), any(FrequenciaRequest.class), any(Usuario.class))).thenReturn(f);
 
         String json = """
             {
@@ -152,7 +152,7 @@ class FrequenciaControllerTest {
                         .content(json))
                 .andExpect(status().isOk());
 
-        verify(frequenciaService).atualizar(f);
+        verify(frequenciaService).atualizar(eq(publicId), any(FrequenciaRequest.class), any(Usuario.class));
     }
 
     @Test

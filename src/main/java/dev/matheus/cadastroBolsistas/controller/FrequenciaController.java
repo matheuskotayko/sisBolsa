@@ -184,14 +184,7 @@ public class FrequenciaController {
             @AuthenticationPrincipal Usuario usuario,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados da frequência", required = true)
             @Valid @RequestBody FrequenciaRequest body) {
-        Frequencia f = frequenciaService.buscarComPermissao(id, usuario);
-
-        f.setData(body.data());
-        f.setHorasTrabalhadas(body.horasTrabalhadas());
-        f.setDescricao(body.descricao());
-        f.setLinkComprovante(body.linkComprovante());
-        frequenciaService.atualizar(f);
-        return ResponseEntity.ok(FrequenciaResponse.from(f));
+        return ResponseEntity.ok(FrequenciaResponse.from(frequenciaService.atualizar(id, body, usuario)));
     }
 
     @Operation(summary = "Desativar frequência (Soft Delete)", description = "Desativa um registro de apontamento de horas.")

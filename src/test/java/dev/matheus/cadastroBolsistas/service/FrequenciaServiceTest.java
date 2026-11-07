@@ -1,5 +1,6 @@
 package dev.matheus.cadastroBolsistas.service;
 
+import dev.matheus.cadastroBolsistas.dto.request.FrequenciaRequest;
 import dev.matheus.cadastroBolsistas.dto.response.ResumoHorasResponse;
 import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
 import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
@@ -105,6 +106,26 @@ class FrequenciaServiceTest {
         outroBolsista.setTipoUsuario("BOLSISTA");
 
         assertThrows(PermissaoNegadaException.class, () -> frequenciaService.buscarComPermissao(id, outroBolsista));
+    }
+
+    @Test
+    void atualizar_donoDoRegistro_aplicaOsCamposESalva() {
+        UUID bolsistaId = UUID.randomUUID();
+        Frequencia f = new Frequencia();
+        f.setPublicId("frq_1");
+        f.setBolsistaId(bolsistaId);
+        when(repository.findByPublicIdAndAtivoTrue("frq_1")).thenReturn(Optional.of(f));
+
+        Usuario dono = new Usuario();
+        dono.setId(bolsistaId);
+        dono.setTipoUsuario("BOLSISTA");
+
+        FrequenciaRequest body = new FrequenciaRequest(null, LocalDate.of(2026, 9, 2), 6.0, "Revisao", "http://x");
+        Frequencia salva = frequenciaService.atualizar("frq_1", body, dono);
+
+        assertEquals(6.0, salva.getHorasTrabalhadas());
+        assertEquals("Revisao", salva.getDescricao());
+        verify(repository).save(f);
     }
 
     @Test

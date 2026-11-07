@@ -1,6 +1,7 @@
 package dev.matheus.cadastroBolsistas.service;
 
 import dev.matheus.cadastroBolsistas.common.CsvUtil;
+import dev.matheus.cadastroBolsistas.dto.request.FrequenciaRequest;
 import dev.matheus.cadastroBolsistas.dto.response.ResumoHorasResponse;
 import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
 import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
@@ -59,7 +60,7 @@ public class FrequenciaService {
      * @return a Frequencia persistida com publicId gerado
      */
     @Transactional
-    public Frequencia registrar(dev.matheus.cadastroBolsistas.dto.request.FrequenciaRequest body, Bolsista alvo) {
+    public Frequencia registrar(FrequenciaRequest body, Bolsista alvo) {
         Frequencia f = new Frequencia();
         f.setBolsista(alvo);
         f.setData(body.data());
@@ -149,6 +150,17 @@ public class FrequenciaService {
     public Frequencia buscarComPermissao(UUID id, Usuario logado) {
         Frequencia f = buscarOuFalhar(id);
         exigirAcesso(logado, f.getBolsistaId());
+        return f;
+    }
+
+    /** aplica o corpo do PATCH na frequencia, desde que o usuario tenha acesso ao bolsista dela. */
+    public Frequencia atualizar(String id, FrequenciaRequest body, Usuario logado) {
+        Frequencia f = buscarComPermissao(id, logado);
+        f.setData(body.data());
+        f.setHorasTrabalhadas(body.horasTrabalhadas());
+        f.setDescricao(body.descricao());
+        f.setLinkComprovante(body.linkComprovante());
+        repository.save(f);
         return f;
     }
 
