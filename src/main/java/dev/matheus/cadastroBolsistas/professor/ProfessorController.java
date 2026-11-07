@@ -1,8 +1,6 @@
 package dev.matheus.cadastroBolsistas.professor;
 
 import dev.matheus.cadastroBolsistas.common.ErroResponse;
-import dev.matheus.cadastroBolsistas.common.PaginaResponse;
-import dev.matheus.cadastroBolsistas.common.PaginacaoUtil;
 import dev.matheus.cadastroBolsistas.usuario.UsuarioResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -13,6 +11,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -28,9 +29,6 @@ import java.util.List;
 @SecurityRequirement(name = "bearerAuth")
 public class ProfessorController {
 
-    private static final int TAMANHO_PADRAO = 10;
-    private static final int TAMANHO_MAXIMO = 200;
-
     private final ProfessorService professorService;
 
     public ProfessorController(ProfessorService professorService) {
@@ -43,12 +41,10 @@ public class ProfessorController {
             @ApiResponse(responseCode = "403", description = "Acesso restrito a administradores", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping
-    public ResponseEntity<PaginaResponse<UsuarioResponse>> listar(
-            @Parameter(description = "Número da página", example = "1") @RequestParam(defaultValue = "1") int pagina,
-            @Parameter(description = "Quantidade de itens por página", example = "10") @RequestParam(required = false) Integer tamanho,
+    public ResponseEntity<Page<UsuarioResponse>> listar(
+            @ParameterObject Pageable pageable,
             @Parameter(description = "Filtro de busca textual por nome", example = "Carlos") @RequestParam(required = false) String buscaNome) {
-        List<Professor> lista = professorService.listarComLaboratorio(buscaNome);
-        return ResponseEntity.ok(PaginacaoUtil.paginar(lista, pagina, tamanho, TAMANHO_PADRAO, TAMANHO_MAXIMO, UsuarioResponse::from));
+        return ResponseEntity.ok(professorService.listarComLaboratorio(buscaNome, pageable).map(UsuarioResponse::from));
     }
 
     @Operation(summary = "Buscar professor por ID", description = "Recupera as informações detalhadas de um professor coordenador pelo seu identificador público (ex: prf_...).")

@@ -4,8 +4,6 @@ import dev.matheus.cadastroBolsistas.bolsista.Bolsista;
 import dev.matheus.cadastroBolsistas.bolsista.BolsistaService;
 import dev.matheus.cadastroBolsistas.common.ArquivoDownloadUtil;
 import dev.matheus.cadastroBolsistas.common.ErroResponse;
-import dev.matheus.cadastroBolsistas.common.PaginaResponse;
-import dev.matheus.cadastroBolsistas.common.PaginacaoUtil;
 import dev.matheus.cadastroBolsistas.laboratorio.Laboratorio;
 import dev.matheus.cadastroBolsistas.laboratorio.LaboratorioService;
 import dev.matheus.cadastroBolsistas.professor.Professor;
@@ -20,6 +18,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -36,8 +37,6 @@ import java.util.UUID;
 @RequestMapping("/api/v1/frequencia")
 @SecurityRequirement(name = "bearerAuth")
 public class FrequenciaController {
-
-    private static final int TAMANHO_PAGINA = 10;
 
     private final FrequenciaService frequenciaService;
     private final BolsistaService bolsistaService;
@@ -62,9 +61,9 @@ public class FrequenciaController {
             @ApiResponse(responseCode = "401", description = "Não autenticado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping
-    public ResponseEntity<PaginaResponse<FrequenciaResponse>> listar(
+    public ResponseEntity<Page<FrequenciaResponse>> listar(
             @AuthenticationPrincipal Usuario usuario,
-            @Parameter(description = "Número da página", example = "1") @RequestParam(defaultValue = "1") int pagina,
+            @ParameterObject Pageable pageable,
             @Parameter(description = "ID público do bolsista (ex: bol_...)", example = "bol_a1b2c3d4e5f6g7h8i9j0") @RequestParam(required = false) String bolsistaId,
             @Parameter(description = "Data de início do intervalo") @RequestParam(required = false) LocalDate dataInicio,
             @Parameter(description = "Data de término do intervalo") @RequestParam(required = false) LocalDate dataFim) {
@@ -79,23 +78,7 @@ public class FrequenciaController {
             frequenciaService.exigirAcesso(usuario, filtro);
         }
 
-        int total;
-        List<Frequencia> pagina1;
-        int atual;
-
-        if (filtro == null && usuario.isProfessor()) {
-            List<UUID> ids = bolsistaService.idsDosBolsistasCoordenadosPor(usuario.getId());
-            total = frequenciaService.contarPorBolsistas(ids, dataInicio, dataFim);
-            atual = PaginacaoUtil.paginaValida(pagina, PaginacaoUtil.totalPaginas(total, TAMANHO_PAGINA));
-            pagina1 = frequenciaService.buscarPorBolsistas(ids, dataInicio, dataFim, TAMANHO_PAGINA, (atual - 1) * TAMANHO_PAGINA);
-        } else {
-            total = frequenciaService.contarFrequencias(filtro, dataInicio, dataFim);
-            atual = PaginacaoUtil.paginaValida(pagina, PaginacaoUtil.totalPaginas(total, TAMANHO_PAGINA));
-            pagina1 = frequenciaService.buscarFrequencias(filtro, dataInicio, dataFim, TAMANHO_PAGINA, (atual - 1) * TAMANHO_PAGINA);
-        }
-
-        int totalPaginas = PaginacaoUtil.totalPaginas(total, TAMANHO_PAGINA);
-        return ResponseEntity.ok(new PaginaResponse<>(pagina1.stream().map(FrequenciaResponse::from).toList(), atual, totalPaginas, total));
+        return ResponseEntity.ok(frequenciaService.listar(usuario, filtro, dataInicio, dataFim, pageable).map(FrequenciaResponse::from));
     }
 
     @Operation(summary = "Resumo mensal de horas", description = "Calcula o total de horas trabalhadas no mês vigente e o histórico total acumulado do bolsista.")

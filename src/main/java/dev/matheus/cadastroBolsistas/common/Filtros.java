@@ -1,5 +1,7 @@
 package dev.matheus.cadastroBolsistas.common;
 
+import dev.matheus.cadastroBolsistas.bolsista.Bolsista;
+import dev.matheus.cadastroBolsistas.professor.Professor;
 import dev.matheus.cadastroBolsistas.frequencia.Frequencia;
 import dev.matheus.cadastroBolsistas.laboratorio.Laboratorio;
 import dev.matheus.cadastroBolsistas.projeto.Projeto;
@@ -7,6 +9,9 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
@@ -94,6 +99,41 @@ public final class Filtros {
             }
             return cb.and(ps.toArray(new Predicate[0]));
         };
+    }
+
+    public static Specification<Bolsista> bolsista(String buscaNome, String buscaCurso, String tipo) {
+        return (raiz, consulta, cb) -> {
+            Path<Object> usuario = raiz.get("usuario");
+            List<Predicate> ps = new ArrayList<>();
+            ps.add(cb.isTrue(usuario.get("ativo")));
+            if (temTermo(buscaNome)) {
+                ps.add(contem(usuario.get("nome"), buscaNome, cb));
+            }
+            if (temTermo(buscaCurso)) {
+                ps.add(contem(raiz.get("curso"), buscaCurso, cb));
+            }
+            if (temTermo(tipo)) {
+                ps.add(cb.equal(usuario.get("tipoUsuario"), tipo.trim().toUpperCase()));
+            }
+            return cb.and(ps.toArray(new Predicate[0]));
+        };
+    }
+
+    public static Specification<Professor> professor(String buscaNome) {
+        return (raiz, consulta, cb) -> {
+            Path<Object> usuario = raiz.get("usuario");
+            List<Predicate> ps = new ArrayList<>();
+            ps.add(cb.isTrue(usuario.get("ativo")));
+            if (temTermo(buscaNome)) {
+                ps.add(contem(usuario.get("nome"), buscaNome, cb));
+            }
+            return cb.and(ps.toArray(new Predicate[0]));
+        };
+    }
+
+    /** mantem a ordenacao pedida pelo cliente (?sort=); sem ela, usa a padrao. */
+    public static Pageable ordenado(Pageable pageable, Sort padrao) {
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), pageable.getSortOr(padrao));
     }
 
     private static boolean temTermo(String valor) {

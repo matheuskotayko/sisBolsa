@@ -2,8 +2,6 @@ package dev.matheus.cadastroBolsistas.bolsista;
 
 import dev.matheus.cadastroBolsistas.common.ArquivoDownloadUtil;
 import dev.matheus.cadastroBolsistas.common.ErroResponse;
-import dev.matheus.cadastroBolsistas.common.PaginaResponse;
-import dev.matheus.cadastroBolsistas.common.PaginacaoUtil;
 import dev.matheus.cadastroBolsistas.common.StringUtil;
 import dev.matheus.cadastroBolsistas.projeto.ProjetoResponse;
 import dev.matheus.cadastroBolsistas.projeto.ProjetoService;
@@ -18,6 +16,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -35,9 +36,6 @@ import java.util.Map;
 @SecurityRequirement(name = "bearerAuth")
 public class BolsistaController {
 
-    private static final int TAMANHO_PADRAO = 10;
-    private static final int TAMANHO_MAXIMO = 200;
-
     private final BolsistaService bolsistaService;
     private final ProjetoService projetoService;
 
@@ -52,26 +50,13 @@ public class BolsistaController {
             @ApiResponse(responseCode = "401", description = "Não autenticado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping
-    public ResponseEntity<PaginaResponse<UsuarioResponse>> listar(
+    public ResponseEntity<Page<UsuarioResponse>> listar(
             @AuthenticationPrincipal Usuario usuario,
-            @Parameter(description = "Número da página", example = "1") @RequestParam(defaultValue = "1") int pagina,
-            @Parameter(description = "Quantidade de itens por página", example = "10") @RequestParam(required = false) Integer tamanho,
+            @ParameterObject Pageable pageable,
             @Parameter(description = "Filtro por perfil (BOLSISTA)", example = "BOLSISTA") @RequestParam(required = false) String tipo,
             @Parameter(description = "Filtro de busca textual por nome", example = "Lucas") @RequestParam(required = false) String buscaNome,
             @Parameter(description = "Filtro de busca textual por curso", example = "Engenharia") @RequestParam(required = false) String buscaCurso) {
-        ArrayList<Bolsista> lista;
-        if (!StringUtil.estaVazio(buscaNome)) {
-            lista = new ArrayList<>(bolsistaService.buscarPorNome(buscaNome));
-        } else if (!StringUtil.estaVazio(buscaCurso)) {
-            lista = new ArrayList<>(bolsistaService.buscarPorCurso(buscaCurso));
-        } else {
-            lista = new ArrayList<>(bolsistaService.listarTodos());
-        }
-
-        lista = bolsistaService.filtrarPorTipo(lista, tipo);
-        lista = bolsistaService.filtrarPorEscopo(lista, usuario);
-
-        return ResponseEntity.ok(paginar(lista, pagina, tamanho));
+        return ResponseEntity.ok(bolsistaService.listar(usuario, buscaNome, buscaCurso, tipo, pageable).map(UsuarioResponse::from));
     }
 
     @Operation(summary = "Buscar bolsista por ID", description = "Recupera as informações detalhadas de um bolsista pelo seu identificador público ou UUID.")
@@ -185,9 +170,5 @@ public class BolsistaController {
         bolsistaService.buscarComPermissaoDeExclusao(id, usuario);
         bolsistaService.excluir(id);
         return ResponseEntity.noContent().build();
-    }
-
-    private PaginaResponse<UsuarioResponse> paginar(List<Bolsista> lista, int pagina, Integer tamanhoPedido) {
-        return PaginacaoUtil.paginar(lista, pagina, tamanhoPedido, TAMANHO_PADRAO, TAMANHO_MAXIMO, UsuarioResponse::from);
     }
 }

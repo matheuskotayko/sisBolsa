@@ -2,6 +2,7 @@ package dev.matheus.cadastroBolsistas.bolsista;
 
 import dev.matheus.cadastroBolsistas.auth.PerfilRequest;
 import dev.matheus.cadastroBolsistas.common.CsvUtil;
+import dev.matheus.cadastroBolsistas.common.Filtros;
 import dev.matheus.cadastroBolsistas.common.PermissaoNegadaException;
 import dev.matheus.cadastroBolsistas.common.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.common.StringUtil;
@@ -10,6 +11,10 @@ import dev.matheus.cadastroBolsistas.laboratorio.LaboratorioRepository;
 import dev.matheus.cadastroBolsistas.laboratorio.LaboratorioService;
 import dev.matheus.cadastroBolsistas.usuario.Usuario;
 import dev.matheus.cadastroBolsistas.usuario.UsuarioResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -154,14 +159,6 @@ public class BolsistaService {
             throw new PermissaoNegadaException("Sem permissao para excluir este usuario.");
         }
         return b;
-    }
-
-    public ArrayList<Bolsista> buscarPorNome(String nome) {
-        return new ArrayList<>(repository.findByNomeContainingIgnoreCaseAndAtivoTrueOrderByNome(nome));
-    }
-
-    public ArrayList<Bolsista> buscarPorCurso(String curso) {
-        return new ArrayList<>(repository.findByCursoContainingIgnoreCaseAndAtivoTrueOrderByNome(curso));
     }
 
     public ArrayList<Bolsista> buscarPorLaboratorio(String labPublicId) {
@@ -361,13 +358,28 @@ public class BolsistaService {
         return passwordEncoder.encode(senhaNova);
     }
 
-    public ArrayList<Bolsista> filtrarPorTipo(ArrayList<Bolsista> lista, String tipo) {
-        if (StringUtil.estaVazio(tipo)) {
-            return lista;
+    public Page<Bolsista> listar(Usuario logado, String buscaNome, String buscaCurso, String tipo, Pageable pageable) {
+        Specification<Bolsista> filtro = Filtros.bolsista(buscaNome, buscaCurso, tipo).and(escopo(logado));
+        return repository.findAll(filtro, Filtros.ordenado(pageable, Sort.by("usuario.nome")));
+    }
+
+    /** mesmo recorte do filtrarPorEscopo, so que como predicado no banco para a paginacao contar certo. */
+    private Specification<Bolsista> escopo(Usuario logado) {
+        if (logado.isAdmin()) {
+            return (raiz, consulta, cb) -> cb.conjunction();
         }
-        String filtro = tipo.trim().toUpperCase();
-        lista.removeIf(u -> !filtro.equals(u.getTipoUsuario()));
-        return lista;
+        if (logado.isProfessor()) {
+            List<UUID> labIds = laboratorioRepository.findByCoordenadorIdAndAtivoTrueOrderByNome(logado.getId())
+                    .stream().map(Laboratorio::getId).toList();
+            return (raiz, consulta, cb) -> labIds.isEmpty() ? cb.disjunction() : raiz.get("laboratorioId").in(labIds);
+        }
+        if (logado.isBolsista()) {
+            UUID labId = buscarOuFalhar(logado.getId()).getLaboratorioId();
+            return (raiz, consulta, cb) -> labId == null
+                    ? cb.isNull(raiz.get("laboratorioId"))
+                    : cb.equal(raiz.get("laboratorioId"), labId);
+        }
+        return (raiz, consulta, cb) -> cb.disjunction();
     }
 
     public List<UUID> idsDosBolsistasCoordenadosPor(UUID professorId) {

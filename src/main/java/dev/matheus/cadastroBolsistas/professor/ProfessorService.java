@@ -1,9 +1,13 @@
 package dev.matheus.cadastroBolsistas.professor;
 
+import dev.matheus.cadastroBolsistas.common.Filtros;
 import dev.matheus.cadastroBolsistas.common.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.common.StringUtil;
 import dev.matheus.cadastroBolsistas.laboratorio.Laboratorio;
 import dev.matheus.cadastroBolsistas.laboratorio.LaboratorioRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -54,10 +58,6 @@ public class ProfessorService {
 
     public ArrayList<Professor> listarTodos() {
         return new ArrayList<>(repository.findByAtivoTrueOrderByNome());
-    }
-
-    public ArrayList<Professor> buscarPorNome(String nome) {
-        return new ArrayList<>(repository.findByNomeContainingIgnoreCaseAndAtivoTrueOrderByNome(nome));
     }
 
     public Professor buscarPorId(String publicId) {
@@ -126,15 +126,10 @@ public class ProfessorService {
         }).orElse(false);
     }
 
-    public ArrayList<Professor> listarComLaboratorio(String buscaNome) {
-        ArrayList<Professor> lista;
-        if (!StringUtil.estaVazio(buscaNome)) {
-            lista = new ArrayList<>(buscarPorNome(buscaNome));
-        } else {
-            lista = new ArrayList<>(listarTodos());
-        }
-        enriquecerComLaboratorios(lista);
-        return lista;
+    public Page<Professor> listarComLaboratorio(String buscaNome, Pageable pageable) {
+        Page<Professor> pagina = repository.findAll(Filtros.professor(buscaNome), Filtros.ordenado(pageable, Sort.by("usuario.nome")));
+        enriquecerComLaboratorios(pagina.getContent());
+        return pagina;
     }
 
     public Professor buscarComLaboratorio(String id) {

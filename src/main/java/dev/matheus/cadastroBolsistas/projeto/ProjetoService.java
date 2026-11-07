@@ -8,6 +8,8 @@ import dev.matheus.cadastroBolsistas.common.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.laboratorio.Laboratorio;
 import dev.matheus.cadastroBolsistas.laboratorio.LaboratorioService;
 import dev.matheus.cadastroBolsistas.usuario.Usuario;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -93,6 +95,10 @@ public class ProjetoService {
     public ArrayList<Projeto> buscarProjetos(String buscaNome, UUID labId) {
         String nome = buscaNome != null ? buscaNome.trim() : "";
         return new ArrayList<>(repository.findAll(Filtros.projeto(nome, labId), Sort.by("nome")));
+    }
+
+    public Page<Projeto> buscarProjetos(String buscaNome, String labPublicId, Pageable pageable) {
+        return repository.findAll(Filtros.projeto(buscaNome, labPublicId), Filtros.ordenado(pageable, Sort.by("nome")));
     }
 
     public ArrayList<Projeto> buscarProjetos(String buscaNome, String labPublicId) {

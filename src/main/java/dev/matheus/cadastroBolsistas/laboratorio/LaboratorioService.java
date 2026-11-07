@@ -9,6 +9,9 @@ import dev.matheus.cadastroBolsistas.professor.Professor;
 import dev.matheus.cadastroBolsistas.professor.ProfessorRepository;
 import dev.matheus.cadastroBolsistas.projeto.ProjetoRepository;
 import dev.matheus.cadastroBolsistas.usuario.Usuario;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -106,9 +109,13 @@ public class LaboratorioService {
         return new ArrayList<>(repository.findByAtivoTrueOrderByNome());
     }
 
-    public ArrayList<Laboratorio> buscarLaboratorios(String buscaNome) {
-        String nome = buscaNome != null ? buscaNome.trim() : "";
-        return new ArrayList<>(repository.findAll(Filtros.laboratorio(nome), Sort.by("nome")));
+    /** professor so ve os laboratorios que coordena. */
+    public Page<Laboratorio> listar(Usuario logado, String buscaNome, Pageable pageable) {
+        Specification<Laboratorio> filtro = Filtros.laboratorio(buscaNome);
+        if (logado.isProfessor()) {
+            filtro = filtro.and((raiz, consulta, cb) -> cb.equal(raiz.get("coordenadorId"), logado.getId()));
+        }
+        return repository.findAll(filtro, Filtros.ordenado(pageable, Sort.by("nome")));
     }
 
     public ArrayList<Laboratorio> listarPorCoordenador(UUID professorId) {
@@ -230,16 +237,6 @@ public class LaboratorioService {
         lab.setAtivo(true);
         atualizar(lab);
         return lab;
-    }
-
-    public List<Laboratorio> filtrarPorTermo(List<Laboratorio> labs, String buscaNome) {
-        if (StringUtil.estaVazio(buscaNome)) {
-            return labs;
-        }
-        String termo = buscaNome.trim().toLowerCase();
-        return labs.stream()
-                .filter(l -> contem(l.getNome(), termo) || contem(l.getAreaPesquisa(), termo) || contem(l.getCoordenador(), termo))
-                .toList();
     }
 
     private boolean contem(String valor, String termo) {

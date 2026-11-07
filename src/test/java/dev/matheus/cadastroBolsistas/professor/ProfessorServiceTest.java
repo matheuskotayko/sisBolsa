@@ -3,6 +3,11 @@ package dev.matheus.cadastroBolsistas.professor;
 import dev.matheus.cadastroBolsistas.common.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.laboratorio.Laboratorio;
 import dev.matheus.cadastroBolsistas.laboratorio.LaboratorioRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -119,27 +124,6 @@ class ProfessorServiceTest {
     }
 
     @Test
-    void buscarPorNome_retornaListaFiltrada() throws SQLException {
-        Professor p = new Professor();
-        p.setNome("Roberto Mendes");
-        when(repository.findByNomeContainingIgnoreCaseAndAtivoTrueOrderByNome("Roberto"))
-                .thenReturn(List.of(p));
-
-        ArrayList<Professor> resultado = professorService.buscarPorNome("Roberto");
-
-        assertEquals(1, resultado.size());
-        assertEquals("Roberto Mendes", resultado.get(0).getNome());
-    }
-
-    @Test
-    void buscarPorNome_semResultados_retornaListaVazia() throws SQLException {
-        when(repository.findByNomeContainingIgnoreCaseAndAtivoTrueOrderByNome("Inexistente"))
-                .thenReturn(List.of());
-
-        assertTrue(professorService.buscarPorNome("Inexistente").isEmpty());
-    }
-
-    @Test
     void buscarOuFalhar_professorInexistente_lancaRecursoNaoEncontrado() {
         UUID id = UUID.randomUUID();
         when(repository.findById(id)).thenReturn(Optional.empty());
@@ -170,7 +154,7 @@ class ProfessorServiceTest {
         p2.setId(profId2);
         p2.setNome("Prof 2");
 
-        when(repository.findByAtivoTrueOrderByNome()).thenReturn(List.of(p1, p2));
+        when(repository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(p1, p2)));
 
         Laboratorio lab1 = new Laboratorio();
         lab1.setCoordenadorId(profId1);
@@ -178,9 +162,9 @@ class ProfessorServiceTest {
 
         when(laboratorioRepository.findByAtivoTrueOrderByNome()).thenReturn(List.of(lab1));
 
-        ArrayList<Professor> resultado = professorService.listarComLaboratorio(null);
+        Page<Professor> resultado = professorService.listarComLaboratorio(null, PageRequest.of(0, 10));
 
-        assertEquals(2, resultado.size());
+        assertEquals(2, resultado.getTotalElements());
         assertEquals("Lab Inteligência Artificial", p1.getNomeLaboratorio());
         assertNull(p2.getNomeLaboratorio());
         verify(laboratorioRepository, times(1)).findByAtivoTrueOrderByNome();

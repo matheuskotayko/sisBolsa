@@ -1,6 +1,7 @@
 package dev.matheus.cadastroBolsistas.bolsista;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -8,7 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface BolsistaRepository extends JpaRepository<Bolsista, UUID> {
+public interface BolsistaRepository extends JpaRepository<Bolsista, UUID>, JpaSpecificationExecutor<Bolsista> {
 
     Optional<Bolsista> findByPublicId(String publicId);
 
@@ -18,10 +19,6 @@ public interface BolsistaRepository extends JpaRepository<Bolsista, UUID> {
     Optional<Bolsista> findByEmailAndAtivoTrue(String email);
 
     List<Bolsista> findByAtivoTrueOrderByNome();
-
-    List<Bolsista> findByNomeContainingIgnoreCaseAndAtivoTrueOrderByNome(String nome);
-
-    List<Bolsista> findByCursoContainingIgnoreCaseAndAtivoTrueOrderByNome(String curso);
 
     List<Bolsista> findByLaboratorioIdAndAtivoTrueOrderByNome(UUID laboratorioId);
 

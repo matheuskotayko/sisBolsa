@@ -2,8 +2,6 @@ package dev.matheus.cadastroBolsistas.laboratorio;
 
 import dev.matheus.cadastroBolsistas.bolsista.BolsistaService;
 import dev.matheus.cadastroBolsistas.common.ErroResponse;
-import dev.matheus.cadastroBolsistas.common.PaginaResponse;
-import dev.matheus.cadastroBolsistas.common.PaginacaoUtil;
 import dev.matheus.cadastroBolsistas.projeto.ProjetoResponse;
 import dev.matheus.cadastroBolsistas.projeto.ProjetoService;
 import dev.matheus.cadastroBolsistas.usuario.Usuario;
@@ -17,6 +15,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,9 +32,6 @@ import java.util.List;
 @RequestMapping("/api/v1/laboratorio")
 @SecurityRequirement(name = "bearerAuth")
 public class LaboratorioController {
-
-    private static final int TAMANHO_PADRAO = 10;
-    private static final int TAMANHO_MAXIMO = 200;
 
     private final LaboratorioService laboratorioService;
     private final BolsistaService bolsistaService;
@@ -52,15 +50,11 @@ public class LaboratorioController {
             @ApiResponse(responseCode = "401", description = "Não autenticado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping
-    public ResponseEntity<PaginaResponse<LaboratorioResponse>> listar(
+    public ResponseEntity<Page<LaboratorioResponse>> listar(
             @AuthenticationPrincipal Usuario usuario,
-            @Parameter(description = "Número da página", example = "1") @RequestParam(defaultValue = "1") int pagina,
-            @Parameter(description = "Quantidade de itens por página", example = "10") @RequestParam(required = false) Integer tamanho,
+            @ParameterObject Pageable pageable,
             @Parameter(description = "Filtro de busca por nome, área de pesquisa ou coordenador", example = "Inteligência") @RequestParam(required = false) String buscaNome) {
-        List<Laboratorio> labs = usuario.isProfessor()
-                ? laboratorioService.filtrarPorTermo(laboratorioService.listarPorCoordenador(usuario.getId()), buscaNome)
-                : laboratorioService.buscarLaboratorios(buscaNome);
-        return ResponseEntity.ok(PaginacaoUtil.paginar(labs, pagina, tamanho, TAMANHO_PADRAO, TAMANHO_MAXIMO, this::comOcupacao));
+        return ResponseEntity.ok(laboratorioService.listar(usuario, buscaNome, pageable).map(this::comOcupacao));
     }
 
     @Operation(summary = "Buscar laboratório por ID", description = "Retorna os detalhes de um laboratório específico incluindo capacidade e percentual de ocupação.")

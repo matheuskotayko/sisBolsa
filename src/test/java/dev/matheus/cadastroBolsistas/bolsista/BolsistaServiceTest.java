@@ -388,26 +388,6 @@ class BolsistaServiceTest {
     }
 
     @Test
-    void filtrarPorTipo_semFiltro_devolveListaIntacta() {
-        ArrayList<Bolsista> lista = new ArrayList<>(List.of(new Bolsista(), new Bolsista()));
-        assertEquals(2, bolsistaService.filtrarPorTipo(lista, "").size());
-    }
-
-    @Test
-    void filtrarPorTipo_comFiltro_removeQuemNaoBate() {
-        Bolsista b1 = new Bolsista();
-        b1.setTipoUsuario("BOLSISTA");
-        Bolsista b2 = new Bolsista();
-        b2.setTipoUsuario("OUTRO");
-        ArrayList<Bolsista> lista = new ArrayList<>(List.of(b1, b2));
-
-        ArrayList<Bolsista> filtrado = bolsistaService.filtrarPorTipo(lista, "bolsista");
-
-        assertEquals(1, filtrado.size());
-        assertSame(b1, filtrado.get(0));
-    }
-
-    @Test
     void idsDosBolsistasCoordenadosPor_combinaLaboratoriosDoProfessor() {
         UUID profId = UUID.randomUUID();
         Laboratorio lab1 = new Laboratorio();

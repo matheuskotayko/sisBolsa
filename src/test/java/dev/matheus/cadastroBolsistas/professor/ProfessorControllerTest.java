@@ -3,6 +3,7 @@ package dev.matheus.cadastroBolsistas.professor;
 import dev.matheus.cadastroBolsistas.security.JwtCookieFilter;
 import dev.matheus.cadastroBolsistas.security.SecurityConfig;
 import dev.matheus.cadastroBolsistas.usuario.Usuario;
+import org.springframework.data.domain.PageImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -72,15 +73,15 @@ class ProfessorControllerTest {
         p.setNomeLaboratorio("Lab IA");
         p.setAtivo(true);
 
-        when(professorService.listarComLaboratorio(null)).thenReturn(new ArrayList<>(List.of(p)));
+        when(professorService.listarComLaboratorio(isNull(), any())).thenReturn(new PageImpl<>(List.of(p)));
 
         mockMvc.perform(get("/api/v1/professor"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.itens[0].id").value("prf_12345678901234567890"))
-                .andExpect(jsonPath("$.itens[0].nome").value("Dr. Roberto"))
-                .andExpect(jsonPath("$.itens[0].nomeLaboratorio").value("Lab IA"));
+                .andExpect(jsonPath("$.content[0].id").value("prf_12345678901234567890"))
+                .andExpect(jsonPath("$.content[0].nome").value("Dr. Roberto"))
+                .andExpect(jsonPath("$.content[0].nomeLaboratorio").value("Lab IA"));
 
-        verify(professorService).listarComLaboratorio(null);
+        verify(professorService).listarComLaboratorio(isNull(), any());
     }
 
     @Test

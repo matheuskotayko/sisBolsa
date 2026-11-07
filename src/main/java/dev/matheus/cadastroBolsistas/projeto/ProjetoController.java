@@ -2,8 +2,6 @@ package dev.matheus.cadastroBolsistas.projeto;
 
 import dev.matheus.cadastroBolsistas.bolsista.BolsistaService;
 import dev.matheus.cadastroBolsistas.common.ErroResponse;
-import dev.matheus.cadastroBolsistas.common.PaginaResponse;
-import dev.matheus.cadastroBolsistas.common.PaginacaoUtil;
 import dev.matheus.cadastroBolsistas.usuario.Usuario;
 import dev.matheus.cadastroBolsistas.usuario.UsuarioResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,6 +13,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,9 +31,6 @@ import java.util.List;
 @SecurityRequirement(name = "bearerAuth")
 public class ProjetoController {
 
-    private static final int TAMANHO_PADRAO = 10;
-    private static final int TAMANHO_MAXIMO = 200;
-
     private final ProjetoService projetoService;
     private final BolsistaService bolsistaService;
 
@@ -47,13 +45,11 @@ public class ProjetoController {
             @ApiResponse(responseCode = "401", description = "Não autenticado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping
-    public ResponseEntity<PaginaResponse<ProjetoResponse>> listar(
-            @Parameter(description = "Número da página", example = "1") @RequestParam(defaultValue = "1") int pagina,
-            @Parameter(description = "Quantidade de itens por página", example = "10") @RequestParam(required = false) Integer tamanho,
+    public ResponseEntity<Page<ProjetoResponse>> listar(
+            @ParameterObject Pageable pageable,
             @Parameter(description = "Filtro por nome do projeto", example = "Sistema") @RequestParam(required = false) String buscaNome,
             @Parameter(description = "Filtro por ID do laboratório", example = "lab_a1b2c3d4e5f6g7h8i9j0") @RequestParam(required = false) String labId) {
-        List<Projeto> lista = projetoService.buscarProjetos(buscaNome, labId);
-        return ResponseEntity.ok(PaginacaoUtil.paginar(lista, pagina, tamanho, TAMANHO_PADRAO, TAMANHO_MAXIMO, this::comMembros));
+        return ResponseEntity.ok(projetoService.buscarProjetos(buscaNome, labId, pageable).map(this::comMembros));
     }
 
     @Operation(summary = "Buscar projeto por ID", description = "Recupera os detalhes completos do projeto pelo seu identificador público (ex: prj_...).")

@@ -9,6 +9,7 @@ import dev.matheus.cadastroBolsistas.common.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.laboratorio.LaboratorioService;
 import dev.matheus.cadastroBolsistas.usuario.Usuario;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -179,6 +180,21 @@ public class FrequenciaService {
         return new ArrayList<>(repository.findByAtivoTrueOrderByDataDesc());
     }
 
+    /** sem bolsista informado, professor ve as frequencias dos bolsistas dos labs que coordena. */
+    public Page<Frequencia> listar(Usuario logado, UUID bolsistaId, LocalDate dataInicio, LocalDate dataFim, Pageable pageable) {
+        Specification<Frequencia> filtro;
+        if (bolsistaId == null && logado.isProfessor()) {
+            List<UUID> ids = bolsistaService.idsDosBolsistasCoordenadosPor(logado.getId());
+            if (ids.isEmpty()) {
+                return Page.empty(pageable);
+            }
+            filtro = Filtros.frequenciaDeVarios(ids, dataInicio, dataFim);
+        } else {
+            filtro = Filtros.frequencia(bolsistaId, dataInicio, dataFim);
+        }
+        return repository.findAll(filtro, Filtros.ordenado(pageable, MAIS_RECENTES));
+    }
+
     public ArrayList<Frequencia> buscarFrequencias(UUID bolsistaId, LocalDate dataInicio, LocalDate dataFim, Integer limit, Integer offset) {
         Specification<Frequencia> filtro = Filtros.frequencia(bolsistaId, dataInicio, dataFim);
         return new ArrayList<>(repository.findAll(filtro, paginar(limit, offset)).getContent());
@@ -196,32 +212,11 @@ public class FrequenciaService {
         return new ArrayList<>(repository.findAll(filtro, paginar(limit, offset)).getContent());
     }
 
-    public ArrayList<Frequencia> buscarPorBolsistas(List<UUID> ids, Integer limit, Integer offset) {
-        return buscarPorBolsistas(ids, null, null, limit, offset);
-    }
-
     private Pageable paginar(Integer limit, Integer offset) {
         if (limit != null && limit > 0 && offset != null && offset >= 0) {
             return PageRequest.of(offset / limit, limit, MAIS_RECENTES);
         }
         return Pageable.unpaged(MAIS_RECENTES);
-    }
-
-    public int contarPorBolsistas(List<UUID> ids, LocalDate dataInicio, LocalDate dataFim) {
-        if (ids == null || ids.isEmpty()) return 0;
-        return (int) repository.count(Filtros.frequenciaDeVarios(ids, dataInicio, dataFim));
-    }
-
-    public int contarPorBolsistas(List<UUID> ids) {
-        return contarPorBolsistas(ids, null, null);
-    }
-
-    public int contarFrequencias(UUID bolsistaId, LocalDate dataInicio, LocalDate dataFim) {
-        return (int) repository.count(Filtros.frequencia(bolsistaId, dataInicio, dataFim));
-    }
-
-    public int contarFrequencias(UUID bolsistaId) {
-        return contarFrequencias(bolsistaId, null, null);
     }
 
     @Transactional
