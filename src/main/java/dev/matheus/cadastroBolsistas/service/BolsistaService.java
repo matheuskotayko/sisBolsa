@@ -164,19 +164,15 @@ public class BolsistaService {
         return b;
     }
 
+    /** 404 se o laboratorio nao existe. */
     public ArrayList<Bolsista> buscarPorLaboratorio(String labPublicId) {
-        if (labPublicId == null || labPublicId.isBlank()) return new ArrayList<>();
+        laboratorioService.buscarOuFalhar(labPublicId);
         return new ArrayList<>(repository.findByLaboratorioPublicIdAndAtivoTrueOrderByNome(labPublicId));
     }
 
     public ArrayList<Bolsista> buscarPorLaboratorio(UUID laboratorioId) {
         if (laboratorioId == null) return new ArrayList<>();
         return new ArrayList<>(repository.findByLaboratorioIdAndAtivoTrueOrderByNome(laboratorioId));
-    }
-
-    public ArrayList<Bolsista> buscarPorProjeto(String projPublicId) {
-        if (projPublicId == null || projPublicId.isBlank()) return new ArrayList<>();
-        return new ArrayList<>(repository.findByProjetosPublicIdAndAtivoTrueOrderByNome(projPublicId));
     }
 
     public ArrayList<Bolsista> buscarPorProjeto(UUID projetoId) {

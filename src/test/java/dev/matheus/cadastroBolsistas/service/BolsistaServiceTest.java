@@ -303,6 +303,13 @@ class BolsistaServiceTest {
     }
 
     @Test
+    void buscarPorLaboratorio_laboratorioInexistente_lancaRecursoNaoEncontrado() {
+        when(laboratorioService.buscarOuFalhar("lab_x")).thenThrow(new RecursoNaoEncontradoException("Laboratorio nao encontrado."));
+
+        assertThrows(RecursoNaoEncontradoException.class, () -> bolsistaService.buscarPorLaboratorio("lab_x"));
+    }
+
+    @Test
     void aplicarCamposDeBolsista_semPermissaoNoLaboratorio_lanca() {
         String labPublicId = "lab_test12345678901234";
         UUID labId = UUID.randomUUID();

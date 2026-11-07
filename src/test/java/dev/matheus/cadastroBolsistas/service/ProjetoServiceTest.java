@@ -165,6 +165,32 @@ class ProjetoServiceTest {
     }
 
     @Test
+    void listarPorLaboratorio_laboratorioInexistente_lancaRecursoNaoEncontrado() {
+        when(laboratorioService.buscarOuFalhar("lab_x")).thenThrow(new RecursoNaoEncontradoException("Laboratorio nao encontrado."));
+
+        assertThrows(RecursoNaoEncontradoException.class, () -> projetoService.listarPorLaboratorio("lab_x"));
+        verify(repository, never()).findByLaboratorio_PublicIdAndAtivoTrueOrderByNome(any());
+    }
+
+    @Test
+    void listarMembros_devolveOsBolsistasDoProjeto() {
+        Projeto p = new Projeto();
+        p.setAtivo(true);
+        when(repository.findByPublicIdAndAtivoTrue("prj_1")).thenReturn(Optional.of(p));
+        Bolsista b = new Bolsista();
+        when(bolsistaRepository.findByProjetosPublicIdAndAtivoTrueOrderByNome("prj_1")).thenReturn(java.util.List.of(b));
+
+        assertEquals(java.util.List.of(b), projetoService.listarMembros("prj_1"));
+    }
+
+    @Test
+    void listarMembros_projetoInexistente_lancaRecursoNaoEncontrado() {
+        when(repository.findByPublicIdAndAtivoTrue("prj_x")).thenReturn(Optional.empty());
+
+        assertThrows(RecursoNaoEncontradoException.class, () -> projetoService.listarMembros("prj_x"));
+    }
+
+    @Test
     void buscarExigindoGerencia_comPermissao_retornaOProjeto() {
         UUID id = UUID.randomUUID();
         UUID labId = UUID.randomUUID();

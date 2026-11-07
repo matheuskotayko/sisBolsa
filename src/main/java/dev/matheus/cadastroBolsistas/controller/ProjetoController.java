@@ -6,7 +6,6 @@ import dev.matheus.cadastroBolsistas.dto.response.ProjetoResponse;
 import dev.matheus.cadastroBolsistas.dto.response.UsuarioResponse;
 import dev.matheus.cadastroBolsistas.model.Projeto;
 import dev.matheus.cadastroBolsistas.model.Usuario;
-import dev.matheus.cadastroBolsistas.service.BolsistaService;
 import dev.matheus.cadastroBolsistas.service.ProjetoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -36,11 +35,9 @@ import java.util.List;
 public class ProjetoController {
 
     private final ProjetoService projetoService;
-    private final BolsistaService bolsistaService;
 
-    public ProjetoController(ProjetoService projetoService, BolsistaService bolsistaService) {
+    public ProjetoController(ProjetoService projetoService) {
         this.projetoService = projetoService;
-        this.bolsistaService = bolsistaService;
     }
 
     @Operation(summary = "Listar projetos paginados", description = "Retorna projetos ativos, com filtros opcionais por nome ou por laboratório de pesquisa.")
@@ -76,8 +73,7 @@ public class ProjetoController {
     @GetMapping("/{id}/membros")
     public ResponseEntity<List<UsuarioResponse>> membros(
             @Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
-        projetoService.buscarOuFalhar(id);
-        return ResponseEntity.ok(bolsistaService.buscarPorProjeto(id).stream().map(UsuarioResponse::from).toList());
+        return ResponseEntity.ok(projetoService.listarMembros(id).stream().map(UsuarioResponse::from).toList());
     }
 
     @Operation(summary = "Criar novo projeto", description = "Cadastra um novo projeto vinculado a um laboratório sob gestão do usuário autenticado.")

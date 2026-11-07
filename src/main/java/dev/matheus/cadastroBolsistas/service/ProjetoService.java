@@ -108,8 +108,9 @@ public class ProjetoService {
         return new ArrayList<>(repository.findAll(Filtros.projeto(nome, labPublicId), Sort.by("nome")));
     }
 
+    /** 404 se o laboratorio nao existe. */
     public ArrayList<Projeto> listarPorLaboratorio(String labPublicId) {
-        if (labPublicId == null || labPublicId.isBlank()) return new ArrayList<>();
+        laboratorioService.buscarOuFalhar(labPublicId);
         return new ArrayList<>(repository.findByLaboratorio_PublicIdAndAtivoTrueOrderByNome(labPublicId));
     }
 
@@ -209,6 +210,12 @@ public class ProjetoService {
     private Bolsista buscarBolsistaAtivo(String bolsistaId) {
         return bolsistaRepository.findByPublicIdAndAtivoTrue(bolsistaId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Bolsista nao encontrado."));
+    }
+
+    /** 404 se o projeto nao existe. */
+    public ArrayList<Bolsista> listarMembros(String projetoPublicId) {
+        buscarOuFalhar(projetoPublicId);
+        return new ArrayList<>(bolsistaRepository.findByProjetosPublicIdAndAtivoTrueOrderByNome(projetoPublicId));
     }
 
     public ArrayList<Projeto> listarPorBolsista(String bolsistaPublicId) {
