@@ -143,8 +143,7 @@ public class LaboratorioController {
     public ResponseEntity<Void> excluir(
             @Parameter(description = "ID público do laboratório (ex: lab_...)", required = true, example = "lab_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
             @AuthenticationPrincipal Usuario usuario) {
-        laboratorioService.buscarExigindoGerencia(id, usuario);
-        laboratorioService.excluir(id);
+        laboratorioService.excluir(id, usuario);
         return ResponseEntity.noContent().build();
     }
 

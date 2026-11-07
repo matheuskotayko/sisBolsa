@@ -96,13 +96,10 @@ class BolsistaControllerTest {
         bolsista.setId(UUID.randomUUID());
         bolsista.setPublicId(publicId);
 
-        when(bolsistaService.buscarComPermissaoDeExclusao(eq(publicId), any(Usuario.class)))
-                .thenReturn(bolsista);
-
         mockMvc.perform(delete("/api/v1/bolsista/{id}", publicId))
                 .andExpect(status().isNoContent());
 
-        verify(bolsistaService).excluir(publicId);
+        verify(bolsistaService).excluir(eq(publicId), any(Usuario.class));
     }
 
     @Test

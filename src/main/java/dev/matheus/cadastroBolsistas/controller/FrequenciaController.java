@@ -166,8 +166,7 @@ public class FrequenciaController {
     public ResponseEntity<Void> excluir(
             @Parameter(description = "ID público da frequência (ex: frq_...)", required = true, example = "frq_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
             @AuthenticationPrincipal Usuario usuario) {
-        frequenciaService.buscarComPermissao(id, usuario);
-        frequenciaService.excluir(id);
+        frequenciaService.excluir(id, usuario);
         return ResponseEntity.noContent().build();
     }
 }

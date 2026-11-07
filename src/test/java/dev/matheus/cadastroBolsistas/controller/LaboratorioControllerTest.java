@@ -158,15 +158,9 @@ class LaboratorioControllerTest {
     @Test
     @DisplayName("DELETE /api/v1/laboratorio/{id} deve retornar 204")
     void excluir_DeveRetornar204() throws Exception {
-        Laboratorio lab = new Laboratorio();
-        lab.setId(UUID.randomUUID());
-        lab.setPublicId("lab_001");
-
-        when(laboratorioService.buscarExigindoGerencia(eq("lab_001"), any(Usuario.class))).thenReturn(lab);
-
         mockMvc.perform(delete("/api/v1/laboratorio/lab_001"))
                 .andExpect(status().isNoContent());
 
-        verify(laboratorioService).excluir("lab_001");
+        verify(laboratorioService).excluir(eq("lab_001"), any(Usuario.class));
     }
 }

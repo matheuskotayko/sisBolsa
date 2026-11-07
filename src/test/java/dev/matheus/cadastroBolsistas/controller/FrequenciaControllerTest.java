@@ -156,12 +156,10 @@ class FrequenciaControllerTest {
         String publicId = "frq_abc123456789012345678";
         Frequencia f = frequenciaFake(publicId, "bol_xyz789");
 
-        when(frequenciaService.buscarComPermissao(eq(publicId), any(Usuario.class))).thenReturn(f);
-
         mockMvc.perform(delete("/api/v1/frequencia/{id}", publicId))
                 .andExpect(status().isNoContent());
 
-        verify(frequenciaService).excluir(publicId);
+        verify(frequenciaService).excluir(eq(publicId), any(Usuario.class));
     }
 
     @Test

@@ -102,31 +102,12 @@ public class ProfessorService {
         return true;
     }
 
+    /** exclusao logica; o controller ja restringe a administradores. */
     @Transactional
-    public boolean excluir(String publicId) {
-        if (publicId == null || publicId.isBlank()) return false;
-        return repository.findByPublicId(publicId).map(p -> {
-            p.setAtivo(false);
-            repository.save(p);
-            return true;
-        }).orElseGet(() -> {
-            try {
-                UUID uuid = UUID.fromString(publicId);
-                return excluir(uuid);
-            } catch (IllegalArgumentException e) {
-                return false;
-            }
-        });
-    }
-
-    @Transactional
-    public boolean excluir(UUID id) {
-        if (id == null) return false;
-        return repository.findById(id).map(p -> {
-            p.setAtivo(false);
-            repository.save(p);
-            return true;
-        }).orElse(false);
+    public void excluir(String id) {
+        Professor p = buscarOuFalhar(id);
+        p.setAtivo(false);
+        repository.save(p);
     }
 
     public Page<Professor> listarComLaboratorio(String buscaNome, Pageable pageable) {

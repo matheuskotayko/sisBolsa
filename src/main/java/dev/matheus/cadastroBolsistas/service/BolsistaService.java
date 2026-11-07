@@ -234,31 +234,12 @@ public class BolsistaService {
         return sb.toString();
     }
 
+    /** exclusao logica; so quem gerencia o bolsista pode (ser dono do cadastro nao basta). */
     @Transactional
-    public boolean excluir(String publicId) {
-        if (publicId == null || publicId.isBlank()) return false;
-        return repository.findByPublicId(publicId).map(b -> {
-            b.setAtivo(false);
-            repository.save(b);
-            return true;
-        }).orElseGet(() -> {
-            try {
-                UUID uuid = UUID.fromString(publicId);
-                return excluir(uuid);
-            } catch (IllegalArgumentException e) {
-                return false;
-            }
-        });
-    }
-
-    @Transactional
-    public boolean excluir(UUID id) {
-        if (id == null) return false;
-        return repository.findById(id).map(b -> {
-            b.setAtivo(false);
-            repository.save(b);
-            return true;
-        }).orElse(false);
+    public void excluir(String id, Usuario logado) {
+        Bolsista b = buscarComPermissaoDeExclusao(id, logado);
+        b.setAtivo(false);
+        repository.save(b);
     }
 
     public ArrayList<Bolsista> filtrarPorEscopo(ArrayList<Bolsista> lista, Usuario usuarioLogado) {

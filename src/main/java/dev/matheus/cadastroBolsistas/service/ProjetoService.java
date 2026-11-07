@@ -182,74 +182,33 @@ public class ProjetoService {
         return p;
     }
 
+    /** exclusao logica; exige permissao de gerencia sobre o laboratorio do projeto. */
     @Transactional
-    public boolean excluir(String publicId) {
-        if (publicId == null || publicId.isBlank()) return false;
-        return repository.findByPublicId(publicId).map(p -> {
-            p.setAtivo(false);
-            repository.save(p);
-            return true;
-        }).orElseGet(() -> {
-            try {
-                UUID uuid = UUID.fromString(publicId);
-                return excluir(uuid);
-            } catch (IllegalArgumentException e) {
-                return false;
-            }
-        });
+    public void excluir(String id, Usuario logado) {
+        Projeto p = buscarExigindoGerencia(id, logado);
+        p.setAtivo(false);
+        repository.save(p);
     }
 
+    /** 404 se o bolsista nao existe ou esta inativo. */
     @Transactional
-    public boolean excluir(UUID id) {
-        if (id == null) return false;
-        return repository.findById(id).map(p -> {
-            p.setAtivo(false);
-            repository.save(p);
-            return true;
-        }).orElse(false);
-    }
-
-    @Transactional
-    public boolean vincularBolsista(String bolsistaPublicId, String projetoPublicId) {
-        return alterarVinculo(bolsistaPublicId, projetoPublicId, true);
-    }
-
-    @Transactional
-    public boolean vincularBolsista(UUID bolsistaId, UUID projetoId) {
-        if (bolsistaId == null || projetoId == null) return false;
-        return alterarVinculo(bolsistaId.toString(), projetoId.toString(), true);
-    }
-
-    @Transactional
-    public boolean desvincularBolsista(String bolsistaPublicId, String projetoPublicId) {
-        return alterarVinculo(bolsistaPublicId, projetoPublicId, false);
-    }
-
-    @Transactional
-    public boolean desvincularBolsista(UUID bolsistaId, UUID projetoId) {
-        if (bolsistaId == null || projetoId == null) return false;
-        return alterarVinculo(bolsistaId.toString(), projetoId.toString(), false);
-    }
-
-    private boolean alterarVinculo(String bolsistaIdOuPublicId, String projetoIdOuPublicId, boolean vincular) {
-        if (bolsistaIdOuPublicId == null || projetoIdOuPublicId == null) return false;
-        Projeto projeto = buscarPorId(projetoIdOuPublicId);
-        Bolsista bolsista = bolsistaRepository.findByPublicIdAndAtivoTrue(bolsistaIdOuPublicId)
-                .orElseGet(() -> {
-                    try {
-                        return bolsistaRepository.findById(UUID.fromString(bolsistaIdOuPublicId)).filter(Bolsista::isAtivo).orElse(null);
-                    } catch (IllegalArgumentException e) {
-                        return null;
-                    }
-                });
-        if (projeto == null || bolsista == null) return false;
-        if (vincular) {
-            projeto.getBolsistas().add(bolsista);
-        } else {
-            projeto.getBolsistas().remove(bolsista);
-        }
+    public void vincularBolsista(String projetoId, String bolsistaId, Usuario logado) {
+        Projeto projeto = buscarExigindoGerencia(projetoId, logado);
+        projeto.getBolsistas().add(buscarBolsistaAtivo(bolsistaId));
         repository.save(projeto);
-        return true;
+    }
+
+    /** idempotente: desvincular quem nao esta na equipe nao e erro. */
+    @Transactional
+    public void desvincularBolsista(String projetoId, String bolsistaId, Usuario logado) {
+        Projeto projeto = buscarExigindoGerencia(projetoId, logado);
+        bolsistaRepository.findByPublicIdAndAtivoTrue(bolsistaId).ifPresent(projeto.getBolsistas()::remove);
+        repository.save(projeto);
+    }
+
+    private Bolsista buscarBolsistaAtivo(String bolsistaId) {
+        return bolsistaRepository.findByPublicIdAndAtivoTrue(bolsistaId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Bolsista nao encontrado."));
     }
 
     public ArrayList<Projeto> listarPorBolsista(String bolsistaPublicId) {

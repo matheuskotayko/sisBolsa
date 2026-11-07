@@ -168,15 +168,9 @@ class ProjetoControllerTest {
     @Test
     @DisplayName("DELETE /api/v1/projeto/{id} deve retornar 204")
     void excluir_DeveRetornar204() throws Exception {
-        Projeto proj = new Projeto();
-        proj.setId(UUID.randomUUID());
-        proj.setPublicId("prj_001");
-
-        when(projetoService.buscarExigindoGerencia(eq("prj_001"), any(Usuario.class))).thenReturn(proj);
-
         mockMvc.perform(delete("/api/v1/projeto/prj_001"))
                 .andExpect(status().isNoContent());
 
-        verify(projetoService).excluir("prj_001");
+        verify(projetoService).excluir(eq("prj_001"), any(Usuario.class));
     }
 }

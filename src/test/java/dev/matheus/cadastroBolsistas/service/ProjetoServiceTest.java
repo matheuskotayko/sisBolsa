@@ -2,8 +2,10 @@ package dev.matheus.cadastroBolsistas.service;
 
 import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
 import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
+import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Projeto;
 import dev.matheus.cadastroBolsistas.model.Usuario;
+import dev.matheus.cadastroBolsistas.repository.BolsistaRepository;
 import dev.matheus.cadastroBolsistas.repository.ProjetoRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +27,9 @@ class ProjetoServiceTest {
 
     @Mock
     private LaboratorioService laboratorioService;
+
+    @Mock
+    private BolsistaRepository bolsistaRepository;
 
     @InjectMocks
     private ProjetoService projetoService;
@@ -91,6 +96,72 @@ class ProjetoServiceTest {
         when(laboratorioService.podeGerenciar(any(), eq(labId))).thenReturn(false);
 
         assertThrows(PermissaoNegadaException.class, () -> projetoService.buscarExigindoGerencia(id, admin()));
+    }
+
+    private Projeto projetoGerenciavel() {
+        Projeto p = new Projeto();
+        p.setPublicId("prj_1");
+        p.setAtivo(true);
+        p.setLaboratorioId(UUID.randomUUID());
+        when(repository.findByPublicIdAndAtivoTrue("prj_1")).thenReturn(Optional.of(p));
+        when(laboratorioService.podeGerenciar(any(), eq(p.getLaboratorioId()))).thenReturn(true);
+        return p;
+    }
+
+    @Test
+    void excluir_semPermissao_lancaENaoDesativa() {
+        Projeto p = new Projeto();
+        p.setPublicId("prj_1");
+        p.setAtivo(true);
+        p.setLaboratorioId(UUID.randomUUID());
+        when(repository.findByPublicIdAndAtivoTrue("prj_1")).thenReturn(Optional.of(p));
+        when(laboratorioService.podeGerenciar(any(), eq(p.getLaboratorioId()))).thenReturn(false);
+
+        assertThrows(PermissaoNegadaException.class, () -> projetoService.excluir("prj_1", admin()));
+        assertTrue(p.isAtivo());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void excluir_comPermissao_desativaESalva() {
+        Projeto p = projetoGerenciavel();
+
+        projetoService.excluir("prj_1", admin());
+
+        assertFalse(p.isAtivo());
+        verify(repository).save(p);
+    }
+
+    @Test
+    void vincularBolsista_bolsistaInexistente_lancaRecursoNaoEncontrado() {
+        projetoGerenciavel();
+        when(bolsistaRepository.findByPublicIdAndAtivoTrue("bol_x")).thenReturn(Optional.empty());
+
+        assertThrows(RecursoNaoEncontradoException.class, () -> projetoService.vincularBolsista("prj_1", "bol_x", admin()));
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void vincularEDesvincular_alteramAEquipeDoProjeto() {
+        Projeto p = projetoGerenciavel();
+        Bolsista b = new Bolsista();
+        b.setId(UUID.randomUUID());
+        when(bolsistaRepository.findByPublicIdAndAtivoTrue("bol_1")).thenReturn(Optional.of(b));
+
+        projetoService.vincularBolsista("prj_1", "bol_1", admin());
+        assertTrue(p.getBolsistas().contains(b));
+
+        projetoService.desvincularBolsista("prj_1", "bol_1", admin());
+        assertFalse(p.getBolsistas().contains(b));
+    }
+
+    @Test
+    void desvincularBolsista_quemNaoExiste_naoELancaErro() {
+        projetoGerenciavel();
+        when(bolsistaRepository.findByPublicIdAndAtivoTrue("bol_x")).thenReturn(Optional.empty());
+
+        projetoService.desvincularBolsista("prj_1", "bol_x", admin());
+        verify(repository).save(any(Projeto.class));
     }
 
     @Test

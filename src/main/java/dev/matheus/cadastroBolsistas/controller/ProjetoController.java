@@ -127,8 +127,7 @@ public class ProjetoController {
     public ResponseEntity<Void> excluir(
             @Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
             @AuthenticationPrincipal Usuario usuario) {
-        projetoService.buscarExigindoGerencia(id, usuario);
-        projetoService.excluir(id);
+        projetoService.excluir(id, usuario);
         return ResponseEntity.noContent().build();
     }
 
@@ -144,9 +143,7 @@ public class ProjetoController {
             @Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
             @Parameter(description = "ID público do bolsista a vincular (ex: bol_...)", required = true, example = "bol_a1b2c3d4e5f6g7h8i9j0") @PathVariable String bolsistaId,
             @AuthenticationPrincipal Usuario usuario) {
-        projetoService.buscarExigindoGerencia(id, usuario);
-        bolsistaService.buscarOuFalhar(bolsistaId);
-        projetoService.vincularBolsista(bolsistaId, id);
+        projetoService.vincularBolsista(id, bolsistaId, usuario);
         return ResponseEntity.noContent().build();
     }
 
@@ -162,8 +159,7 @@ public class ProjetoController {
             @Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
             @Parameter(description = "ID público do bolsista a desvincular (ex: bol_...)", required = true, example = "bol_a1b2c3d4e5f6g7h8i9j0") @PathVariable String bolsistaId,
             @AuthenticationPrincipal Usuario usuario) {
-        projetoService.buscarExigindoGerencia(id, usuario);
-        projetoService.desvincularBolsista(bolsistaId, id);
+        projetoService.desvincularBolsista(id, bolsistaId, usuario);
         return ResponseEntity.noContent().build();
     }
 

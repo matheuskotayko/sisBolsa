@@ -171,8 +171,7 @@ public class BolsistaController {
     public ResponseEntity<Void> excluir(
             @Parameter(description = "ID público do bolsista a desativar", required = true, example = "bol_k8s2M4n9P1q3W5z7A0b2") @PathVariable String id,
             @AuthenticationPrincipal Usuario usuario) {
-        bolsistaService.buscarComPermissaoDeExclusao(id, usuario);
-        bolsistaService.excluir(id);
+        bolsistaService.excluir(id, usuario);
         return ResponseEntity.noContent().build();
     }
 }

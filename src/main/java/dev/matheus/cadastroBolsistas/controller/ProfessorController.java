@@ -100,7 +100,6 @@ public class ProfessorController {
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@Parameter(description = "ID público do professor a desativar", required = true, example = "prf_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
-        professorService.buscarOuFalhar(id);
         professorService.excluir(id);
         return ResponseEntity.noContent().build();
     }

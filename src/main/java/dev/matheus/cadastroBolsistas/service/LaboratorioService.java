@@ -155,31 +155,12 @@ public class LaboratorioService {
         return true;
     }
 
+    /** exclusao logica; exige permissao de gerencia sobre o laboratorio. */
     @Transactional
-    public boolean excluir(String publicId) {
-        if (publicId == null || publicId.isBlank()) return false;
-        return repository.findByPublicId(publicId).map(lab -> {
-            lab.setAtivo(false);
-            repository.save(lab);
-            return true;
-        }).orElseGet(() -> {
-            try {
-                UUID uuid = UUID.fromString(publicId);
-                return excluir(uuid);
-            } catch (IllegalArgumentException e) {
-                return false;
-            }
-        });
-    }
-
-    @Transactional
-    public boolean excluir(UUID id) {
-        if (id == null) return false;
-        return repository.findById(id).map(lab -> {
-            lab.setAtivo(false);
-            repository.save(lab);
-            return true;
-        }).orElse(false);
+    public void excluir(String id, Usuario logado) {
+        Laboratorio lab = buscarExigindoGerencia(id, logado);
+        lab.setAtivo(false);
+        repository.save(lab);
     }
 
     public boolean temVaga(Laboratorio lab) {

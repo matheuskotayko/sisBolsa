@@ -171,8 +171,6 @@ class ProfessorControllerTest {
     @Test
     void excluir_comPublicId_retorna204() throws Exception {
         String publicId = "prf_12345678901234567890";
-        when(professorService.excluir(publicId)).thenReturn(true);
-
         mockMvc.perform(delete("/api/v1/professor/{id}", publicId))
                 .andExpect(status().isNoContent());
 

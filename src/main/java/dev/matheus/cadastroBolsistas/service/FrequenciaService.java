@@ -240,31 +240,12 @@ public class FrequenciaService {
         return Pageable.unpaged(MAIS_RECENTES);
     }
 
+    /** exclusao logica; exige acesso ao bolsista dono da frequencia. */
     @Transactional
-    public boolean excluir(String publicId) {
-        if (publicId == null || publicId.isBlank()) return false;
-        return repository.findByPublicId(publicId).map(f -> {
-            f.setAtivo(false);
-            repository.save(f);
-            return true;
-        }).orElseGet(() -> {
-            try {
-                UUID uuid = UUID.fromString(publicId);
-                return excluir(uuid);
-            } catch (IllegalArgumentException e) {
-                return false;
-            }
-        });
-    }
-
-    @Transactional
-    public boolean excluir(UUID id) {
-        if (id == null) return false;
-        return repository.findById(id).map(f -> {
-            f.setAtivo(false);
-            repository.save(f);
-            return true;
-        }).orElse(false);
+    public void excluir(String id, Usuario logado) {
+        Frequencia f = buscarComPermissao(id, logado);
+        f.setAtivo(false);
+        repository.save(f);
     }
 
     /** bolsista ve so o proprio; os demais filtram pelo id publico (opcional). null = sem filtro de bolsista. */
