@@ -1,7 +1,10 @@
 package dev.matheus.cadastroBolsistas.common;
 
-public class CredenciaisInvalidasException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
+public class CredenciaisInvalidasException extends ResponseStatusException {
     public CredenciaisInvalidasException(String mensagem) {
-        super(mensagem);
+        super(HttpStatus.UNAUTHORIZED, mensagem);
     }
 }

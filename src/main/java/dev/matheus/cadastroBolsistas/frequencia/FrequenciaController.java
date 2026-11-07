@@ -3,7 +3,6 @@ package dev.matheus.cadastroBolsistas.frequencia;
 import dev.matheus.cadastroBolsistas.bolsista.Bolsista;
 import dev.matheus.cadastroBolsistas.bolsista.BolsistaService;
 import dev.matheus.cadastroBolsistas.common.ArquivoDownloadUtil;
-import dev.matheus.cadastroBolsistas.common.ErroInternoException;
 import dev.matheus.cadastroBolsistas.common.ErroResponse;
 import dev.matheus.cadastroBolsistas.common.PaginaResponse;
 import dev.matheus.cadastroBolsistas.common.PaginacaoUtil;
@@ -147,12 +146,8 @@ public class FrequenciaController {
 
         List<Frequencia> frequencias = frequenciaService.buscarFrequencias(b.getId(), inicio, fim, null, null);
 
-        try {
-            byte[] pdfBytes = comprovantePdfService.gerarComprovante(b, lab, coord, frequencias, inicio, fim);
-            return ArquivoDownloadUtil.pdf("comprovante_frequencia_" + Objects.toString(b.getMatricula(), b.getPublicId()) + ".pdf", pdfBytes);
-        } catch (Exception e) {
-            throw new ErroInternoException("Erro ao gerar PDF do comprovante: " + e.getMessage());
-        }
+        byte[] pdfBytes = comprovantePdfService.gerarComprovante(b, lab, coord, frequencias, inicio, fim);
+        return ArquivoDownloadUtil.pdf("comprovante_frequencia_" + Objects.toString(b.getMatricula(), b.getPublicId()) + ".pdf", pdfBytes);
     }
 
     @Operation(summary = "Buscar frequência por ID", description = "Retorna um apontamento de frequência individual pelo identificador público (ex: frq_...).")

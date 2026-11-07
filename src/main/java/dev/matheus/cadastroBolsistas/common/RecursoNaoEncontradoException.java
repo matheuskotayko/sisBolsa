@@ -1,7 +1,10 @@
 package dev.matheus.cadastroBolsistas.common;
 
-public class RecursoNaoEncontradoException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
+public class RecursoNaoEncontradoException extends ResponseStatusException {
     public RecursoNaoEncontradoException(String mensagem) {
-        super(mensagem);
+        super(HttpStatus.NOT_FOUND, mensagem);
     }
 }

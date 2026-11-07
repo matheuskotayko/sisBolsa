@@ -1,6 +1,6 @@
 package dev.matheus.cadastroBolsistas.common;
 
-import dev.matheus.cadastroBolsistas.administrador.LimiteAdminsAtingidoException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,54 +15,21 @@ import java.util.List;
 
 /*
  * traduz excecao em json com uma unica forma: {"mensagem": "..."}.
- * limitado ao pacote controller para nao mexer no tratamento de erro das jsp.
  */
+@Slf4j
 @RestControllerAdvice(basePackages = "dev.matheus.cadastroBolsistas")
 public class ApiExceptionHandler {
-
-    @ExceptionHandler(RecursoNaoEncontradoException.class)
-    public ResponseEntity<ErroResponse> naoEncontrado(RecursoNaoEncontradoException e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErroResponse(e.getMessage()));
-    }
-
-    @ExceptionHandler(PermissaoNegadaException.class)
-    public ResponseEntity<ErroResponse> permissaoNegada(PermissaoNegadaException e) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponse(e.getMessage()));
-    }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErroResponse> acessoNegado(AccessDeniedException e) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErroResponse("Acesso negado."));
     }
 
-    @ExceptionHandler(LimiteAdminsAtingidoException.class)
-    public ResponseEntity<ErroResponse> limiteAdminsAtingido(LimiteAdminsAtingidoException e) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErroResponse(e.getMessage()));
-    }
-
-    @ExceptionHandler(CredenciaisInvalidasException.class)
-    public ResponseEntity<ErroResponse> credenciaisInvalidas(CredenciaisInvalidasException e) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErroResponse(e.getMessage()));
-    }
-
-    @ExceptionHandler(ContaBloqueadaException.class)
-    public ResponseEntity<ErroResponse> contaBloqueada(ContaBloqueadaException e) {
-        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(new ErroResponse(e.getMessage()));
-    }
-
-    /*
-     * ainda usado por casos que nao viraram excecao de dominio: 401 de
-     * "nao autenticado" (rede de seguranca, spring security ja barra antes).
-     */
+    /* excecoes de dominio estendem ResponseStatusException: o status vem da propria excecao. */
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ErroResponse> statusException(ResponseStatusException e) {
         String motivo = e.getReason() != null ? e.getReason() : "Erro na requisicao.";
         return ResponseEntity.status(e.getStatusCode()).body(new ErroResponse(motivo));
-    }
-
-    @ExceptionHandler(ErroInternoException.class)
-    public ResponseEntity<ErroResponse> erroInterno(ErroInternoException e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErroResponse(e.getMessage()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -112,7 +79,7 @@ public class ApiExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErroResponse> erroInesperado(Exception e) {
-        e.printStackTrace();
+        log.error("Erro inesperado", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErroResponse("Erro interno ao processar a requisicao."));
     }

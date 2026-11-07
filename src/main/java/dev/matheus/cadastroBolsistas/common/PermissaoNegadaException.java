@@ -1,7 +1,10 @@
 package dev.matheus.cadastroBolsistas.common;
 
-public class PermissaoNegadaException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
+public class PermissaoNegadaException extends ResponseStatusException {
     public PermissaoNegadaException(String mensagem) {
-        super(mensagem);
+        super(HttpStatus.FORBIDDEN, mensagem);
     }
 }
