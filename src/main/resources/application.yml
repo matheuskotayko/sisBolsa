@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: cadastroBolsistas
+  # valores podem vir do ambiente (container aponta DB_HOST para o servico "db")
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5436}/${DB_NAME:cadastroBolsista}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:1234}
+  # flyway e dono do schema; hibernate so confere se as entidades batem com as tabelas
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+app:
+  jwt:
+    # em producao o segredo tem que vir do ambiente, nunca do arquivo
+    secret: ${JWT_SECRET:troque-esse-segredo-em-producao-precisa-ter-pelo-menos-32-bytes}
+    expiracao-minutos: ${JWT_EXPIRACAO_MINUTOS:120}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+
+server:
+  error:
+    # nao vaza stacktrace na pagina de erro padrao (ApiExceptionHandler cobre /api/**)
+    include-stacktrace: never
