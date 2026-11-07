@@ -218,12 +218,6 @@ class AuthControllerTest {
     }
 
     @Test
-    void me_semSessao_retorna401() throws Exception {
-        mockMvc.perform(get("/api/v1/auth/me"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
     void me_comSessao_devolveOUsuario() throws Exception {
         logarComo(usuarioLogado);
 

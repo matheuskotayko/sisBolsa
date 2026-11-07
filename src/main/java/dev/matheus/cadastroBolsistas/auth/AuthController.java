@@ -23,11 +23,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
@@ -116,9 +114,6 @@ public class AuthController {
     @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/me")
     public ResponseEntity<UsuarioResponse> eu(@AuthenticationPrincipal Usuario usuario) {
-        if (usuario == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Nao autenticado.");
-        }
         return ResponseEntity.ok(UsuarioResponse.from(usuario));
     }
 
@@ -134,9 +129,6 @@ public class AuthController {
             @AuthenticationPrincipal Usuario usuario,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados para atualização de perfil e senha", required = true)
             @Valid @RequestBody PerfilRequest body) {
-        if (usuario == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Nao autenticado.");
-        }
         String senhaNova = bolsistaService.calcularNovaSenha(usuario, body.senhaAtual(), body.senha());
 
         UsuarioResponse response;
