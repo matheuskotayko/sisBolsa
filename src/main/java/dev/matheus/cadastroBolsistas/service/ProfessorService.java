@@ -193,15 +193,10 @@ public class ProfessorService {
         return p;
     }
 
+    /** tamanho minimo fica no @Size do request; aqui so a obrigatoriedade no cadastro. */
     public void validarSenha(String senha, boolean exigirSenha) {
         if (exigirSenha && StringUtil.estaVazio(senha)) {
-            throw new IllegalArgumentException("A senha inicial do usuario é obrigatoria.");
-        }
-        if (exigirSenha && senha.length() < 6) {
-            throw new IllegalArgumentException("A senha inicial precisa ter ao menos 6 caracteres.");
-        }
-        if (!exigirSenha && !StringUtil.estaVazio(senha) && senha.length() < 6) {
-            throw new IllegalArgumentException("A nova senha precisa ter ao menos 6 caracteres.");
+            throw new IllegalArgumentException("Senha e obrigatoria.");
         }
     }
 }

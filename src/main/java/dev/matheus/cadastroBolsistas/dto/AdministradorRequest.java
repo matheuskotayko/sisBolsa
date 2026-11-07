@@ -18,6 +18,7 @@ public record AdministradorRequest(
         String email,
 
         @Schema(description = "Senha de acesso (mínimo 6 caracteres)", example = "senhaSegura123")
+        @Size(min = 6, message = "A senha precisa ter ao menos 6 caracteres.")
         String senha,
 
         @Schema(description = "URL da foto de perfil", example = "https://images.unsplash.com/photo-1534528741775-53994a69daeb")
@@ -31,4 +32,9 @@ public record AdministradorRequest(
 
         @Schema(description = "Telefone de contato", example = "(55) 99999-1234")
         String telefone
-) {}
+) {
+    /** senha em branco = nao alterar; vira null para o @Size ignorar. */
+    public AdministradorRequest {
+        senha = (senha != null && !senha.isBlank()) ? senha.trim() : null;
+    }
+}

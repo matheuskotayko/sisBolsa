@@ -78,18 +78,13 @@ public class PasswordResetService {
     }
 
     @Transactional
-    public void redefinirSenha(String email, String codigo, String novaSenha, String confirmaSenha) {
+    public void redefinirSenha(String email, String codigo, String novaSenha) {
         String emailLimpo = StringUtil.limpar(email);
         String codigoLimpo = StringUtil.limpar(codigo);
         String senhaLimpa = StringUtil.limpar(novaSenha);
-        String confirmaLimpa = StringUtil.limpar(confirmaSenha);
 
         if (!validarCodigo(emailLimpo, codigoLimpo)) {
             throw new IllegalArgumentException("Código de verificação inválido ou expirado.");
-        }
-
-        if (!senhaLimpa.equals(confirmaLimpa)) {
-            throw new IllegalArgumentException("A nova senha e a confirmação não conferem.");
         }
 
         if (usuarioRepository == null || passwordEncoder == null) {

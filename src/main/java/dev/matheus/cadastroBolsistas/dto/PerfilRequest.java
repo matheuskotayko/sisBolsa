@@ -1,14 +1,16 @@
 package dev.matheus.cadastroBolsistas.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /*
  * atualizacao do proprio perfil. os tres campos de senha so importam juntos:
- * trocar a senha exige a atual, a nova e a confirmacao - fica manual no
- * controller porque e regra entre tres campos, bean validation nao cobre.
+ * trocar a senha exige a atual, a nova e a confirmacao: tamanho e confirmacao
+ * via bean validation; senha atual correta fica no service (depende do banco).
  */
 @Schema(description = "Dados para atualização de perfil e alteração opcional de senha.")
 public record PerfilRequest(
@@ -32,8 +34,21 @@ public record PerfilRequest(
         String senhaAtual,
 
         @Schema(description = "Nova senha desejada (mínimo 6 caracteres)", example = "12345678", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+        @Size(min = 6, message = "A senha precisa ter ao menos 6 caracteres.")
         String senha,
 
         @Schema(description = "Confirmação da nova senha", example = "12345678", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
         String confirmaSenha) {
+
+    public PerfilRequest {
+        senha = (senha != null && !senha.isBlank()) ? senha.trim() : null;
+        confirmaSenha = (confirmaSenha != null && !confirmaSenha.isBlank()) ? confirmaSenha.trim() : null;
+    }
+
+    @JsonIgnore
+    @Schema(hidden = true)
+    @AssertTrue(message = "A nova senha e a confirmacao nao coincidem.")
+    public boolean isSenhasConferem() {
+        return java.util.Objects.equals(senha, confirmaSenha);
+    }
 }

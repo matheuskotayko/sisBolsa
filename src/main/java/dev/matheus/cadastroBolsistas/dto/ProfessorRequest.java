@@ -3,6 +3,7 @@ package dev.matheus.cadastroBolsistas.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 /*
  * senha opcional na edicao: vazia significa "mantem a que ja esta la", entao
@@ -20,6 +21,7 @@ public record ProfessorRequest(
         String email,
 
         @Schema(description = "Senha de acesso (obrigatória na criação, opcional na edição)", example = "12345678", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+        @Size(min = 6, message = "A senha precisa ter ao menos 6 caracteres.")
         String senha,
 
         @Schema(description = "URL pública da foto de perfil", example = "https://i.pravatar.cc/150?img=32", requiredMode = Schema.RequiredMode.NOT_REQUIRED)

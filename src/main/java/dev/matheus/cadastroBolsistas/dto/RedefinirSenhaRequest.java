@@ -1,6 +1,8 @@
 package dev.matheus.cadastroBolsistas.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -22,4 +24,10 @@ public record RedefinirSenhaRequest(
         @NotBlank(message = "A nova senha e a confirmacao nao conferem.")
         @Schema(description = "Confirmação da nova senha", example = "NovaSenha@2026", requiredMode = Schema.RequiredMode.REQUIRED)
         String confirmaSenha) {
+    @JsonIgnore
+    @Schema(hidden = true)
+    @AssertTrue(message = "A nova senha e a confirmacao nao conferem.")
+    public boolean isSenhasConferem() {
+        return java.util.Objects.equals(novaSenha, confirmaSenha);
+    }
 }

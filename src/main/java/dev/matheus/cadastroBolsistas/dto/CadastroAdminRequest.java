@@ -1,12 +1,14 @@
 package dev.matheus.cadastroBolsistas.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /*
- * confirmaSenha == senha: validação cross-field feita em AdministradorService.criarAdminAutocadastro().
+ * confirmaSenha == senha: validado por isSenhasConferem() (@AssertTrue).
  * Bean Validation de campo único não cobre regras entre dois campos.
  */
 @Schema(description = "Dados para cadastro inicial de administrador (limitado a 3 no sistema).")
@@ -36,5 +38,11 @@ public record CadastroAdminRequest(
         email = email != null ? email.trim().toLowerCase() : null;
         senha = senha != null ? senha.trim() : null;
         confirmaSenha = confirmaSenha != null ? confirmaSenha.trim() : null;
+    }
+    @JsonIgnore
+    @Schema(hidden = true)
+    @AssertTrue(message = "As senhas nao coincidem.")
+    public boolean isSenhasConferem() {
+        return java.util.Objects.equals(senha, confirmaSenha);
     }
 }

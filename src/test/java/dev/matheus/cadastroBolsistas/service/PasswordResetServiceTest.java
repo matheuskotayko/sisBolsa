@@ -73,7 +73,7 @@ class PasswordResetServiceTest {
         when(usuarioRepository.findByEmailAndAtivoTrue(email)).thenReturn(Optional.of(usuario));
         when(passwordEncoder.encode("novaSenha123")).thenReturn("novaSenhaHash");
 
-        service.redefinirSenha(email, codigo, "novaSenha123", "novaSenha123");
+        service.redefinirSenha(email, codigo, "novaSenha123");
 
         assertEquals("novaSenhaHash", usuario.getSenha());
         verify(usuarioRepository).save(usuario);
@@ -86,21 +86,9 @@ class PasswordResetServiceTest {
         service.gerarCodigo(email);
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                service.redefinirSenha(email, "999999", "novaSenha123", "novaSenha123"));
+                service.redefinirSenha(email, "999999", "novaSenha123"));
 
         assertTrue(ex.getMessage().contains("Código de verificação inválido"));
-        verifyNoInteractions(usuarioRepository);
-    }
-
-    @Test
-    void redefinirSenha_comConfirmacaoDiferente_lancaExcecao() {
-        String email = "usuario@sisbolsa.com";
-        String codigo = service.gerarCodigo(email);
-
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                service.redefinirSenha(email, codigo, "novaSenha123", "outraSenha"));
-
-        assertTrue(ex.getMessage().contains("não conferem"));
         verifyNoInteractions(usuarioRepository);
     }
 
@@ -112,7 +100,7 @@ class PasswordResetServiceTest {
         when(usuarioRepository.findByEmailAndAtivoTrue(email)).thenReturn(Optional.empty());
 
         assertThrows(RecursoNaoEncontradoException.class, () ->
-                service.redefinirSenha(email, codigo, "novaSenha123", "novaSenha123"));
+                service.redefinirSenha(email, codigo, "novaSenha123"));
 
         verify(usuarioRepository, never()).save(any());
     }

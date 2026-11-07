@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -25,6 +26,7 @@ public record BolsistaRequest(
         String email,
 
         @Schema(description = "Senha de acesso (obrigatória na criação, opcional na edição)", example = "12345678", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+        @Size(min = 6, message = "A senha precisa ter ao menos 6 caracteres.")
         String senha,
 
         @Schema(description = "Data de nascimento", example = "2002-05-15", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
@@ -73,6 +75,7 @@ public record BolsistaRequest(
 
     /** Normaliza nome (trim) e e-mail (trim + lowercase) na deserialização, antes da Bean Validation. */
     public BolsistaRequest {
+        senha = (senha != null && !senha.isBlank()) ? senha.trim() : null;
         nome = nome != null ? nome.trim() : null;
         email = email != null ? email.trim().toLowerCase() : null;
     }

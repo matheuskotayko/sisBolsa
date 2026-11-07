@@ -98,12 +98,8 @@ public class AdministradorService {
     }
 
     @Transactional
-    public Administrador criarAdminAutocadastro(String nome, String email, String senha, String confirmaSenha) {
+    public Administrador criarAdminAutocadastro(String nome, String email, String senha) {
         exigirVagaParaNovoAdmin();
-
-        if (!senha.equals(confirmaSenha)) {
-            throw new IllegalArgumentException("As senhas nao coincidem.");
-        }
 
         String emailLimpo = StringUtil.limpar(email);
         if (usuarioRepository.existsByEmail(emailLimpo)) {
@@ -162,10 +158,7 @@ public class AdministradorService {
         admin.setCargo(body.cargo());
         admin.setTelefone(body.telefone());
 
-        if (!StringUtil.estaVazio(body.senha())) {
-            if (body.senha().length() < 6) {
-                throw new IllegalArgumentException("A nova senha precisa ter ao menos 6 caracteres.");
-            }
+        if (body.senha() != null) {
             admin.setSenha(passwordEncoder.encode(body.senha()));
         }
 
@@ -201,8 +194,8 @@ public class AdministradorService {
             throw new DataIntegrityViolationException("duplicate key value violates unique constraint uk_usuario_email");
         }
 
-        if (StringUtil.estaVazio(body.senha()) || body.senha().length() < 6) {
-            throw new IllegalArgumentException("Senha e obrigatoria e precisa ter ao menos 6 caracteres.");
+        if (body.senha() == null) {
+            throw new IllegalArgumentException("Senha e obrigatoria.");
         }
 
         Administrador admin = construirAdministrador(

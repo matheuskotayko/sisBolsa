@@ -301,18 +301,8 @@ class BolsistaServiceTest {
     }
 
     @Test
-    void validarSenha_exigindoESenhaCurta_lanca() {
-        assertThrows(IllegalArgumentException.class, () -> bolsistaService.validarSenha("123", true));
-    }
-
-    @Test
     void validarSenha_naoExigindoESemSenha_naoLanca() {
         assertDoesNotThrow(() -> bolsistaService.validarSenha("", false));
-    }
-
-    @Test
-    void validarSenha_naoExigindoMasSenhaCurtaInformada_lanca() {
-        assertThrows(IllegalArgumentException.class, () -> bolsistaService.validarSenha("123", false));
     }
 
     @Test
@@ -320,7 +310,7 @@ class BolsistaServiceTest {
         Usuario logado = new Usuario();
         logado.setSenha("hashAtual");
 
-        assertNull(bolsistaService.calcularNovaSenha(logado, "", "", ""));
+        assertNull(bolsistaService.calcularNovaSenha(logado, "", ""));
         verifyNoInteractions(passwordEncoder);
     }
 
@@ -331,27 +321,7 @@ class BolsistaServiceTest {
         when(passwordEncoder.matches("errada", "hashAtual")).thenReturn(false);
 
         assertThrows(IllegalArgumentException.class,
-                () -> bolsistaService.calcularNovaSenha(logado, "errada", "novaSenha1", "novaSenha1"));
-    }
-
-    @Test
-    void calcularNovaSenha_confirmacaoDiferente_lanca() {
-        Usuario logado = new Usuario();
-        logado.setSenha("hashAtual");
-        when(passwordEncoder.matches("senha123", "hashAtual")).thenReturn(true);
-
-        assertThrows(IllegalArgumentException.class,
-                () -> bolsistaService.calcularNovaSenha(logado, "senha123", "novaSenha1", "outraCoisa"));
-    }
-
-    @Test
-    void calcularNovaSenha_novaSenhaCurta_lanca() {
-        Usuario logado = new Usuario();
-        logado.setSenha("hashAtual");
-        when(passwordEncoder.matches("senha123", "hashAtual")).thenReturn(true);
-
-        assertThrows(IllegalArgumentException.class,
-                () -> bolsistaService.calcularNovaSenha(logado, "senha123", "123", "123"));
+                () -> bolsistaService.calcularNovaSenha(logado, "errada", "novaSenha1"));
     }
 
     @Test
@@ -361,7 +331,7 @@ class BolsistaServiceTest {
         when(passwordEncoder.matches("senha123", "hashAtual")).thenReturn(true);
         when(passwordEncoder.encode("novaSenha1")).thenReturn("hashNovo");
 
-        assertEquals("hashNovo", bolsistaService.calcularNovaSenha(logado, "senha123", "novaSenha1", "novaSenha1"));
+        assertEquals("hashNovo", bolsistaService.calcularNovaSenha(logado, "senha123", "novaSenha1"));
     }
 
     @Test

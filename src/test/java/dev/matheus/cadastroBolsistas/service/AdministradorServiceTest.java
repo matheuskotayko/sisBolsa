@@ -73,7 +73,7 @@ class AdministradorServiceTest {
         when(usuarioRepository.existsByEmail("admin@teste.com")).thenReturn(true);
 
         assertThrows(DataIntegrityViolationException.class,
-                () -> service.criarAdminAutocadastro("Admin", "admin@teste.com", "senha123", "senha123"));
+                () -> service.criarAdminAutocadastro("Admin", "admin@teste.com", "senha123"));
     }
 
     @Test

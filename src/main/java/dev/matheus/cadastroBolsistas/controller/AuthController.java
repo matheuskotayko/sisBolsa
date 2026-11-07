@@ -132,7 +132,7 @@ public class AuthController {
         if (usuario == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Nao autenticado.");
         }
-        String senhaNova = bolsistaService.calcularNovaSenha(usuario, body.senhaAtual(), body.senha(), body.confirmaSenha());
+        String senhaNova = bolsistaService.calcularNovaSenha(usuario, body.senhaAtual(), body.senha());
 
         UsuarioResponse response;
         if (usuario.isAdmin()) {
@@ -167,7 +167,7 @@ public class AuthController {
                                                          UriComponentsBuilder uriBuilder) {
         // Sanitização e validação cross-field delegadas a CadastroAdminRequest e AdministradorService
         Administrador admin = administradorService.criarAdminAutocadastro(
-                body.nome(), body.email(), body.senha(), body.confirmaSenha());
+                body.nome(), body.email(), body.senha());
 
         URI uri = uriBuilder.replacePath("/api/v1/administrador/{id}").buildAndExpand(admin.getPublicId()).toUri();
         return ResponseEntity.created(uri).body(UsuarioResponse.from(admin.getUsuario()));
@@ -202,7 +202,7 @@ public class AuthController {
     @PostMapping("/password-resets")
     public ResponseEntity<MensagemResponse> redefinirSenha(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados para redefinição de senha", required = true)
                                               @Valid @RequestBody RedefinirSenhaRequest body) {
-        passwordResetService.redefinirSenha(body.email(), body.codigo(), body.novaSenha(), body.confirmaSenha());
+        passwordResetService.redefinirSenha(body.email(), body.codigo(), body.novaSenha());
 
         return ResponseEntity.ok(new MensagemResponse("Senha redefinida com sucesso! Você já pode acessar sua conta com a nova senha."));
     }

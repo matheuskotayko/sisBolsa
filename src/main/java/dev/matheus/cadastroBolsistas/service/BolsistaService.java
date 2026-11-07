@@ -301,12 +301,10 @@ public class BolsistaService {
         return new ArrayList<>();
     }
 
+    /** tamanho minimo fica no @Size do request; aqui so a obrigatoriedade no cadastro. */
     public void validarSenha(String senha, boolean exigirSenha) {
-        if (exigirSenha && (StringUtil.estaVazio(senha) || senha.length() < 6)) {
-            throw new IllegalArgumentException("Senha e obrigatoria e precisa ter ao menos 6 caracteres.");
-        }
-        if (!exigirSenha && !StringUtil.estaVazio(senha) && senha.length() < 6) {
-            throw new IllegalArgumentException("A nova senha precisa ter ao menos 6 caracteres.");
+        if (exigirSenha && StringUtil.estaVazio(senha)) {
+            throw new IllegalArgumentException("Senha e obrigatoria.");
         }
     }
 
@@ -356,22 +354,13 @@ public class BolsistaService {
         }
     }
 
-    public String calcularNovaSenha(Usuario logado, String senhaAtual, String senhaNova, String confirmaSenha) {
-        boolean trocando = !StringUtil.estaVazio(senhaAtual) || !StringUtil.estaVazio(senhaNova) || !StringUtil.estaVazio(confirmaSenha);
-        if (!trocando) {
+    /** tamanho e confirmacao ja validados no PerfilRequest; aqui so o que depende do banco. */
+    public String calcularNovaSenha(Usuario logado, String senhaAtual, String senhaNova) {
+        if (StringUtil.estaVazio(senhaNova)) {
             return null;
         }
-        if (StringUtil.estaVazio(senhaAtual) || StringUtil.estaVazio(senhaNova) || StringUtil.estaVazio(confirmaSenha)) {
-            throw new IllegalArgumentException("Para alterar a senha, preencha a senha atual, a nova e a confirmacao.");
-        }
-        if (!passwordEncoder.matches(senhaAtual, logado.getSenha())) {
+        if (StringUtil.estaVazio(senhaAtual) || !passwordEncoder.matches(senhaAtual, logado.getSenha())) {
             throw new IllegalArgumentException("A senha atual informada esta incorreta.");
-        }
-        if (senhaNova.length() < 6) {
-            throw new IllegalArgumentException("A nova senha deve ter pelo menos 6 caracteres.");
-        }
-        if (!senhaNova.equals(confirmaSenha)) {
-            throw new IllegalArgumentException("A nova senha e a confirmacao nao coincidem.");
         }
         return passwordEncoder.encode(senhaNova);
     }
