@@ -15,6 +15,8 @@ import com.lowagie.text.Phrase;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
+import dev.matheus.cadastroBolsistas.dto.response.ComprovanteResponse;
+import dev.matheus.cadastroBolsistas.model.Usuario;
 import org.springframework.stereotype.Service;
 
 import java.awt.Color;
@@ -40,6 +42,36 @@ public class ComprovanteFrequenciaPdfService {
     private static final Color COR_FUNDO_CABECALHO = new Color(241, 245, 249); // #F1F5F9
     private static final Color COR_ZEBRADA = new Color(248, 250, 252); // #F8FAFC
     private static final Color COR_BORDA = new Color(226, 232, 240);  // #E2E8F0
+
+    private final FrequenciaService frequenciaService;
+    private final LaboratorioService laboratorioService;
+    private final ProfessorService professorService;
+
+    public ComprovanteFrequenciaPdfService(FrequenciaService frequenciaService,
+                                           LaboratorioService laboratorioService,
+                                           ProfessorService professorService) {
+        this.frequenciaService = frequenciaService;
+        this.laboratorioService = laboratorioService;
+        this.professorService = professorService;
+    }
+
+    /** sem periodo informado, usa o mes corrente; so quem tem acesso ao bolsista consegue emitir. */
+    public ComprovanteResponse emitir(Usuario logado, String bolsistaId, LocalDate dataInicio, LocalDate dataFim)
+            throws DocumentException {
+        Bolsista b = frequenciaService.resolverBolsistaAlvo(logado, bolsistaId);
+        frequenciaService.exigirAcesso(logado, b.getId());
+
+        Laboratorio lab = b.getLaboratorioId() != null ? laboratorioService.buscarPorId(b.getLaboratorioId()) : null;
+        Professor coord = (lab != null && lab.getCoordenadorId() != null) ? professorService.buscarPorId(lab.getCoordenadorId()) : null;
+
+        LocalDate hoje = LocalDate.now();
+        LocalDate inicio = dataInicio != null ? dataInicio : hoje.withDayOfMonth(1);
+        LocalDate fim = dataFim != null ? dataFim : hoje.withDayOfMonth(hoje.lengthOfMonth());
+
+        List<Frequencia> frequencias = frequenciaService.buscarFrequencias(b.getId(), inicio, fim, null, null);
+        byte[] pdf = gerarComprovante(b, lab, coord, frequencias, inicio, fim);
+        return new ComprovanteResponse("comprovante_frequencia_" + Objects.toString(b.getMatricula(), b.getPublicId()) + ".pdf", pdf);
+    }
 
     public byte[] gerarComprovante(Bolsista bolsista,
                                    Laboratorio laboratorio,

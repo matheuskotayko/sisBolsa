@@ -1,6 +1,7 @@
 package dev.matheus.cadastroBolsistas.controller;
 
 import dev.matheus.cadastroBolsistas.common.ArquivoDownloadUtil;
+import dev.matheus.cadastroBolsistas.dto.response.ComprovanteResponse;
 import dev.matheus.cadastroBolsistas.dto.response.ErroResponse;
 import dev.matheus.cadastroBolsistas.dto.request.FrequenciaRequest;
 import dev.matheus.cadastroBolsistas.dto.response.FrequenciaResponse;
@@ -46,19 +47,13 @@ public class FrequenciaController {
 
     private final FrequenciaService frequenciaService;
     private final BolsistaService bolsistaService;
-    private final LaboratorioService laboratorioService;
     private final ComprovanteFrequenciaPdfService comprovantePdfService;
-    private final ProfessorService professorService;
 
     public FrequenciaController(FrequenciaService frequenciaService, BolsistaService bolsistaService,
-                                LaboratorioService laboratorioService,
-                                ComprovanteFrequenciaPdfService comprovantePdfService,
-                                ProfessorService professorService) {
+                                ComprovanteFrequenciaPdfService comprovantePdfService) {
         this.frequenciaService = frequenciaService;
         this.bolsistaService = bolsistaService;
-        this.laboratorioService = laboratorioService;
         this.comprovantePdfService = comprovantePdfService;
-        this.professorService = professorService;
     }
 
     @Operation(summary = "Listar frequências paginadas", description = "Retorna apontamentos de frequência com suporte a filtros de data e bolsista. Bolsistas visualizam somente seus próprios registros.")
@@ -124,19 +119,8 @@ public class FrequenciaController {
             @Parameter(description = "Data inicial de referência") @RequestParam(required = false) LocalDate dataInicio,
             @Parameter(description = "Data final de referência") @RequestParam(required = false) LocalDate dataFim,
             @AuthenticationPrincipal Usuario usuario) {
-        Bolsista b = frequenciaService.resolverBolsistaAlvo(usuario, bolsistaId);
-        frequenciaService.exigirAcesso(usuario, b.getId());
-
-        Laboratorio lab = b.getLaboratorioId() != null ? laboratorioService.buscarPorId(b.getLaboratorioId()) : null;
-        Professor coord = (lab != null && lab.getCoordenadorId() != null) ? professorService.buscarPorId(lab.getCoordenadorId()) : null;
-
-        LocalDate inicio = dataInicio != null ? dataInicio : LocalDate.now().withDayOfMonth(1);
-        LocalDate fim = dataFim != null ? dataFim : LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
-
-        List<Frequencia> frequencias = frequenciaService.buscarFrequencias(b.getId(), inicio, fim, null, null);
-
-        byte[] pdfBytes = comprovantePdfService.gerarComprovante(b, lab, coord, frequencias, inicio, fim);
-        return ArquivoDownloadUtil.pdf("comprovante_frequencia_" + Objects.toString(b.getMatricula(), b.getPublicId()) + ".pdf", pdfBytes);
+        ComprovanteResponse comprovante = comprovantePdfService.emitir(usuario, bolsistaId, dataInicio, dataFim);
+        return ArquivoDownloadUtil.pdf(comprovante.nomeArquivo(), comprovante.conteudo());
     }
 
     @Operation(summary = "Buscar frequência por ID", description = "Retorna um apontamento de frequência individual pelo identificador público (ex: frq_...).")
