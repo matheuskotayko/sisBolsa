@@ -3,7 +3,6 @@ package dev.matheus.cadastroBolsistas.service;
 import dev.matheus.cadastroBolsistas.common.CsvUtil;
 import dev.matheus.cadastroBolsistas.common.StringUtil;
 import dev.matheus.cadastroBolsistas.dto.request.BolsistaRequest;
-import dev.matheus.cadastroBolsistas.dto.request.PerfilRequest;
 import dev.matheus.cadastroBolsistas.dto.response.UsuarioResponse;
 import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
 import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
@@ -339,27 +338,6 @@ public class BolsistaService {
             b.setLaboratorio(null);
             b.setLaboratorioId(null);
         }
-    }
-
-    public void aplicarDadosPerfil(Usuario u, PerfilRequest body, String senhaNova) {
-        u.setNome(StringUtil.limpar(body.nome()));
-        u.setEmail(StringUtil.limpar(body.email()));
-        u.setFotoUrl(body.fotoUrl());
-        u.setBio(body.bio());
-        if (senhaNova != null) {
-            u.setSenha(senhaNova);
-        }
-    }
-
-    /** tamanho e confirmacao ja validados no PerfilRequest; aqui so o que depende do banco. */
-    public String calcularNovaSenha(Usuario logado, String senhaAtual, String senhaNova) {
-        if (StringUtil.estaVazio(senhaNova)) {
-            return null;
-        }
-        if (StringUtil.estaVazio(senhaAtual) || !passwordEncoder.matches(senhaAtual, logado.getSenha())) {
-            throw new IllegalArgumentException("A senha atual informada esta incorreta.");
-        }
-        return passwordEncoder.encode(senhaNova);
     }
 
     public Page<Bolsista> listar(Usuario logado, String buscaNome, String buscaCurso, String tipo, Pageable pageable) {

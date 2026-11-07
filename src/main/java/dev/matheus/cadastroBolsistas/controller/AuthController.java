@@ -10,15 +10,12 @@ import dev.matheus.cadastroBolsistas.dto.request.PerfilRequest;
 import dev.matheus.cadastroBolsistas.dto.request.RedefinirSenhaRequest;
 import dev.matheus.cadastroBolsistas.dto.response.UsuarioResponse;
 import dev.matheus.cadastroBolsistas.model.Administrador;
-import dev.matheus.cadastroBolsistas.model.Bolsista;
-import dev.matheus.cadastroBolsistas.model.Professor;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.security.JwtService;
 import dev.matheus.cadastroBolsistas.service.AdministradorService;
-import dev.matheus.cadastroBolsistas.service.BolsistaService;
 import dev.matheus.cadastroBolsistas.service.LoginService;
 import dev.matheus.cadastroBolsistas.service.PasswordResetService;
-import dev.matheus.cadastroBolsistas.service.ProfessorService;
+import dev.matheus.cadastroBolsistas.service.PerfilService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -43,21 +40,19 @@ public class AuthController {
 
     private final LoginService loginService;
     private final JwtService jwtService;
-    private final BolsistaService bolsistaService;
-    private final ProfessorService professorService;
     private final AdministradorService administradorService;
     private final PasswordResetService passwordResetService;
+    private final PerfilService perfilService;
 
     public AuthController(LoginService loginService, JwtService jwtService,
-                          BolsistaService bolsistaService, ProfessorService professorService,
                           AdministradorService administradorService,
-                          PasswordResetService passwordResetService) {
+                          PasswordResetService passwordResetService,
+                          PerfilService perfilService) {
         this.loginService = loginService;
         this.jwtService = jwtService;
-        this.bolsistaService = bolsistaService;
-        this.professorService = professorService;
         this.administradorService = administradorService;
         this.passwordResetService = passwordResetService;
+        this.perfilService = perfilService;
     }
 
     @Operation(summary = "Autenticar usuário e emitir token", description = "Realiza login por e-mail e senha. Aplica proteção por rate-limiting com bloqueio temporário após tentativas inválidas.")
@@ -111,27 +106,7 @@ public class AuthController {
             @AuthenticationPrincipal Usuario usuario,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados para atualização de perfil e senha", required = true)
             @Valid @RequestBody PerfilRequest body) {
-        String senhaNova = bolsistaService.calcularNovaSenha(usuario, body.senhaAtual(), body.senha());
-
-        UsuarioResponse response;
-        if (usuario.isAdmin()) {
-            Administrador a = administradorService.buscarPorId(usuario.getId());
-            bolsistaService.aplicarDadosPerfil(a.getUsuario(), body, senhaNova);
-            administradorService.atualizar(a);
-            response = UsuarioResponse.from(a.getUsuario());
-        } else if (usuario.isProfessor()) {
-            Professor p = professorService.buscarOuFalhar(usuario.getId());
-            bolsistaService.aplicarDadosPerfil(p.getUsuario(), body, senhaNova);
-            professorService.atualizar(p);
-            response = UsuarioResponse.from(p);
-        } else {
-            Bolsista b = bolsistaService.buscarOuFalhar(usuario.getId());
-            bolsistaService.aplicarDadosPerfil(b.getUsuario(), body, senhaNova);
-            bolsistaService.atualizar(b);
-            response = UsuarioResponse.from(b);
-        }
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(perfilService.atualizar(usuario, body));
     }
 
     @Operation(summary = "Cadastro inicial de Administrador", description = "Permite a criação pública de uma conta de Administrador caso o limite de 3 vagas não tenha sido atingido.")

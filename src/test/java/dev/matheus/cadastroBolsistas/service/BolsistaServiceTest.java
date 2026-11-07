@@ -1,7 +1,6 @@
 package dev.matheus.cadastroBolsistas.service;
 
 import dev.matheus.cadastroBolsistas.dto.request.BolsistaRequest;
-import dev.matheus.cadastroBolsistas.dto.request.PerfilRequest;
 import dev.matheus.cadastroBolsistas.exceptions.PermissaoNegadaException;
 import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
@@ -301,48 +300,6 @@ class BolsistaServiceTest {
     @Test
     void validarSenha_naoExigindoESemSenha_naoLanca() {
         assertDoesNotThrow(() -> bolsistaService.validarSenha("", false));
-    }
-
-    @Test
-    void calcularNovaSenha_semCamposDeSenha_retornaNull() {
-        Usuario logado = new Usuario();
-        logado.setSenha("hashAtual");
-
-        assertNull(bolsistaService.calcularNovaSenha(logado, "", ""));
-        verifyNoInteractions(passwordEncoder);
-    }
-
-    @Test
-    void calcularNovaSenha_senhaAtualErrada_lanca() {
-        Usuario logado = new Usuario();
-        logado.setSenha("hashAtual");
-        when(passwordEncoder.matches("errada", "hashAtual")).thenReturn(false);
-
-        assertThrows(IllegalArgumentException.class,
-                () -> bolsistaService.calcularNovaSenha(logado, "errada", "novaSenha1"));
-    }
-
-    @Test
-    void calcularNovaSenha_valida_retornaHashCodificado() {
-        Usuario logado = new Usuario();
-        logado.setSenha("hashAtual");
-        when(passwordEncoder.matches("senha123", "hashAtual")).thenReturn(true);
-        when(passwordEncoder.encode("novaSenha1")).thenReturn("hashNovo");
-
-        assertEquals("hashNovo", bolsistaService.calcularNovaSenha(logado, "senha123", "novaSenha1"));
-    }
-
-    @Test
-    void aplicarDadosPerfil_semTrocarSenha_mantemHashAtual() {
-        Usuario u = new Usuario();
-        u.setSenha("hashAtual");
-        PerfilRequest body = new PerfilRequest("Novo Nome", "novo@teste.com", null, null, null, null, null);
-
-        bolsistaService.aplicarDadosPerfil(u, body, null);
-
-        assertEquals("Novo Nome", u.getNome());
-        assertEquals("novo@teste.com", u.getEmail());
-        assertEquals("hashAtual", u.getSenha());
     }
 
     @Test

@@ -5,17 +5,17 @@ import dev.matheus.cadastroBolsistas.exceptions.RecursoNaoEncontradoException;
 import dev.matheus.cadastroBolsistas.exceptions.ContaBloqueadaException;
 import dev.matheus.cadastroBolsistas.exceptions.CredenciaisInvalidasException;
 import dev.matheus.cadastroBolsistas.model.Administrador;
-import dev.matheus.cadastroBolsistas.model.Bolsista;
+import dev.matheus.cadastroBolsistas.dto.request.PerfilRequest;
+import dev.matheus.cadastroBolsistas.dto.response.UsuarioResponse;
 import dev.matheus.cadastroBolsistas.model.Professor;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.security.JwtCookieFilter;
 import dev.matheus.cadastroBolsistas.security.JwtService;
 import dev.matheus.cadastroBolsistas.security.SecurityConfig;
 import dev.matheus.cadastroBolsistas.service.AdministradorService;
-import dev.matheus.cadastroBolsistas.service.BolsistaService;
+import dev.matheus.cadastroBolsistas.service.PerfilService;
 import dev.matheus.cadastroBolsistas.service.LoginService;
 import dev.matheus.cadastroBolsistas.service.PasswordResetService;
-import dev.matheus.cadastroBolsistas.service.ProfessorService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -83,10 +83,7 @@ class AuthControllerTest {
     private JwtService jwtService;
 
     @MockitoBean
-    private BolsistaService bolsistaService;
-
-    @MockitoBean
-    private ProfessorService professorService;
+    private PerfilService perfilService;
 
     @MockitoBean
     private AdministradorService administradorService;
@@ -95,13 +92,11 @@ class AuthControllerTest {
     private PasswordResetService passwordResetService;
 
     private Usuario usuarioLogado;
-    private Bolsista bolsistaLogado;
 
     @BeforeEach
     void setUp() {
         usuarioLogado = new Usuario(USUARIO_ID, "Thiago Rocha", "thiago@teste.com",
                 passwordEncoder.encode(SENHA_ATUAL), true, "BOLSISTA", null, null);
-        bolsistaLogado = new Bolsista(USUARIO_ID, usuarioLogado);
     }
 
     @AfterEach
@@ -230,41 +225,23 @@ class AuthControllerTest {
     }
 
     @Test
-    void perfil_semTrocarSenha_atualizaOsDados() throws Exception {
-        when(bolsistaService.buscarOuFalhar(USUARIO_ID)).thenReturn(bolsistaLogado);
-        when(bolsistaService.calcularNovaSenha(eq(usuarioLogado), isNull(), isNull())).thenReturn(null);
+    void perfil_comDadosValidos_delegaAoServicoEDevolveOResultado() throws Exception {
+        when(perfilService.atualizar(any(Usuario.class), any(PerfilRequest.class)))
+                .thenReturn(UsuarioResponse.from(usuarioLogado));
         logarComo(usuarioLogado);
 
         mockMvc.perform(patch("/api/v1/auth/perfil")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json("nome", "Thiago Editado", "email", "novo@teste.com")))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("thiago@teste.com"));
 
-        verify(bolsistaService).aplicarDadosPerfil(eq(bolsistaLogado.getUsuario()), any(), isNull());
-        verify(bolsistaService).atualizar(bolsistaLogado);
-    }
-
-    @Test
-    void perfil_comSenhaAtualCorreta_gravaNovoHash() throws Exception {
-        when(bolsistaService.buscarOuFalhar(USUARIO_ID)).thenReturn(bolsistaLogado);
-        String hashEsperado = passwordEncoder.encode("novaSenha123");
-        when(bolsistaService.calcularNovaSenha(usuarioLogado, SENHA_ATUAL, "novaSenha123")).thenReturn(hashEsperado);
-        logarComo(usuarioLogado);
-
-        mockMvc.perform(patch("/api/v1/auth/perfil")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("nome", "Thiago Rocha", "email", "thiago@teste.com",
-                                "senhaAtual", SENHA_ATUAL, "senha", "novaSenha123", "confirmaSenha", "novaSenha123")))
-                .andExpect(status().isOk());
-
-        verify(bolsistaService).aplicarDadosPerfil(eq(bolsistaLogado.getUsuario()), any(), eq(hashEsperado));
-        verify(bolsistaService).atualizar(bolsistaLogado);
+        verify(perfilService).atualizar(eq(usuarioLogado), any(PerfilRequest.class));
     }
 
     @Test
     void perfil_comSenhaAtualErrada_recusa() throws Exception {
-        when(bolsistaService.buscarOuFalhar(USUARIO_ID)).thenReturn(bolsistaLogado);
-        when(bolsistaService.calcularNovaSenha(usuarioLogado, "chuteErrado", "hackeado123"))
+        when(perfilService.atualizar(any(Usuario.class), any(PerfilRequest.class)))
                 .thenThrow(new IllegalArgumentException("A senha atual informada esta incorreta."));
         logarComo(usuarioLogado);
 
@@ -275,12 +252,10 @@ class AuthControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.mensagem").value("A senha atual informada esta incorreta."));
 
-        verify(bolsistaService, never()).atualizar(any());
     }
 
     @Test
     void perfil_comConfirmacaoDiferente_recusa() throws Exception {
-        when(bolsistaService.buscarOuFalhar(USUARIO_ID)).thenReturn(bolsistaLogado);
         logarComo(usuarioLogado);
 
         mockMvc.perform(patch("/api/v1/auth/perfil")
@@ -289,12 +264,10 @@ class AuthControllerTest {
                                 "senhaAtual", SENHA_ATUAL, "senha", "novaSenha123", "confirmaSenha", "outraCoisa")))
                 .andExpect(status().isBadRequest());
 
-        verify(bolsistaService, never()).atualizar(any());
     }
 
     @Test
     void perfil_comSenhaNovaCurta_recusa() throws Exception {
-        when(bolsistaService.buscarOuFalhar(USUARIO_ID)).thenReturn(bolsistaLogado);
         logarComo(usuarioLogado);
 
         mockMvc.perform(patch("/api/v1/auth/perfil")
@@ -303,7 +276,6 @@ class AuthControllerTest {
                                 "senhaAtual", SENHA_ATUAL, "senha", "123", "confirmaSenha", "123")))
                 .andExpect(status().isBadRequest());
 
-        verify(bolsistaService, never()).atualizar(any());
     }
 
     @Test
@@ -319,29 +291,9 @@ class AuthControllerTest {
     }
 
     @Test
-    void perfil_deProfessor_usaOServicoDeProfessor() throws Exception {
-        UUID profId = UUID.randomUUID();
-        Usuario profUsuario = new Usuario(profId, "Dr. Roberto", "roberto@teste.com",
-                passwordEncoder.encode(SENHA_ATUAL), true, "PROFESSOR", null, null);
-        Professor professor = new Professor(profId, profUsuario);
-
-        when(professorService.buscarOuFalhar(profId)).thenReturn(professor);
-        when(bolsistaService.calcularNovaSenha(eq(profUsuario), isNull(), isNull())).thenReturn(null);
-        logarComo(profUsuario);
-
-        mockMvc.perform(patch("/api/v1/auth/perfil")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("nome", "Dr. Roberto Mendes", "email", "roberto@teste.com")))
-                .andExpect(status().isOk());
-
-        verify(professorService).atualizar(any(Professor.class));
-        verify(bolsistaService, never()).buscarOuFalhar(any(UUID.class));
-        verify(bolsistaService, never()).atualizar(any());
-    }
-
-    @Test
     void perfil_quandoOUsuarioSumiuDoBanco_retorna404() throws Exception {
-        when(bolsistaService.buscarOuFalhar(USUARIO_ID)).thenThrow(new RecursoNaoEncontradoException("Usuario nao encontrado."));
+        when(perfilService.atualizar(any(Usuario.class), any(PerfilRequest.class)))
+                .thenThrow(new RecursoNaoEncontradoException("Usuario nao encontrado."));
         logarComo(usuarioLogado);
 
         mockMvc.perform(patch("/api/v1/auth/perfil")
@@ -406,29 +358,6 @@ class AuthControllerTest {
                         .content(json("nome", "Alguem", "email", "alguem@teste.com",
                                 "senha", "123456", "confirmaSenha", "outra")))
                 .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void perfil_deAdmin_usaOServicoDeAdministrador() throws Exception {
-        UUID adminId = UUID.randomUUID();
-        Usuario adminUsuario = new Usuario(adminId, "Admin Master", "admin@teste.com",
-                passwordEncoder.encode(SENHA_ATUAL), true, "ADMIN", null, null);
-        Administrador admin = new Administrador();
-        admin.setId(adminId);
-        admin.setUsuario(adminUsuario);
-
-        when(administradorService.buscarPorId(adminId)).thenReturn(admin);
-        when(bolsistaService.calcularNovaSenha(eq(adminUsuario), isNull(), isNull())).thenReturn(null);
-        logarComo(adminUsuario);
-
-        mockMvc.perform(patch("/api/v1/auth/perfil")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("nome", "Admin Editado", "email", "admin@teste.com")))
-                .andExpect(status().isOk());
-
-        verify(administradorService).atualizar(admin);
-        verify(bolsistaService, never()).atualizar(any());
-        verify(professorService, never()).atualizar(any());
     }
 
     @Test
