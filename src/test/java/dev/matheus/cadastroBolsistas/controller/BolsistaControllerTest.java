@@ -1,6 +1,5 @@
 package dev.matheus.cadastroBolsistas.controller;
 
-import dev.matheus.cadastroBolsistas.assembler.BolsistaModelAssembler;
 import dev.matheus.cadastroBolsistas.dto.BolsistaRequest;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Usuario;
@@ -16,7 +15,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -38,7 +36,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
                 classes = {SecurityConfig.class, JwtCookieFilter.class}))
 @AutoConfigureMockMvc(addFilters = false)
-@Import(BolsistaModelAssembler.class)
 class BolsistaControllerTest {
 
     @Autowired
@@ -87,41 +84,9 @@ class BolsistaControllerTest {
         mockMvc.perform(get("/api/v1/bolsista/{id}", publicId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(publicId))
-                .andExpect(jsonPath("$.nome").value("Maria Silva"))
-                // BolsistaModelAssembler gera links self e projetos
-                .andExpect(jsonPath("$.links[0].href").value("/api/v1/bolsista/" + publicId))
-                .andExpect(jsonPath("$.links[1].rel").value("projetos"));
+                .andExpect(jsonPath("$.nome").value("Maria Silva"));
 
         verify(bolsistaService).buscarComPermissaoDeVisualizacao(eq(publicId), any(Usuario.class));
-    }
-
-    @Test
-    void buscar_comLaboratorioVinculado_incluiLinkDeLaboratorio() throws Exception {
-        String publicId = "bol_12345678901234567890";
-        String labPublicId = "lab_abcdef1234567890abcd";
-
-        // Laboratorio com publicId para que getLaboratorioPublicId() retorne valor não-nulo
-        dev.matheus.cadastroBolsistas.model.Laboratorio lab =
-                new dev.matheus.cadastroBolsistas.model.Laboratorio();
-        lab.setId(UUID.randomUUID());
-        lab.setPublicId(labPublicId);
-        lab.setNome("Lab Teste");
-
-        Bolsista bolsista = new Bolsista();
-        bolsista.setId(UUID.randomUUID());
-        bolsista.setPublicId(publicId);
-        bolsista.setNome("Carlos Lima");
-        bolsista.setEmail("carlos@teste.com");
-        bolsista.setAtivo(true);
-        bolsista.setLaboratorio(lab);
-
-        when(bolsistaService.buscarComPermissaoDeVisualizacao(eq(publicId), any(Usuario.class)))
-                .thenReturn(bolsista);
-
-        mockMvc.perform(get("/api/v1/bolsista/{id}", publicId))
-                .andExpect(status().isOk())
-                // assembler adiciona link "laboratorio" quando laboratorioId != null
-                .andExpect(jsonPath("$.links[?(@.rel=='laboratorio')]").exists());
     }
 
     @Test
@@ -170,8 +135,7 @@ class BolsistaControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "http://localhost/api/v1/bolsista/" + publicId))
                 .andExpect(jsonPath("$.id").value(publicId))
-                .andExpect(jsonPath("$.nome").value("Lucas Teste"))
-                .andExpect(jsonPath("$.links[0].href").value("/api/v1/bolsista/" + publicId));
+                .andExpect(jsonPath("$.nome").value("Lucas Teste"));
 
         verify(bolsistaService).criar(any(BolsistaRequest.class), any(Usuario.class));
     }

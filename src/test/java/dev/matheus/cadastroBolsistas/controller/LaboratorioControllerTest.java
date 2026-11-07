@@ -1,6 +1,5 @@
 package dev.matheus.cadastroBolsistas.controller;
 
-import dev.matheus.cadastroBolsistas.assembler.LaboratorioModelAssembler;
 import dev.matheus.cadastroBolsistas.dto.LaboratorioRequest;
 import dev.matheus.cadastroBolsistas.model.Laboratorio;
 import dev.matheus.cadastroBolsistas.model.Usuario;
@@ -18,7 +17,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -39,7 +37,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
                 classes = {SecurityConfig.class, JwtCookieFilter.class}))
 @AutoConfigureMockMvc(addFilters = false)
-@Import(LaboratorioModelAssembler.class)
 class LaboratorioControllerTest {
 
     @Autowired
@@ -77,7 +74,7 @@ class LaboratorioControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/laboratorio/{id} deve retornar 200 com links HATEOAS")
+    @DisplayName("GET /api/v1/laboratorio/{id} deve retornar 200 ")
     void buscar_DeveRetornar200ComLinks() throws Exception {
         Laboratorio lab = new Laboratorio();
         lab.setId(UUID.randomUUID());
@@ -93,14 +90,11 @@ class LaboratorioControllerTest {
         mockMvc.perform(get("/api/v1/laboratorio/lab_001"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("lab_001"))
-                .andExpect(jsonPath("$.nome").value("Lab Sistemas"))
-                .andExpect(jsonPath("$.links[?(@.rel == 'self')].href").value("/api/v1/laboratorio/lab_001"))
-                .andExpect(jsonPath("$.links[?(@.rel == 'bolsistas')].href").value("/api/v1/laboratorio/lab_001/bolsistas"))
-                .andExpect(jsonPath("$.links[?(@.rel == 'projetos')].href").value("/api/v1/laboratorio/lab_001/projetos"));
+                .andExpect(jsonPath("$.nome").value("Lab Sistemas"));
     }
 
     @Test
-    @DisplayName("POST /api/v1/laboratorio deve retornar 201 com Location e links HATEOAS")
+    @DisplayName("POST /api/v1/laboratorio deve retornar 201 Location e ")
     void criar_DeveRetornar201() throws Exception {
         Laboratorio lab = new Laboratorio();
         lab.setId(UUID.randomUUID());
@@ -125,8 +119,7 @@ class LaboratorioControllerTest {
                         .content(json))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", org.hamcrest.Matchers.containsString("/api/v1/laboratorio/lab_new")))
-                .andExpect(jsonPath("$.id").value("lab_new"))
-                .andExpect(jsonPath("$.links[?(@.rel == 'self')].href").value("/api/v1/laboratorio/lab_new"));
+                .andExpect(jsonPath("$.id").value("lab_new"));
 
         verify(laboratorioService).criar(any(LaboratorioRequest.class));
     }

@@ -31,14 +31,11 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import org.springframework.context.annotation.Import;
-import dev.matheus.cadastroBolsistas.assembler.ProfessorModelAssembler;
 
 @WebMvcTest(controllers = ProfessorController.class,
         excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
                 classes = {SecurityConfig.class, JwtCookieFilter.class}))
 @AutoConfigureMockMvc(addFilters = false)
-@Import(ProfessorModelAssembler.class)
 class ProfessorControllerTest {
 
     @Autowired
@@ -105,8 +102,7 @@ class ProfessorControllerTest {
         mockMvc.perform(get("/api/v1/professor/{id}", publicId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(publicId))
-                .andExpect(jsonPath("$.nome").value("Dr. Roberto"))
-                .andExpect(jsonPath("$.links[0].href").value("/api/v1/professor/" + publicId));
+                .andExpect(jsonPath("$.nome").value("Dr. Roberto"));
 
         verify(professorService).buscarComLaboratorio(publicId);
     }

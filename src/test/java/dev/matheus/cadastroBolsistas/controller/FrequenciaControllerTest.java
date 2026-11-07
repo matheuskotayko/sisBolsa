@@ -1,6 +1,5 @@
 package dev.matheus.cadastroBolsistas.controller;
 
-import dev.matheus.cadastroBolsistas.assembler.FrequenciaModelAssembler;
 import dev.matheus.cadastroBolsistas.dto.FrequenciaRequest;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Frequencia;
@@ -20,7 +19,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -42,7 +40,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
                 classes = {SecurityConfig.class, JwtCookieFilter.class}))
 @AutoConfigureMockMvc(addFilters = false)
-@Import(FrequenciaModelAssembler.class)
 class FrequenciaControllerTest {
 
     @Autowired
@@ -100,9 +97,7 @@ class FrequenciaControllerTest {
 
         mockMvc.perform(get("/api/v1/frequencia/{id}", publicId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(publicId))
-                .andExpect(jsonPath("$.links[0].rel").value("self"))
-                .andExpect(jsonPath("$.links[1].rel").value("bolsista"));
+                .andExpect(jsonPath("$.id").value(publicId));
     }
 
     @Test
@@ -131,8 +126,7 @@ class FrequenciaControllerTest {
                         .content(json))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", org.hamcrest.Matchers.containsString(freqPublicId)))
-                .andExpect(jsonPath("$.id").value(freqPublicId))
-                .andExpect(jsonPath("$.links[0].rel").value("self"));
+                .andExpect(jsonPath("$.id").value(freqPublicId));
 
         verify(frequenciaService).registrar(any(FrequenciaRequest.class), eq(alvo));
     }
@@ -156,8 +150,7 @@ class FrequenciaControllerTest {
         mockMvc.perform(patch("/api/v1/frequencia/{id}", publicId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.links[0].rel").value("self"));
+                .andExpect(status().isOk());
 
         verify(frequenciaService).atualizar(f);
     }

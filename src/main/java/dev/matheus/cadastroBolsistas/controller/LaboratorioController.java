@@ -1,6 +1,5 @@
 package dev.matheus.cadastroBolsistas.controller;
 
-import dev.matheus.cadastroBolsistas.assembler.LaboratorioModelAssembler;
 import dev.matheus.cadastroBolsistas.dto.ErroResponse;
 import dev.matheus.cadastroBolsistas.dto.LaboratorioRequest;
 import dev.matheus.cadastroBolsistas.dto.LaboratorioResponse;
@@ -22,7 +21,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -44,15 +42,12 @@ public class LaboratorioController {
     private final LaboratorioService laboratorioService;
     private final BolsistaService bolsistaService;
     private final ProjetoService projetoService;
-    private final LaboratorioModelAssembler laboratorioModelAssembler;
 
     public LaboratorioController(LaboratorioService laboratorioService, BolsistaService bolsistaService,
-                                 ProjetoService projetoService,
-                                 LaboratorioModelAssembler laboratorioModelAssembler) {
+                                 ProjetoService projetoService) {
         this.laboratorioService = laboratorioService;
         this.bolsistaService = bolsistaService;
         this.projetoService = projetoService;
-        this.laboratorioModelAssembler = laboratorioModelAssembler;
     }
 
     @Operation(summary = "Listar laboratórios paginados", description = "Retorna os laboratórios cadastrados com capacidade e ocupação calculadas. Professores visualizam somente os laboratórios que coordenam.")
@@ -78,9 +73,9 @@ public class LaboratorioController {
             @ApiResponse(responseCode = "404", description = "Laboratório não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public ResponseEntity<EntityModel<LaboratorioResponse>> buscar(
+    public ResponseEntity<LaboratorioResponse> buscar(
             @Parameter(description = "ID público do laboratório (ex: lab_...)", required = true, example = "lab_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
-        return ResponseEntity.ok(laboratorioModelAssembler.toModel(comOcupacao(laboratorioService.buscarOuFalhar(id))));
+        return ResponseEntity.ok(comOcupacao(laboratorioService.buscarOuFalhar(id)));
     }
 
     @Operation(summary = "Listar bolsistas de um laboratório", description = "Retorna a lista completa de bolsistas e pesquisadores vinculados ao laboratório informado.")
@@ -117,12 +112,12 @@ public class LaboratorioController {
     })
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<EntityModel<LaboratorioResponse>> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do laboratório", required = true)
+    public ResponseEntity<LaboratorioResponse> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do laboratório", required = true)
                                                      @Valid @RequestBody LaboratorioRequest body,
                                                      UriComponentsBuilder uriBuilder) {
         Laboratorio lab = laboratorioService.criar(body);
         URI uri = uriBuilder.replacePath("/api/v1/laboratorio/{id}").buildAndExpand(lab.getPublicId()).toUri();
-        return ResponseEntity.created(uri).body(laboratorioModelAssembler.toModel(comOcupacao(lab)));
+        return ResponseEntity.created(uri).body(comOcupacao(lab));
     }
 
     @Operation(summary = "Atualizar laboratório", description = "Atualiza os dados de capacidade, nome, área de pesquisa ou coordenador do laboratório.")
@@ -134,13 +129,13 @@ public class LaboratorioController {
     })
     @PatchMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESSOR')")
-    public ResponseEntity<EntityModel<LaboratorioResponse>> atualizar(
+    public ResponseEntity<LaboratorioResponse> atualizar(
             @Parameter(description = "ID público do laboratório (ex: lab_...)", required = true, example = "lab_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
             @AuthenticationPrincipal Usuario usuario,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do laboratório", required = true)
             @Valid @RequestBody LaboratorioRequest body) {
         Laboratorio lab = laboratorioService.atualizar(id, body, usuario);
-        return ResponseEntity.ok(laboratorioModelAssembler.toModel(comOcupacao(lab)));
+        return ResponseEntity.ok(comOcupacao(lab));
     }
 
     @Operation(summary = "Desativar laboratório (Soft Delete)", description = "Desativa o laboratório no sistema.")

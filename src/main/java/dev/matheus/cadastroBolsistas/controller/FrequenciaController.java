@@ -1,6 +1,5 @@
 package dev.matheus.cadastroBolsistas.controller;
 
-import dev.matheus.cadastroBolsistas.assembler.FrequenciaModelAssembler;
 import dev.matheus.cadastroBolsistas.dto.ErroResponse;
 import dev.matheus.cadastroBolsistas.dto.FrequenciaRequest;
 import dev.matheus.cadastroBolsistas.dto.FrequenciaResponse;
@@ -28,7 +27,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -53,19 +51,16 @@ public class FrequenciaController {
     private final LaboratorioService laboratorioService;
     private final ComprovanteFrequenciaPdfService comprovantePdfService;
     private final ProfessorService professorService;
-    private final FrequenciaModelAssembler frequenciaModelAssembler;
 
     public FrequenciaController(FrequenciaService frequenciaService, BolsistaService bolsistaService,
                                 LaboratorioService laboratorioService,
                                 ComprovanteFrequenciaPdfService comprovantePdfService,
-                                ProfessorService professorService,
-                                FrequenciaModelAssembler frequenciaModelAssembler) {
+                                ProfessorService professorService) {
         this.frequenciaService = frequenciaService;
         this.bolsistaService = bolsistaService;
         this.laboratorioService = laboratorioService;
         this.comprovantePdfService = comprovantePdfService;
         this.professorService = professorService;
-        this.frequenciaModelAssembler = frequenciaModelAssembler;
     }
 
     @Operation(summary = "Listar frequências paginadas", description = "Retorna apontamentos de frequência com suporte a filtros de data e bolsista. Bolsistas visualizam somente seus próprios registros.")
@@ -172,11 +167,11 @@ public class FrequenciaController {
             @ApiResponse(responseCode = "404", description = "Frequência não encontrada", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public ResponseEntity<EntityModel<FrequenciaResponse>> buscar(
+    public ResponseEntity<FrequenciaResponse> buscar(
             @Parameter(description = "ID público da frequência (ex: frq_...)", required = true, example = "frq_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
             @AuthenticationPrincipal Usuario usuario) {
         Frequencia f = frequenciaService.buscarComPermissao(id, usuario);
-        return ResponseEntity.ok(frequenciaModelAssembler.toModel(FrequenciaResponse.de(f)));
+        return ResponseEntity.ok(FrequenciaResponse.de(f));
     }
 
     @Operation(summary = "Registrar novo apontamento de frequência", description = "Aponta horas trabalhadas e descrição das atividades realizadas.")
@@ -185,7 +180,7 @@ public class FrequenciaController {
             @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PostMapping
-    public ResponseEntity<EntityModel<FrequenciaResponse>> registrar(
+    public ResponseEntity<FrequenciaResponse> registrar(
             @AuthenticationPrincipal Usuario usuario,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do apontamento de horas", required = true)
             @Valid @RequestBody FrequenciaRequest body,
@@ -196,7 +191,7 @@ public class FrequenciaController {
         Frequencia f = frequenciaService.registrar(body, alvo);
 
         URI uri = uriBuilder.replacePath("/api/v1/frequencia/{id}").buildAndExpand(f.getPublicId()).toUri();
-        return ResponseEntity.created(uri).body(frequenciaModelAssembler.toModel(FrequenciaResponse.de(f)));
+        return ResponseEntity.created(uri).body(FrequenciaResponse.de(f));
     }
 
     @Operation(summary = "Atualizar apontamento de frequência", description = "Altera as horas, data, descrição ou link de entregável de um registro de frequência.")
@@ -206,7 +201,7 @@ public class FrequenciaController {
             @ApiResponse(responseCode = "404", description = "Frequência não encontrada", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PatchMapping("/{id}")
-    public ResponseEntity<EntityModel<FrequenciaResponse>> atualizar(
+    public ResponseEntity<FrequenciaResponse> atualizar(
             @Parameter(description = "ID público da frequência (ex: frq_...)", required = true, example = "frq_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
             @AuthenticationPrincipal Usuario usuario,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados da frequência", required = true)
@@ -218,7 +213,7 @@ public class FrequenciaController {
         f.setDescricao(body.descricao());
         f.setLinkComprovante(body.linkComprovante());
         frequenciaService.atualizar(f);
-        return ResponseEntity.ok(frequenciaModelAssembler.toModel(FrequenciaResponse.de(f)));
+        return ResponseEntity.ok(FrequenciaResponse.de(f));
     }
 
     @Operation(summary = "Desativar frequência (Soft Delete)", description = "Desativa um registro de apontamento de horas.")

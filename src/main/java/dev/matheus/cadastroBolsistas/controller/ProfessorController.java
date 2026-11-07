@@ -1,6 +1,5 @@
 package dev.matheus.cadastroBolsistas.controller;
 
-import dev.matheus.cadastroBolsistas.assembler.ProfessorModelAssembler;
 import dev.matheus.cadastroBolsistas.dto.ErroResponse;
 import dev.matheus.cadastroBolsistas.dto.PaginaResponse;
 import dev.matheus.cadastroBolsistas.dto.ProfessorRequest;
@@ -17,7 +16,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -37,11 +35,9 @@ public class ProfessorController {
     private static final int TAMANHO_MAXIMO = 200;
 
     private final ProfessorService professorService;
-    private final ProfessorModelAssembler professorModelAssembler;
 
-    public ProfessorController(ProfessorService professorService, ProfessorModelAssembler professorModelAssembler) {
+    public ProfessorController(ProfessorService professorService) {
         this.professorService = professorService;
-        this.professorModelAssembler = professorModelAssembler;
     }
 
     @Operation(summary = "Listar professores paginados", description = "Retorna os professores coordenadores cadastrados (restrito a Administradores).")
@@ -65,9 +61,9 @@ public class ProfessorController {
             @ApiResponse(responseCode = "404", description = "Professor não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public ResponseEntity<EntityModel<UsuarioResponse>> buscar(@Parameter(description = "ID público do professor (ex: prf_...)", required = true, example = "prf_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
+    public ResponseEntity<UsuarioResponse> buscar(@Parameter(description = "ID público do professor (ex: prf_...)", required = true, example = "prf_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
         Professor p = professorService.buscarComLaboratorio(id);
-        return ResponseEntity.ok(professorModelAssembler.toModel(UsuarioResponse.de(p)));
+        return ResponseEntity.ok(UsuarioResponse.de(p));
     }
 
     @Operation(summary = "Cadastrar novo professor", description = "Cria um novo professor coordenador no sistema (restrito a Administradores).")
@@ -77,12 +73,12 @@ public class ProfessorController {
             @ApiResponse(responseCode = "403", description = "Acesso restrito a administradores", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PostMapping
-    public ResponseEntity<EntityModel<UsuarioResponse>> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do professor a ser cadastrado", required = true)
+    public ResponseEntity<UsuarioResponse> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do professor a ser cadastrado", required = true)
                                                  @Valid @RequestBody ProfessorRequest body,
                                                  UriComponentsBuilder uriBuilder) {
         Professor p = professorService.criar(body);
         URI uri = uriBuilder.replacePath("/api/v1/professor/{id}").buildAndExpand(p.getPublicId()).toUri();
-        return ResponseEntity.created(uri).body(professorModelAssembler.toModel(UsuarioResponse.de(p)));
+        return ResponseEntity.created(uri).body(UsuarioResponse.de(p));
     }
 
     @Operation(summary = "Atualizar professor", description = "Atualiza os dados do professor (restrito a Administradores). Se a senha vier em branco, a atual é preservada.")
@@ -93,11 +89,11 @@ public class ProfessorController {
             @ApiResponse(responseCode = "404", description = "Professor não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @PatchMapping("/{id}")
-    public ResponseEntity<EntityModel<UsuarioResponse>> atualizar(@Parameter(description = "ID público do professor a atualizar", required = true, example = "prf_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
+    public ResponseEntity<UsuarioResponse> atualizar(@Parameter(description = "ID público do professor a atualizar", required = true, example = "prf_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
                                      @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do professor", required = true)
                                      @Valid @RequestBody ProfessorRequest body) {
         Professor p = professorService.atualizar(id, body);
-        return ResponseEntity.ok(professorModelAssembler.toModel(UsuarioResponse.de(p)));
+        return ResponseEntity.ok(UsuarioResponse.de(p));
     }
 
     @Operation(summary = "Desativar professor (Soft Delete)", description = "Desativa um professor coordenador (restrito a Administradores).")

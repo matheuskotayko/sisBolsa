@@ -1,6 +1,5 @@
 package dev.matheus.cadastroBolsistas.controller;
 
-import dev.matheus.cadastroBolsistas.assembler.ProjetoModelAssembler;
 import dev.matheus.cadastroBolsistas.dto.ErroResponse;
 import dev.matheus.cadastroBolsistas.dto.PaginaResponse;
 import dev.matheus.cadastroBolsistas.dto.ProjetoRequest;
@@ -20,7 +19,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -41,13 +39,10 @@ public class ProjetoController {
 
     private final ProjetoService projetoService;
     private final BolsistaService bolsistaService;
-    private final ProjetoModelAssembler projetoModelAssembler;
 
-    public ProjetoController(ProjetoService projetoService, BolsistaService bolsistaService,
-                             ProjetoModelAssembler projetoModelAssembler) {
+    public ProjetoController(ProjetoService projetoService, BolsistaService bolsistaService) {
         this.projetoService = projetoService;
         this.bolsistaService = bolsistaService;
-        this.projetoModelAssembler = projetoModelAssembler;
     }
 
     @Operation(summary = "Listar projetos paginados", description = "Retorna projetos ativos, com filtros opcionais por nome ou por laboratório de pesquisa.")
@@ -71,10 +66,10 @@ public class ProjetoController {
             @ApiResponse(responseCode = "404", description = "Projeto não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public ResponseEntity<EntityModel<ProjetoResponse>> buscar(
+    public ResponseEntity<ProjetoResponse> buscar(
             @Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
         Projeto p = projetoService.buscarOuFalhar(id);
-        return ResponseEntity.ok(projetoModelAssembler.toModel(comMembros(p)));
+        return ResponseEntity.ok(comMembros(p));
     }
 
     @Operation(summary = "Listar membros de um projeto", description = "Retorna a lista de bolsistas e pesquisadores vinculados à equipe do projeto.")
@@ -97,14 +92,14 @@ public class ProjetoController {
     })
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESSOR')")
-    public ResponseEntity<EntityModel<ProjetoResponse>> criar(
+    public ResponseEntity<ProjetoResponse> criar(
             @AuthenticationPrincipal Usuario usuario,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do projeto", required = true)
             @Valid @RequestBody ProjetoRequest body,
             UriComponentsBuilder uriBuilder) {
         Projeto p = projetoService.criar(body, usuario);
         URI uri = uriBuilder.replacePath("/api/v1/projeto/{id}").buildAndExpand(p.getPublicId()).toUri();
-        return ResponseEntity.created(uri).body(projetoModelAssembler.toModel(ProjetoResponse.de(p)));
+        return ResponseEntity.created(uri).body(ProjetoResponse.de(p));
     }
 
     @Operation(summary = "Atualizar projeto", description = "Atualiza o título, descrição, links externos de entregáveis ou laboratório de lotação do projeto.")
@@ -116,13 +111,13 @@ public class ProjetoController {
     })
     @PatchMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESSOR')")
-    public ResponseEntity<EntityModel<ProjetoResponse>> atualizar(
+    public ResponseEntity<ProjetoResponse> atualizar(
             @Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
             @AuthenticationPrincipal Usuario usuario,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do projeto", required = true)
             @Valid @RequestBody ProjetoRequest body) {
         Projeto p = projetoService.atualizar(id, body, usuario);
-        return ResponseEntity.ok(projetoModelAssembler.toModel(ProjetoResponse.de(p)));
+        return ResponseEntity.ok(ProjetoResponse.de(p));
     }
 
     @Operation(summary = "Desativar projeto (Soft Delete)", description = "Desativa o projeto mantendo o histórico de vínculos.")

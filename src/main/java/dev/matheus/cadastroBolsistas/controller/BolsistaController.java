@@ -1,6 +1,5 @@
 package dev.matheus.cadastroBolsistas.controller;
 
-import dev.matheus.cadastroBolsistas.assembler.BolsistaModelAssembler;
 import dev.matheus.cadastroBolsistas.dto.BolsistaRequest;
 import dev.matheus.cadastroBolsistas.dto.ErroResponse;
 import dev.matheus.cadastroBolsistas.dto.PaginaResponse;
@@ -24,7 +23,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -47,13 +45,10 @@ public class BolsistaController {
 
     private final BolsistaService bolsistaService;
     private final ProjetoService projetoService;
-    private final BolsistaModelAssembler bolsistaModelAssembler;
 
-    public BolsistaController(BolsistaService bolsistaService, ProjetoService projetoService,
-                              BolsistaModelAssembler bolsistaModelAssembler) {
+    public BolsistaController(BolsistaService bolsistaService, ProjetoService projetoService) {
         this.bolsistaService = bolsistaService;
         this.projetoService = projetoService;
-        this.bolsistaModelAssembler = bolsistaModelAssembler;
     }
 
     @Operation(summary = "Listar bolsistas paginados", description = "Retorna a listagem de bolsistas de acordo com o escopo do usuário autenticado: ADMIN visualiza todos, PROFESSOR visualiza os bolsistas dos laboratórios que coordena, e BOLSISTA visualiza seus colegas de laboratório.")
@@ -91,11 +86,11 @@ public class BolsistaController {
             @ApiResponse(responseCode = "404", description = "Bolsista não encontrado", content = @Content(schema = @Schema(implementation = ErroResponse.class)))
     })
     @GetMapping("/{id}")
-    public ResponseEntity<EntityModel<UsuarioResponse>> buscar(
+    public ResponseEntity<UsuarioResponse> buscar(
             @Parameter(description = "ID público do bolsista", required = true, example = "bol_k8s2M4n9P1q3W5z7A0b2") @PathVariable String id,
             @AuthenticationPrincipal Usuario usuario) {
         Bolsista b = bolsistaService.buscarComPermissaoDeVisualizacao(id, usuario);
-        return ResponseEntity.ok(bolsistaModelAssembler.toModel(UsuarioResponse.de(b)));
+        return ResponseEntity.ok(UsuarioResponse.de(b));
     }
 
     @Operation(summary = "Listar cargos disponíveis", description = "Retorna todos os cargos cadastrados para bolsistas nos laboratórios.")
@@ -153,14 +148,14 @@ public class BolsistaController {
     })
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESSOR')")
-    public ResponseEntity<EntityModel<UsuarioResponse>> criar(
+    public ResponseEntity<UsuarioResponse> criar(
             @AuthenticationPrincipal Usuario usuario,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do bolsista a ser cadastrado", required = true)
             @Valid @RequestBody BolsistaRequest body,
             UriComponentsBuilder uriBuilder) {
         Bolsista b = bolsistaService.criar(body, usuario);
         URI uri = uriBuilder.replacePath("/api/v1/bolsista/{id}").buildAndExpand(b.getPublicId()).toUri();
-        return ResponseEntity.created(uri).body(bolsistaModelAssembler.toModel(UsuarioResponse.de(b)));
+        return ResponseEntity.created(uri).body(UsuarioResponse.de(b));
     }
 
     @Operation(summary = "Atualizar bolsista", description = "Atualiza os dados do bolsista. Se a senha vier em branco, a atual é preservada.")
@@ -172,13 +167,13 @@ public class BolsistaController {
     })
     @PatchMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESSOR')")
-    public ResponseEntity<EntityModel<UsuarioResponse>> atualizar(
+    public ResponseEntity<UsuarioResponse> atualizar(
             @Parameter(description = "ID público do bolsista a atualizar", required = true, example = "bol_k8s2M4n9P1q3W5z7A0b2") @PathVariable String id,
             @AuthenticationPrincipal Usuario usuario,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do bolsista", required = true)
             @Valid @RequestBody BolsistaRequest body) {
         Bolsista b = bolsistaService.atualizar(id, body, usuario);
-        return ResponseEntity.ok(bolsistaModelAssembler.toModel(UsuarioResponse.de(b)));
+        return ResponseEntity.ok(UsuarioResponse.de(b));
     }
 
     @Operation(summary = "Desativar bolsista (Soft Delete)", description = "Desativa um bolsista, mantendo o histórico de frequência e projetos íntegros no banco de dados.")
