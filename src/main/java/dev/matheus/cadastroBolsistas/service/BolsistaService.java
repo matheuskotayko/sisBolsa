@@ -10,6 +10,7 @@ import dev.matheus.cadastroBolsistas.model.Bolsista;
 import dev.matheus.cadastroBolsistas.model.Cargo;
 import dev.matheus.cadastroBolsistas.model.Laboratorio;
 import dev.matheus.cadastroBolsistas.model.ModalidadeBolsa;
+import dev.matheus.cadastroBolsistas.dto.response.OpcaoResponse;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.repository.BolsistaRepository;
 import dev.matheus.cadastroBolsistas.repository.Filtros;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -315,6 +317,14 @@ public class BolsistaService {
             b.setLaboratorio(null);
             b.setLaboratorioId(null);
         }
+    }
+
+    public List<OpcaoResponse> listarCargos() {
+        return Arrays.stream(Cargo.values()).map(c -> new OpcaoResponse(c.name(), c.getDescricao())).toList();
+    }
+
+    public List<OpcaoResponse> listarModalidades() {
+        return Arrays.stream(ModalidadeBolsa.values()).map(m -> new OpcaoResponse(m.name(), m.getDescricao())).toList();
     }
 
     public Page<Bolsista> listar(Usuario logado, String buscaNome, String buscaCurso, String tipo, Pageable pageable) {

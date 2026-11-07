@@ -3,11 +3,10 @@ package dev.matheus.cadastroBolsistas.controller;
 import dev.matheus.cadastroBolsistas.common.ArquivoDownloadUtil;
 import dev.matheus.cadastroBolsistas.dto.request.BolsistaRequest;
 import dev.matheus.cadastroBolsistas.dto.response.ErroResponse;
+import dev.matheus.cadastroBolsistas.dto.response.OpcaoResponse;
 import dev.matheus.cadastroBolsistas.dto.response.ProjetoResponse;
 import dev.matheus.cadastroBolsistas.dto.response.UsuarioResponse;
 import dev.matheus.cadastroBolsistas.model.Bolsista;
-import dev.matheus.cadastroBolsistas.model.Cargo;
-import dev.matheus.cadastroBolsistas.model.ModalidadeBolsa;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.service.BolsistaService;
 import dev.matheus.cadastroBolsistas.service.ProjetoService;
@@ -32,7 +31,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Tag(name = "Bolsista", description = "Gestão de bolsistas, dados acadêmicos, modalidades de bolsa e projetos vinculados.")
 @RestController
@@ -82,10 +80,8 @@ public class BolsistaController {
             @ApiResponse(responseCode = "200", description = "Lista de cargos")
     })
     @GetMapping("/cargos")
-    public ResponseEntity<List<Map<String, String>>> cargos() {
-        return ResponseEntity.ok(java.util.Arrays.stream(Cargo.values())
-                .map(c -> Map.of("valor", c.name(), "descricao", c.getDescricao()))
-                .toList());
+    public ResponseEntity<List<OpcaoResponse>> cargos() {
+        return ResponseEntity.ok(bolsistaService.listarCargos());
     }
 
     @Operation(summary = "Listar modalidades de bolsa", description = "Retorna todas as modalidades de bolsa suportadas pelo sistema (PIBIC, PIBITI, Extensão, Monitoria, etc.).")
@@ -93,10 +89,8 @@ public class BolsistaController {
             @ApiResponse(responseCode = "200", description = "Lista de modalidades de bolsa")
     })
     @GetMapping("/modalidades")
-    public ResponseEntity<List<Map<String, String>>> modalidades() {
-        return ResponseEntity.ok(java.util.Arrays.stream(ModalidadeBolsa.values())
-                .map(m -> Map.of("valor", m.name(), "descricao", m.getDescricao()))
-                .toList());
+    public ResponseEntity<List<OpcaoResponse>> modalidades() {
+        return ResponseEntity.ok(bolsistaService.listarModalidades());
     }
 
     @Operation(summary = "Exportar bolsistas em formato CSV", description = "Gera planilha CSV com todos os dados cadastrais dos bolsistas de acordo com o escopo do usuário autenticado (restrito a ADMIN e PROFESSOR).")

@@ -303,6 +303,13 @@ class BolsistaServiceTest {
     }
 
     @Test
+    void listarCargosEModalidades_expoemTodosOsValoresDoEnum() {
+        assertEquals(dev.matheus.cadastroBolsistas.model.Cargo.values().length, bolsistaService.listarCargos().size());
+        assertEquals(dev.matheus.cadastroBolsistas.model.ModalidadeBolsa.values().length, bolsistaService.listarModalidades().size());
+        assertEquals(dev.matheus.cadastroBolsistas.model.Cargo.values()[0].name(), bolsistaService.listarCargos().get(0).valor());
+    }
+
+    @Test
     void buscarPorLaboratorio_laboratorioInexistente_lancaRecursoNaoEncontrado() {
         when(laboratorioService.buscarOuFalhar("lab_x")).thenThrow(new RecursoNaoEncontradoException("Laboratorio nao encontrado."));
 
