@@ -32,11 +32,11 @@ public record ProjetoResponse(
         @Schema(description = "Link da documentação ou artigo publicado", example = "https://www.overleaf.com/read/exemplo123")
         String linkDocumentacao) {
 
-    public static ProjetoResponse de(Projeto p) {
-        return de(p, 0);
+    public static ProjetoResponse from(Projeto p) {
+        return from(p, 0);
     }
 
-    public static ProjetoResponse de(Projeto p, int totalMembros) {
+    public static ProjetoResponse from(Projeto p, int totalMembros) {
         if (p == null) {
             return null;
         }

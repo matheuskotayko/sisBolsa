@@ -77,7 +77,7 @@ public record UsuarioResponse(
         @Schema(description = "Indica se a vigência da bolsa expira em menos de 30 dias", example = "false")
         boolean bolsaPrestesAVencer) {
 
-    public static UsuarioResponse de(Usuario u) {
+    public static UsuarioResponse from(Usuario u) {
         if (u == null) {
             return null;
         }
@@ -87,7 +87,7 @@ public record UsuarioResponse(
                 null, null, null, null, null, false, false);
     }
 
-    public static UsuarioResponse de(Bolsista b) {
+    public static UsuarioResponse from(Bolsista b) {
         if (b == null) {
             return null;
         }
@@ -109,7 +109,7 @@ public record UsuarioResponse(
                 b.isBolsaPrestesAVencer());
     }
 
-    public static UsuarioResponse de(dev.matheus.cadastroBolsistas.model.Professor p) {
+    public static UsuarioResponse from(dev.matheus.cadastroBolsistas.model.Professor p) {
         if (p == null) {
             return null;
         }

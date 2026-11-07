@@ -226,7 +226,7 @@ public class BolsistaService {
 
         StringBuilder sb = new StringBuilder("ID,Nome,Email,Tipo,Curso,Matricula,Cargo,Modalidade,Valor,DataInicio,DataFim,Laboratorio\n");
         for (Bolsista b : lista) {
-            UsuarioResponse r = UsuarioResponse.de(b);
+            UsuarioResponse r = UsuarioResponse.from(b);
             sb.append(String.join(",",
                     String.valueOf(r.id()), CsvUtil.escapar(r.nome()), CsvUtil.escapar(r.email()), CsvUtil.escapar(r.tipoUsuario()),
                     CsvUtil.escapar(r.curso()), CsvUtil.escapar(r.matricula()), CsvUtil.escapar(r.cargo()),

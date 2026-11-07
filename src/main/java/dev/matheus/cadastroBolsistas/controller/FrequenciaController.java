@@ -102,7 +102,7 @@ public class FrequenciaController {
         }
 
         int totalPaginas = PaginacaoUtil.totalPaginas(total, TAMANHO_PAGINA);
-        return ResponseEntity.ok(new PaginaResponse<>(pagina1.stream().map(FrequenciaResponse::de).toList(), atual, totalPaginas, total));
+        return ResponseEntity.ok(new PaginaResponse<>(pagina1.stream().map(FrequenciaResponse::from).toList(), atual, totalPaginas, total));
     }
 
     @Operation(summary = "Resumo mensal de horas", description = "Calcula o total de horas trabalhadas no mês vigente e o histórico total acumulado do bolsista.")
@@ -171,7 +171,7 @@ public class FrequenciaController {
             @Parameter(description = "ID público da frequência (ex: frq_...)", required = true, example = "frq_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id,
             @AuthenticationPrincipal Usuario usuario) {
         Frequencia f = frequenciaService.buscarComPermissao(id, usuario);
-        return ResponseEntity.ok(FrequenciaResponse.de(f));
+        return ResponseEntity.ok(FrequenciaResponse.from(f));
     }
 
     @Operation(summary = "Registrar novo apontamento de frequência", description = "Aponta horas trabalhadas e descrição das atividades realizadas.")
@@ -191,7 +191,7 @@ public class FrequenciaController {
         Frequencia f = frequenciaService.registrar(body, alvo);
 
         URI uri = uriBuilder.replacePath("/api/v1/frequencia/{id}").buildAndExpand(f.getPublicId()).toUri();
-        return ResponseEntity.created(uri).body(FrequenciaResponse.de(f));
+        return ResponseEntity.created(uri).body(FrequenciaResponse.from(f));
     }
 
     @Operation(summary = "Atualizar apontamento de frequência", description = "Altera as horas, data, descrição ou link de entregável de um registro de frequência.")
@@ -213,7 +213,7 @@ public class FrequenciaController {
         f.setDescricao(body.descricao());
         f.setLinkComprovante(body.linkComprovante());
         frequenciaService.atualizar(f);
-        return ResponseEntity.ok(FrequenciaResponse.de(f));
+        return ResponseEntity.ok(FrequenciaResponse.from(f));
     }
 
     @Operation(summary = "Desativar frequência (Soft Delete)", description = "Desativa um registro de apontamento de horas.")

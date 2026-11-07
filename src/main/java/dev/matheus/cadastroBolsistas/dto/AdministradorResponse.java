@@ -32,7 +32,7 @@ public record AdministradorResponse(
         @Schema(description = "Indica se está ativo no sistema", example = "true")
         boolean ativo
 ) {
-    public static AdministradorResponse de(Administrador a) {
+    public static AdministradorResponse from(Administrador a) {
         if (a == null) return null;
         return new AdministradorResponse(
                 a.getPublicId(),

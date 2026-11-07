@@ -54,7 +54,7 @@ public class AdministradorController {
     @GetMapping("/{id}")
     public ResponseEntity<AdministradorResponse> buscarPorId(@PathVariable String id) {
         Administrador admin = service.buscarPorId(id);
-        return ResponseEntity.ok(AdministradorResponse.de(admin));
+        return ResponseEntity.ok(AdministradorResponse.from(admin));
     }
 
     @Operation(summary = "Cadastrar administrador", description = "Cria um novo administrador institucional. Requer perfil ADMIN e respeita o limite de 3 contas ativas.")

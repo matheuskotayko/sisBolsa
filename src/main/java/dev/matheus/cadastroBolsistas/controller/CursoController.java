@@ -44,7 +44,7 @@ public class CursoController {
     })
     @GetMapping
     public ResponseEntity<List<CursoResponse>> listar() {
-        return ResponseEntity.ok(cursoService.listarTodos().stream().map(CursoResponse::de).toList());
+        return ResponseEntity.ok(cursoService.listarTodos().stream().map(CursoResponse::from).toList());
     }
 
     @Operation(summary = "Cadastrar novo curso", description = "Adiciona um novo curso à lista disponível (restrito a Administradores).")
@@ -61,6 +61,6 @@ public class CursoController {
         // nome já normalizado pelo compact constructor de CursoRequest
         Curso curso = cursoService.cadastrar(body.nome());
         URI uri = uriBuilder.replacePath("/api/v1/curso").build().toUri();
-        return ResponseEntity.created(uri).body(CursoResponse.de(curso));
+        return ResponseEntity.created(uri).body(CursoResponse.from(curso));
     }
 }

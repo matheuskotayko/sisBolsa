@@ -81,7 +81,7 @@ public class ProjetoController {
     public ResponseEntity<List<UsuarioResponse>> membros(
             @Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
         projetoService.buscarOuFalhar(id);
-        return ResponseEntity.ok(bolsistaService.buscarPorProjeto(id).stream().map(UsuarioResponse::de).toList());
+        return ResponseEntity.ok(bolsistaService.buscarPorProjeto(id).stream().map(UsuarioResponse::from).toList());
     }
 
     @Operation(summary = "Criar novo projeto", description = "Cadastra um novo projeto vinculado a um laboratório sob gestão do usuário autenticado.")
@@ -99,7 +99,7 @@ public class ProjetoController {
             UriComponentsBuilder uriBuilder) {
         Projeto p = projetoService.criar(body, usuario);
         URI uri = uriBuilder.replacePath("/api/v1/projeto/{id}").buildAndExpand(p.getPublicId()).toUri();
-        return ResponseEntity.created(uri).body(ProjetoResponse.de(p));
+        return ResponseEntity.created(uri).body(ProjetoResponse.from(p));
     }
 
     @Operation(summary = "Atualizar projeto", description = "Atualiza o título, descrição, links externos de entregáveis ou laboratório de lotação do projeto.")
@@ -117,7 +117,7 @@ public class ProjetoController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do projeto", required = true)
             @Valid @RequestBody ProjetoRequest body) {
         Projeto p = projetoService.atualizar(id, body, usuario);
-        return ResponseEntity.ok(ProjetoResponse.de(p));
+        return ResponseEntity.ok(ProjetoResponse.from(p));
     }
 
     @Operation(summary = "Desativar projeto (Soft Delete)", description = "Desativa o projeto mantendo o histórico de vínculos.")
@@ -172,6 +172,6 @@ public class ProjetoController {
     }
 
     private ProjetoResponse comMembros(Projeto p) {
-        return ProjetoResponse.de(p, projetoService.contarMembros(p.getId()));
+        return ProjetoResponse.from(p, projetoService.contarMembros(p.getId()));
     }
 }

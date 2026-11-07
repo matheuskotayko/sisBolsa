@@ -87,7 +87,7 @@ public class LaboratorioController {
     public ResponseEntity<List<UsuarioResponse>> bolsistas(
             @Parameter(description = "ID público do laboratório (ex: lab_...)", required = true, example = "lab_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
         laboratorioService.buscarOuFalhar(id);
-        return ResponseEntity.ok(bolsistaService.buscarPorLaboratorio(id).stream().map(UsuarioResponse::de).toList());
+        return ResponseEntity.ok(bolsistaService.buscarPorLaboratorio(id).stream().map(UsuarioResponse::from).toList());
     }
 
     @Operation(summary = "Listar projetos de um laboratório", description = "Retorna os projetos de pesquisa desenvolvidos no âmbito do laboratório informado.")
@@ -100,7 +100,7 @@ public class LaboratorioController {
             @Parameter(description = "ID público do laboratório (ex: lab_...)", required = true, example = "lab_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
         laboratorioService.buscarOuFalhar(id);
         return ResponseEntity.ok(projetoService.listarPorLaboratorio(id).stream()
-                .map(p -> ProjetoResponse.de(p, projetoService.contarMembros(p.getId())))
+                .map(p -> ProjetoResponse.from(p, projetoService.contarMembros(p.getId())))
                 .toList());
     }
 
@@ -155,6 +155,6 @@ public class LaboratorioController {
     }
 
     private LaboratorioResponse comOcupacao(Laboratorio lab) {
-        return LaboratorioResponse.de(lab, laboratorioService.contarBolsistasNoLaboratorio(lab.getId()));
+        return LaboratorioResponse.from(lab, laboratorioService.contarBolsistasNoLaboratorio(lab.getId()));
     }
 }

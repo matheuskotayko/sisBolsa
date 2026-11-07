@@ -90,7 +90,7 @@ public class AuthController {
         return ResponseEntity.ok()
                 .header("X-Auth-Token", token)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                .body(UsuarioResponse.de(usuario));
+                .body(UsuarioResponse.from(usuario));
     }
 
     @Operation(summary = "Encerrar sessão autenticada", description = "Informa ao cliente para descartar o token JWT armazenado localmente.")
@@ -114,7 +114,7 @@ public class AuthController {
         if (usuario == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Nao autenticado.");
         }
-        return ResponseEntity.ok(UsuarioResponse.de(usuario));
+        return ResponseEntity.ok(UsuarioResponse.from(usuario));
     }
 
     @Operation(summary = "Atualizar perfil próprio", description = "Permite a alteração do nome, e-mail, foto e senha do usuário logado. A alteração de senha exige a validação prévia da senha atual.")
@@ -139,17 +139,17 @@ public class AuthController {
             Administrador a = administradorService.buscarPorId(usuario.getId());
             bolsistaService.aplicarDadosPerfil(a.getUsuario(), body, senhaNova);
             administradorService.atualizar(a);
-            response = UsuarioResponse.de(a.getUsuario());
+            response = UsuarioResponse.from(a.getUsuario());
         } else if (usuario.isProfessor()) {
             Professor p = professorService.buscarOuFalhar(usuario.getId());
             bolsistaService.aplicarDadosPerfil(p.getUsuario(), body, senhaNova);
             professorService.atualizar(p);
-            response = UsuarioResponse.de(p);
+            response = UsuarioResponse.from(p);
         } else {
             Bolsista b = bolsistaService.buscarOuFalhar(usuario.getId());
             bolsistaService.aplicarDadosPerfil(b.getUsuario(), body, senhaNova);
             bolsistaService.atualizar(b);
-            response = UsuarioResponse.de(b);
+            response = UsuarioResponse.from(b);
         }
 
         return ResponseEntity.ok(response);
@@ -170,7 +170,7 @@ public class AuthController {
                 body.nome(), body.email(), body.senha(), body.confirmaSenha());
 
         URI uri = uriBuilder.replacePath("/api/v1/administrador/{id}").buildAndExpand(admin.getPublicId()).toUri();
-        return ResponseEntity.created(uri).body(UsuarioResponse.de(admin.getUsuario()));
+        return ResponseEntity.created(uri).body(UsuarioResponse.from(admin.getUsuario()));
     }
 
     @Operation(summary = "Solicitar código de recuperação de senha", description = "Gera um código temporário de 6 dígitos válido por 15 minutos para o e-mail cadastrado.")

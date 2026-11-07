@@ -63,7 +63,7 @@ public class AdministradorService {
     public List<AdministradorResponse> listarTodos() {
         return repository.findByAtivoTrueOrderByNome()
                 .stream()
-                .map(AdministradorResponse::de)
+                .map(AdministradorResponse::from)
                 .toList();
     }
 
@@ -94,7 +94,7 @@ public class AdministradorService {
     @Transactional
     public AdministradorResponse criar(AdministradorRequest body, Usuario logado) {
         exigirPodeCriarAdmin(logado);
-        return AdministradorResponse.de(salvarNovo(body));
+        return AdministradorResponse.from(salvarNovo(body));
     }
 
     @Transactional
@@ -169,7 +169,7 @@ public class AdministradorService {
             admin.setSenha(passwordEncoder.encode(body.senha()));
         }
 
-        return AdministradorResponse.de(repository.save(admin));
+        return AdministradorResponse.from(repository.save(admin));
     }
 
     @Transactional

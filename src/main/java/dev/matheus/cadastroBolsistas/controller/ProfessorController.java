@@ -51,7 +51,7 @@ public class ProfessorController {
             @Parameter(description = "Quantidade de itens por página", example = "10") @RequestParam(required = false) Integer tamanho,
             @Parameter(description = "Filtro de busca textual por nome", example = "Carlos") @RequestParam(required = false) String buscaNome) {
         List<Professor> lista = professorService.listarComLaboratorio(buscaNome);
-        return ResponseEntity.ok(PaginacaoUtil.paginar(lista, pagina, tamanho, TAMANHO_PADRAO, TAMANHO_MAXIMO, UsuarioResponse::de));
+        return ResponseEntity.ok(PaginacaoUtil.paginar(lista, pagina, tamanho, TAMANHO_PADRAO, TAMANHO_MAXIMO, UsuarioResponse::from));
     }
 
     @Operation(summary = "Buscar professor por ID", description = "Recupera as informações detalhadas de um professor coordenador pelo seu identificador público (ex: prf_...).")
@@ -63,7 +63,7 @@ public class ProfessorController {
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioResponse> buscar(@Parameter(description = "ID público do professor (ex: prf_...)", required = true, example = "prf_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
         Professor p = professorService.buscarComLaboratorio(id);
-        return ResponseEntity.ok(UsuarioResponse.de(p));
+        return ResponseEntity.ok(UsuarioResponse.from(p));
     }
 
     @Operation(summary = "Cadastrar novo professor", description = "Cria um novo professor coordenador no sistema (restrito a Administradores).")
@@ -78,7 +78,7 @@ public class ProfessorController {
                                                  UriComponentsBuilder uriBuilder) {
         Professor p = professorService.criar(body);
         URI uri = uriBuilder.replacePath("/api/v1/professor/{id}").buildAndExpand(p.getPublicId()).toUri();
-        return ResponseEntity.created(uri).body(UsuarioResponse.de(p));
+        return ResponseEntity.created(uri).body(UsuarioResponse.from(p));
     }
 
     @Operation(summary = "Atualizar professor", description = "Atualiza os dados do professor (restrito a Administradores). Se a senha vier em branco, a atual é preservada.")
@@ -93,7 +93,7 @@ public class ProfessorController {
                                      @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do professor", required = true)
                                      @Valid @RequestBody ProfessorRequest body) {
         Professor p = professorService.atualizar(id, body);
-        return ResponseEntity.ok(UsuarioResponse.de(p));
+        return ResponseEntity.ok(UsuarioResponse.from(p));
     }
 
     @Operation(summary = "Desativar professor (Soft Delete)", description = "Desativa um professor coordenador (restrito a Administradores).")

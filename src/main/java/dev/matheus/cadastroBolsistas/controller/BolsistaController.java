@@ -90,7 +90,7 @@ public class BolsistaController {
             @Parameter(description = "ID público do bolsista", required = true, example = "bol_k8s2M4n9P1q3W5z7A0b2") @PathVariable String id,
             @AuthenticationPrincipal Usuario usuario) {
         Bolsista b = bolsistaService.buscarComPermissaoDeVisualizacao(id, usuario);
-        return ResponseEntity.ok(UsuarioResponse.de(b));
+        return ResponseEntity.ok(UsuarioResponse.from(b));
     }
 
     @Operation(summary = "Listar cargos disponíveis", description = "Retorna todos os cargos cadastrados para bolsistas nos laboratórios.")
@@ -137,7 +137,7 @@ public class BolsistaController {
             @Parameter(description = "ID público do bolsista", required = true, example = "bol_k8s2M4n9P1q3W5z7A0b2") @PathVariable String id,
             @AuthenticationPrincipal Usuario usuario) {
         bolsistaService.buscarComPermissaoDeVisualizacao(id, usuario);
-        return ResponseEntity.ok(projetoService.listarPorBolsista(id).stream().map(ProjetoResponse::de).toList());
+        return ResponseEntity.ok(projetoService.listarPorBolsista(id).stream().map(ProjetoResponse::from).toList());
     }
 
     @Operation(summary = "Cadastrar novo bolsista", description = "Cria um novo bolsista no sistema. Administradores podem cadastrar qualquer um; Professores podem cadastrar bolsistas para os laboratórios que coordenam.")
@@ -155,7 +155,7 @@ public class BolsistaController {
             UriComponentsBuilder uriBuilder) {
         Bolsista b = bolsistaService.criar(body, usuario);
         URI uri = uriBuilder.replacePath("/api/v1/bolsista/{id}").buildAndExpand(b.getPublicId()).toUri();
-        return ResponseEntity.created(uri).body(UsuarioResponse.de(b));
+        return ResponseEntity.created(uri).body(UsuarioResponse.from(b));
     }
 
     @Operation(summary = "Atualizar bolsista", description = "Atualiza os dados do bolsista. Se a senha vier em branco, a atual é preservada.")
@@ -173,7 +173,7 @@ public class BolsistaController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do bolsista", required = true)
             @Valid @RequestBody BolsistaRequest body) {
         Bolsista b = bolsistaService.atualizar(id, body, usuario);
-        return ResponseEntity.ok(UsuarioResponse.de(b));
+        return ResponseEntity.ok(UsuarioResponse.from(b));
     }
 
     @Operation(summary = "Desativar bolsista (Soft Delete)", description = "Desativa um bolsista, mantendo o histórico de frequência e projetos íntegros no banco de dados.")
@@ -193,6 +193,6 @@ public class BolsistaController {
     }
 
     private PaginaResponse<UsuarioResponse> paginar(List<Bolsista> lista, int pagina, Integer tamanhoPedido) {
-        return PaginacaoUtil.paginar(lista, pagina, tamanhoPedido, TAMANHO_PADRAO, TAMANHO_MAXIMO, UsuarioResponse::de);
+        return PaginacaoUtil.paginar(lista, pagina, tamanhoPedido, TAMANHO_PADRAO, TAMANHO_MAXIMO, UsuarioResponse::from);
     }
 }

@@ -35,11 +35,11 @@ public record LaboratorioResponse(
         @Schema(description = "Percentual de ocupação em relação à capacidade (0 a 100%)", example = "60.0")
         double percentualOcupacao) {
 
-    public static LaboratorioResponse de(Laboratorio l) {
-        return de(l, 0);
+    public static LaboratorioResponse from(Laboratorio l) {
+        return from(l, 0);
     }
 
-    public static LaboratorioResponse de(Laboratorio l, int totalBolsistas) {
+    public static LaboratorioResponse from(Laboratorio l, int totalBolsistas) {
         if (l == null) {
             return null;
         }

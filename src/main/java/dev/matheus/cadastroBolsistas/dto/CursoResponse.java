@@ -11,7 +11,7 @@ public record CursoResponse(
         @Schema(description = "Nome do curso", example = "Ciência da Computação")
         String nome) {
 
-    public static CursoResponse de(Curso c) {
+    public static CursoResponse from(Curso c) {
         if (c == null) return null;
         return new CursoResponse(c.getPublicId(), c.getNome());
     }

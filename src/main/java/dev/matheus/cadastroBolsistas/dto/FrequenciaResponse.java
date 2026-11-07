@@ -31,7 +31,7 @@ public record FrequenciaResponse(
         @Schema(description = "Indica se o registro está ativo", example = "true")
         boolean ativo) {
 
-    public static FrequenciaResponse de(Frequencia f) {
+    public static FrequenciaResponse from(Frequencia f) {
         if (f == null) {
             return null;
         }
