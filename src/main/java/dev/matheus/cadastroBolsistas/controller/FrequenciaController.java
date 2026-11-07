@@ -68,18 +68,7 @@ public class FrequenciaController {
             @Parameter(description = "ID público do bolsista (ex: bol_...)", example = "bol_a1b2c3d4e5f6g7h8i9j0") @RequestParam(required = false) String bolsistaId,
             @Parameter(description = "Data de início do intervalo") @RequestParam(required = false) LocalDate dataInicio,
             @Parameter(description = "Data de término do intervalo") @RequestParam(required = false) LocalDate dataFim) {
-        UUID filtro = null;
-        if (usuario.isBolsista()) {
-            filtro = usuario.getId();
-        } else if (bolsistaId != null && !bolsistaId.isBlank()) {
-            filtro = bolsistaService.buscarOuFalhar(bolsistaId).getId();
-        }
-
-        if (filtro != null) {
-            frequenciaService.exigirAcesso(usuario, filtro);
-        }
-
-        return ResponseEntity.ok(frequenciaService.listar(usuario, filtro, dataInicio, dataFim, pageable).map(FrequenciaResponse::from));
+        return ResponseEntity.ok(frequenciaService.listar(usuario, bolsistaId, dataInicio, dataFim, pageable).map(FrequenciaResponse::from));
     }
 
     @Operation(summary = "Resumo mensal de horas", description = "Calcula o total de horas trabalhadas no mês vigente e o histórico total acumulado do bolsista.")
@@ -147,10 +136,7 @@ public class FrequenciaController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do apontamento de horas", required = true)
             @Valid @RequestBody FrequenciaRequest body,
             UriComponentsBuilder uriBuilder) {
-        Bolsista alvo = frequenciaService.resolverBolsistaAlvo(usuario, body.bolsistaId());
-        frequenciaService.exigirAcesso(usuario, alvo.getId());
-
-        Frequencia f = frequenciaService.registrar(body, alvo);
+        Frequencia f = frequenciaService.registrar(usuario, body);
 
         URI uri = uriBuilder.replacePath("/api/v1/frequencia/{id}").buildAndExpand(f.getPublicId()).toUri();
         return ResponseEntity.created(uri).body(FrequenciaResponse.from(f));

@@ -60,7 +60,14 @@ public class FrequenciaService {
      * @return a Frequencia persistida com publicId gerado
      */
     @Transactional
-    public Frequencia registrar(FrequenciaRequest body, Bolsista alvo) {
+    /** bolsista registra para si; os demais informam o bolsista no corpo e precisam ter acesso a ele. */
+    public Frequencia registrar(Usuario logado, FrequenciaRequest body) {
+        Bolsista alvo = resolverBolsistaAlvo(logado, body.bolsistaId());
+        exigirAcesso(logado, alvo.getId());
+        return registrar(body, alvo);
+    }
+
+    private Frequencia registrar(FrequenciaRequest body, Bolsista alvo) {
         Frequencia f = new Frequencia();
         f.setBolsista(alvo);
         f.setData(body.data());
@@ -194,7 +201,8 @@ public class FrequenciaService {
     }
 
     /** sem bolsista informado, professor ve as frequencias dos bolsistas dos labs que coordena. */
-    public Page<Frequencia> listar(Usuario logado, UUID bolsistaId, LocalDate dataInicio, LocalDate dataFim, Pageable pageable) {
+    public Page<Frequencia> listar(Usuario logado, String bolsistaPublicId, LocalDate dataInicio, LocalDate dataFim, Pageable pageable) {
+        UUID bolsistaId = resolverFiltro(logado, bolsistaPublicId);
         Specification<Frequencia> filtro;
         if (bolsistaId == null && logado.isProfessor()) {
             List<UUID> ids = bolsistaService.idsDosBolsistasCoordenadosPor(logado.getId());
@@ -259,6 +267,20 @@ public class FrequenciaService {
         }).orElse(false);
     }
 
+    /** bolsista ve so o proprio; os demais filtram pelo id publico (opcional). null = sem filtro de bolsista. */
+    private UUID resolverFiltro(Usuario usuario, String bolsistaPublicId) {
+        UUID filtro = null;
+        if (usuario.isBolsista()) {
+            filtro = usuario.getId();
+        } else if (bolsistaPublicId != null && !bolsistaPublicId.isBlank()) {
+            filtro = bolsistaService.buscarOuFalhar(bolsistaPublicId).getId();
+        }
+        if (filtro != null) {
+            exigirAcesso(usuario, filtro);
+        }
+        return filtro;
+    }
+
     public Bolsista resolverBolsistaAlvo(Usuario logado, String bolsistaPublicId) {
         if (logado.isBolsista()) {
             return bolsistaService.buscarOuFalhar(logado.getId());
@@ -267,16 +289,6 @@ public class FrequenciaService {
             throw new IllegalArgumentException("Informe o bolsista para o qual o registro esta sendo feito.");
         }
         return bolsistaService.buscarOuFalhar(bolsistaPublicId);
-    }
-
-    public UUID resolverBolsistaAlvo(Usuario logado, UUID bolsistaId) {
-        if (logado.isBolsista()) {
-            return logado.getId();
-        }
-        if (bolsistaId == null) {
-            throw new IllegalArgumentException("Informe o bolsista para o qual o registro esta sendo feito.");
-        }
-        return bolsistaId;
     }
 
     public ResumoHorasResponse calcularResumoHoras(Usuario logado, String bolsistaId) {
@@ -302,15 +314,7 @@ public class FrequenciaService {
     }
 
     public String gerarCsv(Usuario usuario, String bolsistaId, LocalDate dataInicio, LocalDate dataFim) {
-        UUID filtro = null;
-        if (usuario.isBolsista()) {
-            filtro = usuario.getId();
-        } else if (bolsistaId != null && !bolsistaId.isBlank()) {
-            filtro = bolsistaService.buscarOuFalhar(bolsistaId).getId();
-        }
-        if (filtro != null) {
-            exigirAcesso(usuario, filtro);
-        }
+        UUID filtro = resolverFiltro(usuario, bolsistaId);
 
         List<Frequencia> lista = (filtro == null && usuario.isProfessor())
                 ? buscarPorBolsistas(bolsistaService.idsDosBolsistasCoordenadosPor(usuario.getId()), dataInicio, dataFim, null, null)

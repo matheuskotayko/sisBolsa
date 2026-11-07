@@ -109,6 +109,35 @@ class FrequenciaServiceTest {
     }
 
     @Test
+    void registrar_bolsistaSemInformarAlvo_registraParaSiMesmo() {
+        Bolsista eu = new Bolsista();
+        eu.setId(UUID.randomUUID());
+        Usuario logado = new Usuario();
+        logado.setId(eu.getId());
+        logado.setTipoUsuario("BOLSISTA");
+        when(bolsistaService.buscarOuFalhar(eu.getId())).thenReturn(eu);
+        when(bolsistaService.buscarPorId(eu.getId())).thenReturn(eu);
+
+        FrequenciaRequest body = new FrequenciaRequest(null, LocalDate.of(2026, 9, 2), 4.0, "Testes", null);
+        Frequencia f = frequenciaService.registrar(logado, body);
+
+        assertEquals(eu.getId(), f.getBolsistaId());
+        assertTrue(f.isAtivo());
+    }
+
+    @Test
+    void registrar_professorSemInformarBolsista_lancaArgumentoInvalido() {
+        Usuario prof = new Usuario();
+        prof.setId(UUID.randomUUID());
+        prof.setTipoUsuario("PROFESSOR");
+
+        FrequenciaRequest body = new FrequenciaRequest(null, LocalDate.of(2026, 9, 2), 4.0, "Testes", null);
+
+        assertThrows(IllegalArgumentException.class, () -> frequenciaService.registrar(prof, body));
+        verify(repository, never()).save(any());
+    }
+
+    @Test
     void atualizar_donoDoRegistro_aplicaOsCamposESalva() {
         UUID bolsistaId = UUID.randomUUID();
         Frequencia f = new Frequencia();

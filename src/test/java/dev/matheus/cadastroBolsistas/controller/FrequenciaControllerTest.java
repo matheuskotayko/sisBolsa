@@ -104,13 +104,9 @@ class FrequenciaControllerTest {
     void registrar_comDadosValidos_retorna201ComLinks() throws Exception {
         String bolsistaPublicId = "bol_xyz789";
         String freqPublicId = "frq_novo123456789012345";
-        Bolsista alvo = new Bolsista();
-        alvo.setId(UUID.randomUUID());
-        alvo.setPublicId(bolsistaPublicId);
         Frequencia f = frequenciaFake(freqPublicId, bolsistaPublicId);
 
-        when(frequenciaService.resolverBolsistaAlvo(any(Usuario.class), eq(bolsistaPublicId))).thenReturn(alvo);
-        when(frequenciaService.registrar(any(FrequenciaRequest.class), eq(alvo))).thenReturn(f);
+        when(frequenciaService.registrar(any(Usuario.class), any(FrequenciaRequest.class))).thenReturn(f);
 
         String json = """
             {
@@ -128,7 +124,7 @@ class FrequenciaControllerTest {
                 .andExpect(header().string("Location", org.hamcrest.Matchers.containsString(freqPublicId)))
                 .andExpect(jsonPath("$.id").value(freqPublicId));
 
-        verify(frequenciaService).registrar(any(FrequenciaRequest.class), eq(alvo));
+        verify(frequenciaService).registrar(any(Usuario.class), any(FrequenciaRequest.class));
     }
 
     @Test
@@ -182,6 +178,6 @@ class FrequenciaControllerTest {
                         .content(json))
                 .andExpect(status().isBadRequest());
 
-        verify(frequenciaService, never()).registrar(any(FrequenciaRequest.class), any(Bolsista.class));
+        verify(frequenciaService, never()).registrar(any(Usuario.class), any(FrequenciaRequest.class));
     }
 }
