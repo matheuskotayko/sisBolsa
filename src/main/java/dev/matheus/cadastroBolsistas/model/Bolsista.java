@@ -18,6 +18,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
@@ -72,8 +73,8 @@ public class Bolsista {
     @Column(name = "modalidade_bolsa")
     private ModalidadeBolsa modalidadeBolsa;
 
-    @Column(name = "valor_bolsa")
-    private Double valorBolsa;
+    @Column(name = "valor_bolsa", precision = 10, scale = 2)
+    private BigDecimal valorBolsa;
 
     @Column(name = "data_inicio_bolsa")
     private LocalDate dataInicioBolsa;

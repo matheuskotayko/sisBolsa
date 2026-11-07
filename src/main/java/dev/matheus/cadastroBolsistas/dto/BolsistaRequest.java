@@ -1,8 +1,10 @@
 package dev.matheus.cadastroBolsistas.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -56,7 +58,9 @@ public record BolsistaRequest(
         String modalidadeBolsa,
 
         @Schema(description = "Valor mensal da bolsa em Reais (R$)", example = "700.00", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-        Double valorBolsa,
+        @PositiveOrZero(message = "Valor da bolsa nao pode ser negativo.")
+        @Digits(integer = 8, fraction = 2, message = "Valor da bolsa deve ter no maximo 2 casas decimais.")
+        java.math.BigDecimal valorBolsa,
 
         @Schema(description = "Data de início da vigência", example = "2026-03-01", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
         LocalDate dataInicioBolsa,

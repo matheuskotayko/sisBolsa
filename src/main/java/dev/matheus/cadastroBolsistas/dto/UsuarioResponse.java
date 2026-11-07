@@ -63,7 +63,7 @@ public record UsuarioResponse(
         String modalidadeBolsaDescricao,
 
         @Schema(description = "Valor mensal da bolsa em Reais (R$)", example = "700.00")
-        Double valorBolsa,
+        java.math.BigDecimal valorBolsa,
 
         @Schema(description = "Data de início da vigência da bolsa", example = "2026-03-01")
         LocalDate dataInicioBolsa,
