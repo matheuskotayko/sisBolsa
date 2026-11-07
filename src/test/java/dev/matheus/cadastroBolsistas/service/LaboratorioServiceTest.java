@@ -186,6 +186,31 @@ class LaboratorioServiceTest {
     }
 
     @Test
+    void listar_calculaAOcupacaoDaPaginaComUmaUnicaConsultaAgrupada() {
+        Laboratorio a = new Laboratorio();
+        a.setId(UUID.randomUUID());
+        a.setCapacidade(10);
+        Laboratorio b = new Laboratorio();
+        b.setId(UUID.randomUUID());
+        b.setCapacidade(4);
+        when(repository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(a, b)));
+        BolsistaRepository.Contagem deA = mock(BolsistaRepository.Contagem.class);
+        when(deA.getChave()).thenReturn(a.getId());
+        when(deA.getTotal()).thenReturn(5L);
+        when(bolsistaRepository.contarPorLaboratorios(any())).thenReturn(List.of(deA));
+
+        Usuario admin = new Usuario();
+        admin.setTipoUsuario("ADMIN");
+        var pagina = laboratorioService.listar(admin, null, org.springframework.data.domain.PageRequest.of(0, 10));
+
+        assertEquals(50.0, pagina.getContent().get(0).percentualOcupacao());
+        assertEquals(0.0, pagina.getContent().get(1).percentualOcupacao());
+        verify(bolsistaRepository, times(1)).contarPorLaboratorios(any());
+        verify(bolsistaRepository, never()).countByLaboratorioIdAndAtivoTrue(any());
+    }
+
+    @Test
     void buscarExigindoGerencia_semPermissao_lancaPermissaoNegada() {
         UUID id = UUID.randomUUID();
         Laboratorio lab = new Laboratorio();

@@ -10,6 +10,7 @@ import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.repository.BolsistaRepository;
 import dev.matheus.cadastroBolsistas.repository.Filtros;
 import dev.matheus.cadastroBolsistas.repository.ProjetoRepository;
+import dev.matheus.cadastroBolsistas.dto.response.ProjetoResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -17,7 +18,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /*
  * Regras de negócio de projetos de pesquisa com identificadores públicos e UUIDs.
@@ -99,8 +103,27 @@ public class ProjetoService {
         return new ArrayList<>(repository.findAll(Filtros.projeto(nome, labId), Sort.by("nome")));
     }
 
-    public Page<Projeto> buscarProjetos(String buscaNome, String labPublicId, Pageable pageable) {
-        return repository.findAll(Filtros.projeto(buscaNome, labPublicId), Filtros.ordenado(pageable, Sort.by("nome")));
+    public Page<ProjetoResponse> buscarProjetos(String buscaNome, String labPublicId, Pageable pageable) {
+        Page<Projeto> pagina = repository.findAll(Filtros.projeto(buscaNome, labPublicId), Filtros.ordenado(pageable, Sort.by("nome")));
+        Map<UUID, Integer> membros = contarMembros(pagina.getContent());
+        return pagina.map(p -> ProjetoResponse.from(p, membros.getOrDefault(p.getId(), 0)));
+    }
+
+    public ProjetoResponse detalhar(String id) {
+        return responder(buscarOuFalhar(id));
+    }
+
+    /** uma consulta agrupada para todos os projetos da lista. */
+    private Map<UUID, Integer> contarMembros(List<Projeto> projetos) {
+        if (projetos.isEmpty()) {
+            return Map.of();
+        }
+        return bolsistaRepository.contarPorProjetos(projetos.stream().map(Projeto::getId).toList()).stream()
+                .collect(Collectors.toMap(BolsistaRepository.Contagem::getChave, c -> (int) c.getTotal()));
+    }
+
+    private ProjetoResponse responder(Projeto p) {
+        return ProjetoResponse.from(p, contarMembros(p.getId()));
     }
 
     public ArrayList<Projeto> buscarProjetos(String buscaNome, String labPublicId) {
@@ -109,9 +132,11 @@ public class ProjetoService {
     }
 
     /** 404 se o laboratorio nao existe. */
-    public ArrayList<Projeto> listarPorLaboratorio(String labPublicId) {
+    public List<ProjetoResponse> listarPorLaboratorio(String labPublicId) {
         laboratorioService.buscarOuFalhar(labPublicId);
-        return new ArrayList<>(repository.findByLaboratorio_PublicIdAndAtivoTrueOrderByNome(labPublicId));
+        List<Projeto> projetos = repository.findByLaboratorio_PublicIdAndAtivoTrueOrderByNome(labPublicId);
+        Map<UUID, Integer> membros = contarMembros(projetos);
+        return projetos.stream().map(p -> ProjetoResponse.from(p, membros.getOrDefault(p.getId(), 0))).toList();
     }
 
     public ArrayList<Projeto> listarPorLaboratorio(UUID labId) {
@@ -166,21 +191,21 @@ public class ProjetoService {
     }
 
     @Transactional
-    public Projeto criar(ProjetoRequest body, Usuario usuario) {
+    public ProjetoResponse criar(ProjetoRequest body, Usuario usuario) {
         Projeto p = new Projeto();
         aplicar(p, body);
         cadastrar(p, usuario);
-        return p;
+        return responder(p);
     }
 
     @Transactional
-    public Projeto atualizar(String id, ProjetoRequest body, Usuario usuario) {
+    public ProjetoResponse atualizar(String id, ProjetoRequest body, Usuario usuario) {
         Projeto p = buscarExigindoGerencia(id, usuario);
         exigirPodeMoverPara(usuario, body.laboratorioId());
         aplicar(p, body);
         p.setAtivo(true);
         atualizar(p);
-        return p;
+        return responder(p);
     }
 
     /** exclusao logica; exige permissao de gerencia sobre o laboratorio do projeto. */

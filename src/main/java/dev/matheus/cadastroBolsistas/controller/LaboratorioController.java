@@ -58,7 +58,7 @@ public class LaboratorioController {
             @AuthenticationPrincipal Usuario usuario,
             @ParameterObject Pageable pageable,
             @Parameter(description = "Filtro de busca por nome, área de pesquisa ou coordenador", example = "Inteligência") @RequestParam(required = false) String buscaNome) {
-        return ResponseEntity.ok(laboratorioService.listar(usuario, buscaNome, pageable).map(this::comOcupacao));
+        return ResponseEntity.ok(laboratorioService.listar(usuario, buscaNome, pageable));
     }
 
     @Operation(summary = "Buscar laboratório por ID", description = "Retorna os detalhes de um laboratório específico incluindo capacidade e percentual de ocupação.")
@@ -69,7 +69,7 @@ public class LaboratorioController {
     @GetMapping("/{id}")
     public ResponseEntity<LaboratorioResponse> buscar(
             @Parameter(description = "ID público do laboratório (ex: lab_...)", required = true, example = "lab_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
-        return ResponseEntity.ok(comOcupacao(laboratorioService.buscarOuFalhar(id)));
+        return ResponseEntity.ok(laboratorioService.detalhar(id));
     }
 
     @Operation(summary = "Listar bolsistas de um laboratório", description = "Retorna a lista completa de bolsistas e pesquisadores vinculados ao laboratório informado.")
@@ -91,9 +91,7 @@ public class LaboratorioController {
     @GetMapping("/{id}/projetos")
     public ResponseEntity<List<ProjetoResponse>> projetos(
             @Parameter(description = "ID público do laboratório (ex: lab_...)", required = true, example = "lab_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
-        return ResponseEntity.ok(projetoService.listarPorLaboratorio(id).stream()
-                .map(p -> ProjetoResponse.from(p, projetoService.contarMembros(p.getId())))
-                .toList());
+        return ResponseEntity.ok(projetoService.listarPorLaboratorio(id));
     }
 
     @Operation(summary = "Criar laboratório", description = "Cadastra um novo laboratório no sistema (restrito a Administradores).")
@@ -107,9 +105,9 @@ public class LaboratorioController {
     public ResponseEntity<LaboratorioResponse> criar(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do laboratório", required = true)
                                                      @Valid @RequestBody LaboratorioRequest body,
                                                      UriComponentsBuilder uriBuilder) {
-        Laboratorio lab = laboratorioService.criar(body);
-        URI uri = uriBuilder.replacePath("/api/v1/laboratorio/{id}").buildAndExpand(lab.getPublicId()).toUri();
-        return ResponseEntity.created(uri).body(comOcupacao(lab));
+        LaboratorioResponse criado = laboratorioService.criar(body);
+        URI uri = uriBuilder.replacePath("/api/v1/laboratorio/{id}").buildAndExpand(criado.id()).toUri();
+        return ResponseEntity.created(uri).body(criado);
     }
 
     @Operation(summary = "Atualizar laboratório", description = "Atualiza os dados de capacidade, nome, área de pesquisa ou coordenador do laboratório.")
@@ -126,8 +124,7 @@ public class LaboratorioController {
             @AuthenticationPrincipal Usuario usuario,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do laboratório", required = true)
             @Valid @RequestBody LaboratorioRequest body) {
-        Laboratorio lab = laboratorioService.atualizar(id, body, usuario);
-        return ResponseEntity.ok(comOcupacao(lab));
+        return ResponseEntity.ok(laboratorioService.atualizar(id, body, usuario));
     }
 
     @Operation(summary = "Desativar laboratório (Soft Delete)", description = "Desativa o laboratório no sistema.")
@@ -143,9 +140,5 @@ public class LaboratorioController {
             @AuthenticationPrincipal Usuario usuario) {
         laboratorioService.excluir(id, usuario);
         return ResponseEntity.noContent().build();
-    }
-
-    private LaboratorioResponse comOcupacao(Laboratorio lab) {
-        return LaboratorioResponse.from(lab, laboratorioService.contarBolsistasNoLaboratorio(lab.getId()));
     }
 }

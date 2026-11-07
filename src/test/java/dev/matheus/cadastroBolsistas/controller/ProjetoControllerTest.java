@@ -1,6 +1,7 @@
 package dev.matheus.cadastroBolsistas.controller;
 
 import dev.matheus.cadastroBolsistas.dto.request.ProjetoRequest;
+import dev.matheus.cadastroBolsistas.dto.response.ProjetoResponse;
 import dev.matheus.cadastroBolsistas.model.Laboratorio;
 import dev.matheus.cadastroBolsistas.model.Projeto;
 import dev.matheus.cadastroBolsistas.model.Usuario;
@@ -86,8 +87,7 @@ class ProjetoControllerTest {
         proj.setLaboratorio(lab);
         proj.setAtivo(true);
 
-        when(projetoService.buscarOuFalhar("prj_001")).thenReturn(proj);
-        when(projetoService.contarMembros(proj.getId())).thenReturn(3);
+        when(projetoService.detalhar("prj_001")).thenReturn(ProjetoResponse.from(proj, 3));
 
         mockMvc.perform(get("/api/v1/projeto/prj_001"))
                 .andExpect(status().isOk())
@@ -110,7 +110,7 @@ class ProjetoControllerTest {
         p.setLaboratorio(lab);
         p.setAtivo(true);
 
-        when(projetoService.criar(any(ProjetoRequest.class), any(Usuario.class))).thenReturn(p);
+        when(projetoService.criar(any(ProjetoRequest.class), any(Usuario.class))).thenReturn(ProjetoResponse.from(p));
 
         String json = """
                 {
@@ -145,7 +145,7 @@ class ProjetoControllerTest {
         proj.setLaboratorio(lab);
         proj.setAtivo(true);
 
-        when(projetoService.atualizar(eq("prj_001"), any(ProjetoRequest.class), any(Usuario.class))).thenReturn(proj);
+        when(projetoService.atualizar(eq("prj_001"), any(ProjetoRequest.class), any(Usuario.class))).thenReturn(ProjetoResponse.from(proj));
 
         String json = """
                 {

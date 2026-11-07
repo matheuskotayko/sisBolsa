@@ -1,6 +1,7 @@
 package dev.matheus.cadastroBolsistas.controller;
 
 import dev.matheus.cadastroBolsistas.dto.request.LaboratorioRequest;
+import dev.matheus.cadastroBolsistas.dto.response.LaboratorioResponse;
 import dev.matheus.cadastroBolsistas.model.Laboratorio;
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.security.JwtCookieFilter;
@@ -84,8 +85,7 @@ class LaboratorioControllerTest {
         lab.setCapacidade(10);
         lab.setAtivo(true);
 
-        when(laboratorioService.buscarOuFalhar("lab_001")).thenReturn(lab);
-        when(laboratorioService.contarBolsistasNoLaboratorio(lab.getId())).thenReturn(2);
+        when(laboratorioService.detalhar("lab_001")).thenReturn(LaboratorioResponse.from(lab, 2));
 
         mockMvc.perform(get("/api/v1/laboratorio/lab_001"))
                 .andExpect(status().isOk())
@@ -103,7 +103,7 @@ class LaboratorioControllerTest {
         lab.setCapacidade(15);
         lab.setAtivo(true);
 
-        when(laboratorioService.criar(any(LaboratorioRequest.class))).thenReturn(lab);
+        when(laboratorioService.criar(any(LaboratorioRequest.class))).thenReturn(LaboratorioResponse.from(lab));
 
         String json = """
                 {
@@ -134,7 +134,7 @@ class LaboratorioControllerTest {
         lab.setCapacidade(20);
         lab.setAtivo(true);
 
-        when(laboratorioService.atualizar(eq("lab_001"), any(LaboratorioRequest.class), any(Usuario.class))).thenReturn(lab);
+        when(laboratorioService.atualizar(eq("lab_001"), any(LaboratorioRequest.class), any(Usuario.class))).thenReturn(LaboratorioResponse.from(lab));
 
         String json = """
                 {

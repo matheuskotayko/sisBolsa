@@ -7,12 +7,25 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface BolsistaRepository extends JpaRepository<Bolsista, UUID>, JpaSpecificationExecutor<Bolsista> {
+
+    /** contagem agrupada: uma consulta para a pagina inteira em vez de uma por item. */
+    interface Contagem {
+        UUID getChave();
+        long getTotal();
+    }
+
+    @Query("SELECT b.laboratorioId AS chave, COUNT(b) AS total FROM Bolsista b WHERE b.laboratorioId IN :ids AND b.usuario.ativo = true GROUP BY b.laboratorioId")
+    List<Contagem> contarPorLaboratorios(@Param("ids") Collection<UUID> ids);
+
+    @Query("SELECT p.id AS chave, COUNT(b) AS total FROM Bolsista b JOIN b.projetos p WHERE p.id IN :ids AND b.usuario.ativo = true GROUP BY p.id")
+    List<Contagem> contarPorProjetos(@Param("ids") Collection<UUID> ids);
 
     Optional<Bolsista> findByPublicId(String publicId);
 

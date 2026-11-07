@@ -11,6 +11,7 @@ import dev.matheus.cadastroBolsistas.repository.Filtros;
 import dev.matheus.cadastroBolsistas.repository.LaboratorioRepository;
 import dev.matheus.cadastroBolsistas.repository.ProfessorRepository;
 import dev.matheus.cadastroBolsistas.repository.ProjetoRepository;
+import dev.matheus.cadastroBolsistas.dto.response.LaboratorioResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -21,7 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /*
  * Regras de negócio de laboratórios com suporte a identificadores públicos e UUIDs.
@@ -112,12 +115,31 @@ public class LaboratorioService {
     }
 
     /** professor so ve os laboratorios que coordena. */
-    public Page<Laboratorio> listar(Usuario logado, String buscaNome, Pageable pageable) {
+    public Page<LaboratorioResponse> listar(Usuario logado, String buscaNome, Pageable pageable) {
         Specification<Laboratorio> filtro = Filtros.laboratorio(buscaNome);
         if (logado.isProfessor()) {
             filtro = filtro.and((raiz, consulta, cb) -> cb.equal(raiz.get("coordenadorId"), logado.getId()));
         }
-        return repository.findAll(filtro, Filtros.ordenado(pageable, Sort.by("nome")));
+        Page<Laboratorio> pagina = repository.findAll(filtro, Filtros.ordenado(pageable, Sort.by("nome")));
+        Map<UUID, Integer> ocupacao = contarBolsistas(pagina.getContent());
+        return pagina.map(l -> LaboratorioResponse.from(l, ocupacao.getOrDefault(l.getId(), 0)));
+    }
+
+    public LaboratorioResponse detalhar(String id) {
+        return responder(buscarOuFalhar(id));
+    }
+
+    /** uma consulta agrupada para todos os laboratorios da pagina. */
+    private Map<UUID, Integer> contarBolsistas(List<Laboratorio> labs) {
+        if (labs.isEmpty()) {
+            return Map.of();
+        }
+        return bolsistaRepository.contarPorLaboratorios(labs.stream().map(Laboratorio::getId).toList()).stream()
+                .collect(Collectors.toMap(BolsistaRepository.Contagem::getChave, c -> (int) c.getTotal()));
+    }
+
+    private LaboratorioResponse responder(Laboratorio lab) {
+        return LaboratorioResponse.from(lab, contarBolsistasNoLaboratorio(lab.getId()));
     }
 
     public ArrayList<Laboratorio> listarPorCoordenador(UUID professorId) {
@@ -206,20 +228,20 @@ public class LaboratorioService {
     }
 
     @Transactional
-    public Laboratorio criar(LaboratorioRequest body) {
+    public LaboratorioResponse criar(LaboratorioRequest body) {
         Laboratorio lab = new Laboratorio();
         aplicar(lab, body);
         cadastrar(lab);
-        return lab;
+        return responder(lab);
     }
 
     @Transactional
-    public Laboratorio atualizar(String id, LaboratorioRequest body, Usuario usuario) {
+    public LaboratorioResponse atualizar(String id, LaboratorioRequest body, Usuario usuario) {
         Laboratorio lab = buscarExigindoGerencia(id, usuario);
         aplicar(lab, body);
         lab.setAtivo(true);
         atualizar(lab);
-        return lab;
+        return responder(lab);
     }
 
     private boolean contem(String valor, String termo) {

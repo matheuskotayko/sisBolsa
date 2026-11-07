@@ -46,6 +46,8 @@ class RepositoryQueriesTest {
             bolsistas.countByProjetos_IdAndAtivoTrue(id);
             bolsistas.countByLaboratorioIdAndAtivoTrue(id);
             bolsistas.countByTipoUsuarioAndAtivoTrue("BOLSISTA");
+            bolsistas.contarPorLaboratorios(java.util.List.of(id));
+            bolsistas.contarPorProjetos(java.util.List.of(id));
             bolsistas.findAll(Filtros.bolsista("a", "a", "BOLSISTA"),
                     Filtros.ordenado(PageRequest.of(0, 5), Sort.by("usuario.nome")));
         });

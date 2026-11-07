@@ -50,7 +50,7 @@ public class ProjetoController {
             @ParameterObject Pageable pageable,
             @Parameter(description = "Filtro por nome do projeto", example = "Sistema") @RequestParam(required = false) String buscaNome,
             @Parameter(description = "Filtro por ID do laboratório", example = "lab_a1b2c3d4e5f6g7h8i9j0") @RequestParam(required = false) String labId) {
-        return ResponseEntity.ok(projetoService.buscarProjetos(buscaNome, labId, pageable).map(this::comMembros));
+        return ResponseEntity.ok(projetoService.buscarProjetos(buscaNome, labId, pageable));
     }
 
     @Operation(summary = "Buscar projeto por ID", description = "Recupera os detalhes completos do projeto pelo seu identificador público (ex: prj_...).")
@@ -61,8 +61,7 @@ public class ProjetoController {
     @GetMapping("/{id}")
     public ResponseEntity<ProjetoResponse> buscar(
             @Parameter(description = "ID público do projeto (ex: prj_...)", required = true, example = "prj_a1b2c3d4e5f6g7h8i9j0") @PathVariable String id) {
-        Projeto p = projetoService.buscarOuFalhar(id);
-        return ResponseEntity.ok(comMembros(p));
+        return ResponseEntity.ok(projetoService.detalhar(id));
     }
 
     @Operation(summary = "Listar membros de um projeto", description = "Retorna a lista de bolsistas e pesquisadores vinculados à equipe do projeto.")
@@ -89,9 +88,9 @@ public class ProjetoController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do projeto", required = true)
             @Valid @RequestBody ProjetoRequest body,
             UriComponentsBuilder uriBuilder) {
-        Projeto p = projetoService.criar(body, usuario);
-        URI uri = uriBuilder.replacePath("/api/v1/projeto/{id}").buildAndExpand(p.getPublicId()).toUri();
-        return ResponseEntity.created(uri).body(ProjetoResponse.from(p));
+        ProjetoResponse criado = projetoService.criar(body, usuario);
+        URI uri = uriBuilder.replacePath("/api/v1/projeto/{id}").buildAndExpand(criado.id()).toUri();
+        return ResponseEntity.created(uri).body(criado);
     }
 
     @Operation(summary = "Atualizar projeto", description = "Atualiza o título, descrição, links externos de entregáveis ou laboratório de lotação do projeto.")
@@ -108,8 +107,7 @@ public class ProjetoController {
             @AuthenticationPrincipal Usuario usuario,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Novos dados do projeto", required = true)
             @Valid @RequestBody ProjetoRequest body) {
-        Projeto p = projetoService.atualizar(id, body, usuario);
-        return ResponseEntity.ok(ProjetoResponse.from(p));
+        return ResponseEntity.ok(projetoService.atualizar(id, body, usuario));
     }
 
     @Operation(summary = "Desativar projeto (Soft Delete)", description = "Desativa o projeto mantendo o histórico de vínculos.")
@@ -157,9 +155,5 @@ public class ProjetoController {
             @AuthenticationPrincipal Usuario usuario) {
         projetoService.desvincularBolsista(id, bolsistaId, usuario);
         return ResponseEntity.noContent().build();
-    }
-
-    private ProjetoResponse comMembros(Projeto p) {
-        return ProjetoResponse.from(p, projetoService.contarMembros(p.getId()));
     }
 }
