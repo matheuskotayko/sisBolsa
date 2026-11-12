@@ -38,3 +38,7 @@ server:
   error:
     # nao vaza stacktrace na pagina de erro padrao (ApiExceptionHandler cobre /api/**)
     include-stacktrace: never
+
+logging:
+  level:
+    org.springframework.security: TRACE
