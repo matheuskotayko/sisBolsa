@@ -9,8 +9,8 @@ import dev.matheus.cadastroBolsistas.dto.request.PerfilRequest;
 import dev.matheus.cadastroBolsistas.dto.response.UsuarioResponse;
 import dev.matheus.cadastroBolsistas.model.Professor;
 import dev.matheus.cadastroBolsistas.model.Usuario;
-import dev.matheus.cadastroBolsistas.infra.security.JwtCookieFilter;
-import dev.matheus.cadastroBolsistas.infra.security.JwtService;
+import dev.matheus.cadastroBolsistas.infra.security.JwtAuthenticationFilter;
+import dev.matheus.cadastroBolsistas.infra.security.TokenServiceJWT;
 import dev.matheus.cadastroBolsistas.infra.SecurityConfig;
 import dev.matheus.cadastroBolsistas.service.AdministradorService;
 import dev.matheus.cadastroBolsistas.service.PerfilService;
@@ -50,7 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @WebMvcTest(controllers = AuthController.class,
         excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
-                classes = {SecurityConfig.class, JwtCookieFilter.class}))
+                classes = {SecurityConfig.class, JwtAuthenticationFilter.class}))
 @AutoConfigureMockMvc(addFilters = false)
 class AuthControllerTest {
 
@@ -80,7 +80,7 @@ class AuthControllerTest {
     private LoginService loginService;
 
     @MockitoBean
-    private JwtService jwtService;
+    private TokenServiceJWT tokenServiceJWT;
 
     @MockitoBean
     private PerfilService perfilService;
@@ -122,7 +122,7 @@ class AuthControllerTest {
     @Test
     void login_comCredenciaisValidas_retornaTokenNoHeader() throws Exception {
         when(loginService.entrar("thiago@teste.com", "12345678")).thenReturn(usuarioLogado);
-        when(jwtService.gerarToken("thiago@teste.com", "BOLSISTA")).thenReturn("token-fake");
+        when(tokenServiceJWT.gerarToken("thiago@teste.com", "BOLSISTA")).thenReturn("token-fake");
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -148,7 +148,7 @@ class AuthControllerTest {
         u.setEmail("thiago@teste.com");
         u.setSenha("hash-secreto");
         when(loginService.entrar(any(), any())).thenReturn(u);
-        when(jwtService.gerarToken(any(), any())).thenReturn("t");
+        when(tokenServiceJWT.gerarToken(any(), any())).thenReturn("t");
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -197,7 +197,7 @@ class AuthControllerTest {
         u.setEmail("thiago@teste.com");
         u.setTipoUsuario("BOLSISTA");
         when(loginService.entrar("thiago@teste.com", "12345678")).thenReturn(u);
-        when(jwtService.gerarToken("thiago@teste.com", "BOLSISTA")).thenReturn("token-fake");
+        when(tokenServiceJWT.gerarToken("thiago@teste.com", "BOLSISTA")).thenReturn("token-fake");
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -3,7 +3,7 @@ package dev.matheus.cadastroBolsistas.controller;
 import dev.matheus.cadastroBolsistas.dto.request.ProfessorRequest;
 import dev.matheus.cadastroBolsistas.model.Professor;
 import dev.matheus.cadastroBolsistas.model.Usuario;
-import dev.matheus.cadastroBolsistas.infra.security.JwtCookieFilter;
+import dev.matheus.cadastroBolsistas.infra.security.JwtAuthenticationFilter;
 import dev.matheus.cadastroBolsistas.infra.SecurityConfig;
 import dev.matheus.cadastroBolsistas.service.ProfessorService;
 import org.springframework.data.domain.PageImpl;
@@ -35,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = ProfessorController.class,
         excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
-                classes = {SecurityConfig.class, JwtCookieFilter.class}))
+                classes = {SecurityConfig.class, JwtAuthenticationFilter.class}))
 @AutoConfigureMockMvc(addFilters = false)
 class ProfessorControllerTest {
 

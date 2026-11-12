@@ -11,7 +11,7 @@ import dev.matheus.cadastroBolsistas.dto.request.RedefinirSenhaRequest;
 import dev.matheus.cadastroBolsistas.dto.response.UsuarioResponse;
 import dev.matheus.cadastroBolsistas.model.Administrador;
 import dev.matheus.cadastroBolsistas.model.Usuario;
-import dev.matheus.cadastroBolsistas.infra.security.JwtService;
+import dev.matheus.cadastroBolsistas.infra.security.TokenServiceJWT;
 import dev.matheus.cadastroBolsistas.service.AdministradorService;
 import dev.matheus.cadastroBolsistas.service.LoginService;
 import dev.matheus.cadastroBolsistas.service.PasswordResetService;
@@ -39,17 +39,17 @@ import java.net.URI;
 public class AuthController {
 
     private final LoginService loginService;
-    private final JwtService jwtService;
+    private final TokenServiceJWT tokenServiceJWT;
     private final AdministradorService administradorService;
     private final PasswordResetService passwordResetService;
     private final PerfilService perfilService;
 
-    public AuthController(LoginService loginService, JwtService jwtService,
+    public AuthController(LoginService loginService, TokenServiceJWT tokenServiceJWT,
                           AdministradorService administradorService,
                           PasswordResetService passwordResetService,
                           PerfilService perfilService) {
         this.loginService = loginService;
-        this.jwtService = jwtService;
+        this.tokenServiceJWT = tokenServiceJWT;
         this.administradorService = administradorService;
         this.passwordResetService = passwordResetService;
         this.perfilService = perfilService;
@@ -66,7 +66,7 @@ public class AuthController {
     public ResponseEntity<UsuarioResponse> login(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Credenciais de e-mail e senha", required = true)
                                                  @Valid @RequestBody LoginRequest body) {
         Usuario usuario = loginService.entrar(body.email(), body.senha());
-        String token = jwtService.gerarToken(usuario.getEmail(), usuario.getTipoUsuario());
+        String token = tokenServiceJWT.gerarToken(usuario.getEmail(), usuario.getTipoUsuario());
         return ResponseEntity.ok()
                 .header("X-Auth-Token", token)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)

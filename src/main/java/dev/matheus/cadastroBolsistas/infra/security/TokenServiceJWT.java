@@ -18,14 +18,14 @@ import java.util.Date;
  * a authority sem precisar bater no banco antes da hora.
  */
 @Service
-public class JwtService {
+public class TokenServiceJWT {
 
     private static final String CLAIM_TIPO = "tipo";
 
     private final SecretKey chave;
     private final long expiracaoMinutos;
 
-    public JwtService(@Value("${app.jwt.secret}") String secret,
+    public TokenServiceJWT(@Value("${app.jwt.secret}") String secret,
                       @Value("${app.jwt.expiracao-minutos}") long expiracaoMinutos) {
         this.chave = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expiracaoMinutos = expiracaoMinutos;

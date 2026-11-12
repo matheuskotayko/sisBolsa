@@ -1,6 +1,6 @@
 package dev.matheus.cadastroBolsistas.infra;
 
-import dev.matheus.cadastroBolsistas.infra.security.JwtCookieFilter;
+import dev.matheus.cadastroBolsistas.infra.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -31,7 +31,7 @@ public class SecurityConfig {
 
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
-    public SecurityFilterChain apiFilterChain(HttpSecurity http, JwtCookieFilter jwtCookieFilter) throws Exception {
+    public SecurityFilterChain apiFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http
             .securityMatcher("/api/**")
             .csrf(csrf -> csrf.disable())
@@ -62,20 +62,20 @@ public class SecurityConfig {
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((req, res, e) -> escreverErro(res, HttpStatus.UNAUTHORIZED, "Nao autenticado."))
                 .accessDeniedHandler((req, res, e) -> escreverErro(res, HttpStatus.FORBIDDEN, "Acesso negado.")))
-            .addFilterBefore(jwtCookieFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     @Bean
-    public SecurityFilterChain webFilterChain(HttpSecurity http, JwtCookieFilter jwtCookieFilter) throws Exception {
+    public SecurityFilterChain webFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
             .formLogin(form -> form.disable())
             .httpBasic(basic -> basic.disable())
             .logout(logout -> logout.disable())
-            .addFilterBefore(jwtCookieFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

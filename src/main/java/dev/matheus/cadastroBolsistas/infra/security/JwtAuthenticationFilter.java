@@ -24,15 +24,15 @@ import java.util.List;
  * claim e vira o principal do SecurityContext.
  */
 @Component
-public class JwtCookieFilter extends OncePerRequestFilter {
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String BEARER_PREFIX = "Bearer ";
 
-    private final JwtService jwtService;
+    private final TokenServiceJWT tokenServiceJWT;
     private final LoginService loginService;
 
-    public JwtCookieFilter(JwtService jwtService, LoginService loginService) {
-        this.jwtService = jwtService;
+    public JwtAuthenticationFilter(TokenServiceJWT tokenServiceJWT, LoginService loginService) {
+        this.tokenServiceJWT = tokenServiceJWT;
         this.loginService = loginService;
     }
 
@@ -42,7 +42,7 @@ public class JwtCookieFilter extends OncePerRequestFilter {
 
         String token = extrairBearerToken(request);
         if (token != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            Claims claims = jwtService.validar(token);
+            Claims claims = tokenServiceJWT.validar(token);
             if (claims != null) {
                 autenticar(claims);
             }

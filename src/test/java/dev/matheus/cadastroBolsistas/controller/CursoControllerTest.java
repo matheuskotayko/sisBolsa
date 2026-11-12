@@ -1,7 +1,7 @@
 package dev.matheus.cadastroBolsistas.controller;
 
 import dev.matheus.cadastroBolsistas.model.Curso;
-import dev.matheus.cadastroBolsistas.infra.security.JwtCookieFilter;
+import dev.matheus.cadastroBolsistas.infra.security.JwtAuthenticationFilter;
 import dev.matheus.cadastroBolsistas.infra.SecurityConfig;
 import dev.matheus.cadastroBolsistas.service.CursoService;
 import org.junit.jupiter.api.Test;
@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = CursoController.class,
         excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
-                classes = {SecurityConfig.class, JwtCookieFilter.class}))
+                classes = {SecurityConfig.class, JwtAuthenticationFilter.class}))
 @AutoConfigureMockMvc(addFilters = false)
 class CursoControllerTest {
 
