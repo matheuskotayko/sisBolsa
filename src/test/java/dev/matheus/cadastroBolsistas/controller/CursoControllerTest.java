@@ -1,8 +1,8 @@
 package dev.matheus.cadastroBolsistas.controller;
 
 import dev.matheus.cadastroBolsistas.model.Curso;
-import dev.matheus.cadastroBolsistas.security.JwtCookieFilter;
-import dev.matheus.cadastroBolsistas.security.SecurityConfig;
+import dev.matheus.cadastroBolsistas.infra.security.JwtCookieFilter;
+import dev.matheus.cadastroBolsistas.infra.SecurityConfig;
 import dev.matheus.cadastroBolsistas.service.CursoService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

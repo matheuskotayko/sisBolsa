@@ -11,7 +11,7 @@ import dev.matheus.cadastroBolsistas.dto.request.RedefinirSenhaRequest;
 import dev.matheus.cadastroBolsistas.dto.response.UsuarioResponse;
 import dev.matheus.cadastroBolsistas.model.Administrador;
 import dev.matheus.cadastroBolsistas.model.Usuario;
-import dev.matheus.cadastroBolsistas.security.JwtService;
+import dev.matheus.cadastroBolsistas.infra.security.JwtService;
 import dev.matheus.cadastroBolsistas.service.AdministradorService;
 import dev.matheus.cadastroBolsistas.service.LoginService;
 import dev.matheus.cadastroBolsistas.service.PasswordResetService;

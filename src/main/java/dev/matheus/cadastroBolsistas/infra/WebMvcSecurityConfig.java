@@ -1,4 +1,4 @@
-package dev.matheus.cadastroBolsistas.security;
+package dev.matheus.cadastroBolsistas.infra;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;

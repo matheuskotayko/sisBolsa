@@ -1,8 +1,8 @@
 package dev.matheus.cadastroBolsistas.controller;
 
 import dev.matheus.cadastroBolsistas.dto.response.ResumoGeralResponse;
-import dev.matheus.cadastroBolsistas.security.JwtCookieFilter;
-import dev.matheus.cadastroBolsistas.security.SecurityConfig;
+import dev.matheus.cadastroBolsistas.infra.security.JwtCookieFilter;
+import dev.matheus.cadastroBolsistas.infra.SecurityConfig;
 import dev.matheus.cadastroBolsistas.service.RelatorioService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

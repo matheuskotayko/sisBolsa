@@ -1,5 +1,6 @@
-package dev.matheus.cadastroBolsistas.security;
+package dev.matheus.cadastroBolsistas.infra;
 
+import dev.matheus.cadastroBolsistas.infra.security.JwtCookieFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;

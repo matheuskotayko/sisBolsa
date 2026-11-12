@@ -1,4 +1,4 @@
-package dev.matheus.cadastroBolsistas.security;
+package dev.matheus.cadastroBolsistas.infra.security;
 
 import dev.matheus.cadastroBolsistas.model.Usuario;
 import dev.matheus.cadastroBolsistas.service.LoginService;
