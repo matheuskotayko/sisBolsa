@@ -8,13 +8,11 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
 
 /*
  * le o jwt do header Authorization e autentica a requisicao.
@@ -60,15 +58,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private void autenticar(Claims claims) {
         String email = claims.getSubject();
-        String tipo = claims.get("tipo", String.class);
 
         Usuario usuario = loginService.buscarPorEmail(email);
         if (usuario == null) {
             return;
         }
 
-        var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + tipo));
-        var auth = new UsernamePasswordAuthenticationToken(usuario, null, authorities);
+        var auth = UsernamePasswordAuthenticationToken.authenticated(usuario, null, usuario.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(auth);
     }
 }

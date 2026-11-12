@@ -9,7 +9,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
 import java.util.Optional;
 
@@ -23,7 +25,7 @@ class LoginServiceTest {
     private UsuarioRepository usuarioRepository;
 
     @Mock
-    private PasswordEncoder passwordEncoder;
+    private AuthenticationManager authenticationManager;
 
     @InjectMocks
     private LoginService service;
@@ -79,9 +81,13 @@ class LoginServiceTest {
     private void cadastrar(String email, String senhaCerta) {
         Usuario u = new Usuario();
         u.setEmail(email);
-        u.setSenha("hash");
-        when(usuarioRepository.findByEmailAndAtivoTrue(email)).thenReturn(Optional.of(u));
-        when(passwordEncoder.matches(anyString(), eq("hash"))).thenAnswer(i -> senhaCerta.equals(i.getArgument(0)));
+        lenient().when(authenticationManager.authenticate(any())).thenAnswer(i -> {
+            var token = (UsernamePasswordAuthenticationToken) i.getArgument(0);
+            if (!senhaCerta.equals(token.getCredentials())) {
+                throw new BadCredentialsException("senha errada");
+            }
+            return UsernamePasswordAuthenticationToken.authenticated(u, null, u.getAuthorities());
+        });
     }
 
     @Test
@@ -116,30 +122,5 @@ class LoginServiceTest {
                 () -> service.entrar("a@a.com", "errada"));
         assertTrue(quinta.getReason().contains("5 minutos"));
         assertThrows(ContaBloqueadaException.class, () -> service.entrar("a@a.com", "certa"));
-    }
-
-    @Test
-    void autenticar_credenciaisCorretas_retornaUsuario() {
-        Usuario u = new Usuario();
-        u.setEmail("user@sisbolsa.com");
-        u.setSenha("encoded_pass");
-        when(usuarioRepository.findByEmailAndAtivoTrue("user@sisbolsa.com")).thenReturn(Optional.of(u));
-        when(passwordEncoder.matches("123456", "encoded_pass")).thenReturn(true);
-
-        Usuario autenticado = service.autenticar("user@sisbolsa.com", "123456");
-        assertNotNull(autenticado);
-        assertEquals("user@sisbolsa.com", autenticado.getEmail());
-    }
-
-    @Test
-    void autenticar_senhaIncorreta_retornaNull() {
-        Usuario u = new Usuario();
-        u.setEmail("user@sisbolsa.com");
-        u.setSenha("encoded_pass");
-        when(usuarioRepository.findByEmailAndAtivoTrue("user@sisbolsa.com")).thenReturn(Optional.of(u));
-        when(passwordEncoder.matches("wrong_pass", "encoded_pass")).thenReturn(false);
-
-        Usuario autenticado = service.autenticar("user@sisbolsa.com", "wrong_pass");
-        assertNull(autenticado);
     }
 }
