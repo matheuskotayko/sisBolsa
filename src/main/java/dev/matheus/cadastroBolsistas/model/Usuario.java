@@ -12,6 +12,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
+import java.util.List;
 
 import java.util.UUID;
 
@@ -23,7 +29,7 @@ import java.util.UUID;
 @Setter
 @Entity
 @Table(name = "usuario")
-public class Usuario {
+public class Usuario implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -69,6 +75,27 @@ public class Usuario {
         if (this.publicId == null || this.publicId.isBlank()) {
             this.publicId = PublicIdGenerator.generateUsuarioId();
         }
+    }
+
+    /* contrato do spring security: o login e o e-mail, o papel vira a authority ROLE_<tipo> */
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE_" + tipoUsuario));
+    }
+
+    @Override
+    public String getPassword() {
+        return senha;
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return ativo;
     }
 
     public boolean isAdmin() {
